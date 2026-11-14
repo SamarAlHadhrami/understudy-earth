@@ -1,9 +1,9 @@
 # PROGRESS
 
 ## RESUME HERE
-- Current step: Step 5 (web app in /app). Steps 1-4 done and committed.
-- Next action: write app/index.html, app/app.js, app/style.css (Leaflet, loads app/data/*.json); test headless; deploy to GitHub Pages (gh-pages branch).
-- Run tests: `python -m pytest tests -q`. Rebuild data: `python pipeline/build_windows.py && python pipeline/analyse.py && python pipeline/verify.py`.
+- Current step: Steps 1-6 done. Extras (step 7) NOT done. gh-pages branch is pushed but GitHub Pages must be enabled by the owner: repo Settings > Pages > Deploy from branch gh-pages / root. Public link then: https://samaralhadhrami.github.io/understudy-earth/
+- Next action: enable Pages, redeploy after app changes with `git subtree push --prefix app origin gh-pages`, then extras.
+- Run tests: `python -m pytest tests -q`, `node tests/check_js_score.js`, `python tests/run_browser.py` (headless browser, writes docs/screens). Rebuild data: `python pipeline/build_windows.py && python pipeline/analyse.py && python pipeline/verify.py`.
 - Open problems: reference PDF only attached in chat, not on disk. Rover limit sources need primary-source confirmation (see REFERENCES). AMADEE-18 area is approximate (Marmul 18.19N 55.23E, 15 km radius), OeWF report not read.
 - Latest commit: see `git log`.
 
@@ -22,4 +22,4 @@
 - Blind test (scoring sees only histograms): AMADEE-18 area ranks top 37% by best Mars target, top 10% by mean over Mars targets; Meteor Crater 48% / 52%; Atacama tile median 68% / 70%. Caveat: 456 of 627 windows score 90+ against some Mars target because many Mars targets are flat plains, so the test discriminates weakly. Reported as is.
 
 ## Steps
-1 first score: done | 2 gate: passed | 3 blind test: done | 4 gap map: done | 5 web app: todo | 6 demo+submission text: todo | 7 extras: todo
+1 first score: done | 2 gate: passed | 3 blind test: done | 4 gap map: done | 5 web app: done (Pages not yet enabled) | 6 demo+submission text: done | 7 extras: not started (NASA Earth temperature needs Earthdata login; walking/landing need sourced limits; click-on-Mars, world view, thermal inertia still open). Jezero HiRISE not used yet.
