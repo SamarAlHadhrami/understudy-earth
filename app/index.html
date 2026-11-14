@@ -4,18 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Understudy Earth</title>
-<meta name="description" content="Which places on Earth can we use to practise for the Moon and Mars, and where is nothing good enough?">
+<meta name="description" content="Where and when on Earth can we rehearse a Moon or Mars job, and where is nothing good enough?">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header>
   <div class="brand"><span class="logo" aria-hidden="true">&#9680;</span><div><h1>Understudy Earth</h1>
-  <p class="tag">Where on Earth can we practise for the Moon and Mars &mdash; and where is nothing good enough?</p></div></div>
+  <p class="tag">Where and when on Earth can we rehearse a Moon or Mars job &mdash; and where is nothing good enough?</p></div></div>
   <nav>
-    <button class="tab on" data-view="map">Match map</button>
+    <button class="tab on" data-view="map">Planner</button>
     <button class="tab" data-view="gap">Gap view</button>
     <button class="tab" data-view="blind">Blind test</button>
+    <button class="tab" data-view="replay">AMADEE-18 replay</button>
     <button class="tab" data-view="about">How it works</button>
   </nav>
 </header>
@@ -23,31 +24,44 @@
 <main>
   <section id="mapwrap">
     <div id="hook" class="hook"></div>
-    <div id="map" role="application" aria-label="Map of Oman terrain windows coloured by match score"></div>
+    <div id="map" role="application" aria-label="Map of Oman terrain windows coloured by fit for the chosen test"></div>
     <div class="legend" aria-label="Legend">
-      <span><i class="sw match"></i>MATCH 90+</span>
-      <span><i class="sw partial"></i>PARTIAL 70&ndash;90</span>
-      <span><i class="sw gap"></i>GAP &lt;70</span>
+      <span><i class="sw match"></i>GOOD</span><span><i class="sw partial"></i>PARTIAL</span><span><i class="sw gap"></i>POOR</span>
     </div>
     <div id="loaderr" class="err" hidden></div>
   </section>
 
   <aside id="panel">
     <div class="view on" id="v-map">
-      <h2>Choose a practice job and a target</h2>
-      <label>Task
-        <select id="task"><option value="rover">Rover driving</option>
-          <option disabled>Walking (EVA) &ndash; limits not sourced</option>
-          <option disabled>Landing &ndash; limits not sourced</option></select></label>
-      <label>Moon / Mars target
-        <select id="target"></select></label>
-      <label>Max slope the rover may drive: <b id="limval" class="mono">17&deg;</b>
-        <input type="range" id="limit" min="5" max="30" step="0.5" value="17">
-        <small id="limsrc"></small></label>
+      <h2>1. Terrain to copy</h2>
+      <label>Moon / Mars target <select id="target"></select></label>
+
+      <h2>2. What your test needs</h2>
+      <div class="presets" id="presets">
+        <button data-p="rover">Rover test</button><button data-p="instrument">Instrument test</button>
+        <button data-p="walking">Walking test</button><button data-p="cold">Cold test</button>
+      </div>
+      <div class="sentence"><input id="sentence" type="text" placeholder='e.g. rover test, slopes 10 to 20 degrees, dry, 5 to 30 degrees' aria-label="Describe your test in one sentence">
+        <button id="go" title="Fill the sliders from the sentence">Apply</button><button id="mic" title="Speak (if your browser supports it)" hidden>&#127908;</button></div>
+      <div id="understood" class="understood"></div>
+      <div class="needs">
+        <label>Air temperature window: <b id="tv" class="mono"></b>
+          <span class="two"><input type="range" id="tlo" min="-30" max="50" step="1" value="5"><input type="range" id="thi" min="-30" max="50" step="1" value="35"></span></label>
+        <label>Wind: <b id="wv" class="mono"></b>
+          <span class="two"><input type="range" id="wmin" min="0" max="12" step="0.5" value="0"><input type="range" id="wmax" min="0" max="12" step="0.5" value="12"></span></label>
+        <label>Dryness (max humidity): <b id="rv" class="mono"></b><input type="range" id="rhmax" min="10" max="100" step="5" value="100"></label>
+        <label>Sunlight (min per day): <b id="sv" class="mono"></b><input type="range" id="smin" min="0" max="8" step="0.5" value="0"></label>
+        <label>Max rover slope (drivable share line): <b id="limval" class="mono">17&deg;</b><input type="range" id="limit" min="5" max="30" step="0.5" value="17">
+          <small id="limsrc"></small></label>
+        <small id="assume">Test-need numbers are the user's choice or <b>our assumption</b>; they are not mission requirements. Earth temperatures are not Mars or Moon temperatures.</small>
+      </div>
+      <label>Map shows
+        <select id="mode"><option value="both">Where + when (terrain match and test needs)</option><option value="terrain">Terrain match only</option><option value="needs">Test needs only</option></select></label>
+      <label>Month
+        <select id="month"><option value="best">Best month for each square</option></select></label>
 
       <div class="gapcard" id="gapcard">
-        <div class="gc-head"><span>Best match in Oman</span><span id="badge" class="badge">&ndash;</span></div>
-        <div class="bar"><i id="barfill"></i><b class="t70"></b><b class="t90"></b></div>
+        <div class="gc-head"><span>Terrain match: best square</span><span id="badge" class="badge">&ndash;</span></div>
         <div class="gc-score"><span class="mono" id="gcscore">&ndash;</span><small id="gctext"></small></div>
         <div class="second">
           <div class="s-title">Add a second site from outside Oman</div>
@@ -57,37 +71,34 @@
         </div>
       </div>
 
-      <div id="result" class="result"><p class="hint">Click a square on the map to see its score, the reason, and what Earth cannot copy.</p></div>
+      <div id="result" class="result"><p class="hint">Click a square on the map to see where it fits, when it fits, and what Earth cannot copy.</p></div>
+      <div class="share"><button id="copylink">Copy share link</button><span id="copied" class="mono"></span></div>
     </div>
 
-    <div class="view" id="v-gap"><h2>Gap view</h2>
-      <p class="sub">Best Earth window for each target at the current slope limit. Oman only, then with the two check sites.</p>
-      <div id="gaptable"></div></div>
-
+    <div class="view" id="v-gap"><h2>Gap view</h2><p class="sub">Terrain match only. Best Earth square for each target, Oman alone, then with the two outside check sites.</p><div id="gaptable"></div></div>
     <div class="view" id="v-blind"><h2>Blind test</h2><div id="blind"></div></div>
-
+    <div class="view" id="v-replay"><h2>AMADEE-18 replay</h2><div id="replay"></div></div>
     <div class="view" id="v-about"><h2>How it works</h2>
       <ol class="how">
-        <li><b>Same scale.</b> Every terrain model (Earth 30 m, Moon 80 m, Mars 463 m) is averaged to 500 m cells, then cut into 10 km windows.</li>
-        <li><b>Measure.</b> For each window: slope and roughness distributions.</li>
-        <li><b>Task.</b> The rover task has one sourced limit: maximum slope. The share of ground under it is the &ldquo;drivable share&rdquo;.</li>
-        <li><b>Score 0&ndash;100.</b> 100 &times; (1 &minus; D). D = 50% drivable-share difference + 25% slope-distribution distance + 25% roughness-distribution distance.</li>
-        <li><b>Gap.</b> No Earth window reaches 70 &rarr; GAP. Adding another site can lift it.</li>
-        <li><b>Blind.</b> The scorer only ever sees numbers, never site names.</li>
+        <li><b>Same scale.</b> Moon, Mars and Earth terrain models are averaged to 500 m cells and cut into 10 km squares.</li>
+        <li><b>Terrain match.</b> Slope, steepness, roughness at two scales and relief are compared. Each square gets a rank for the chosen target (top 5% = good, 5&ndash;20% = partial). A target is a GAP when no square is as close as the closest 5% of Earth-square pairs are to each other.</li>
+        <li><b>Test needs.</b> You enter the temperature window, wind, dryness and sunlight your test needs. Each month is scored by its weakest factor.</li>
+        <li><b>Where and when.</b> The map combines both: a square is only GOOD if the terrain matches and a month fits.</li>
+        <li><b>Blind.</b> The scorer only sees terrain numbers, never site names.</li>
       </ol>
       <h3>What Earth cannot copy</h3>
-      <ul class="cant"><li>Gravity (Mars 0.38 g, Moon 0.16 g)</li><li>Thin air and dust (Mars), vacuum (Moon)</li><li>Radiation and temperature swings</li>
-      <li>Geology and chemistry &ndash; a terrain match is not a rock match</li></ul>
+      <ul class="cant"><li>Gravity (Mars 0.38 g, Moon 0.16 g)</li><li>Thin air and Martian dust, lunar vacuum</li><li>Radiation and real Moon/Mars temperatures</li><li>Geology and chemistry: a terrain match is not a rock match</li></ul>
       <h3>What our data cannot see</h3>
-      <ul class="cant"><li>Rocks, steps and slopes smaller than 500 m</li><li>Earth data is a surface model (trees, buildings); Moon and Mars are bare ground</li>
-      <li>Moon: south pole only (80&deg;S&ndash;90&deg;S). Oman: only the tiles we hold.</li></ul>
+      <ul class="cant"><li>Rocks, steps and slopes smaller than 500 m</li><li>Earth heights are a surface model (trees, buildings); Moon and Mars are bare ground</li><li>Climate is a typical-year average on a coarse grid (NASA POWER cells about 50 km wide), not local weather</li><li>Moon: south pole only. Oman: only the tiles we hold.</li></ul>
       <h3>Checks</h3><div id="second"></div>
-      <p class="credit">Data: LOLA (NASA/GSFC), MOLA (NASA/USGS), HiRISE Jezero DTM (USGS), Copernicus DEM GLO-30 (ESA). Basemap &copy; OpenStreetMap contributors &copy; CARTO. Code: Apache 2.0.</p>
+      <p class="credit">Data: LOLA (NASA/GSFC), MOLA (NASA/USGS), NASA POWER climatology, Copernicus DEM GLO-30 (ESA). Basemap &copy; OpenStreetMap contributors. Code: Apache 2.0.</p>
     </div>
   </aside>
 </main>
+<div id="brief" class="brief" hidden></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="score.js"></script>
+<script src="needs.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

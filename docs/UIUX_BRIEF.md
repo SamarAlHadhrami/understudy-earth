@@ -1,6 +1,7 @@
 # UI/UX BRIEF
-Direction: mission control meets clean data story. Dark navy base, one warm accent, monospace for numbers, sans for text.
-Colour-blind safe: sequential score scale (low = vermilion with hatch/outline, high = teal) plus text labels MATCH / GAP. Never colour alone.
-Layout: desktop = map left, panel right. Phone = map top, panel below, text at least 16px.
-States: loading, data-load error message, empty (no window selected: hint text).
-30 s demo path: load (rover, Jezero) -> blind test card -> toggle second site (red to green) -> drag slider -> limits box.
+Direction: mission control meets clean data story. Dark navy, teal/amber/vermilion tiers, monospace numbers.
+Colour-blind safe: POOR squares and months use a hatch pattern; every month cell carries a number and a symbol (star best, tick good, ~ partial, x poor); legend uses words.
+Layout: desktop = map left, panel right; phone = map on top, panel below, no horizontal scroll (tested at 390 px).
+States: loading error message; empty result hint; optional WorldClim file may be absent (POWER used).
+Print: Test Site Brief has its own print stylesheet (white, one page).
+30 s demo path: see DEMO_SCRIPT.md.

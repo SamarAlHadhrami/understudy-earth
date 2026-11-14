@@ -1,0 +1,454 @@
+{
+ "method": "rank-based terrain similarity",
+ "sensitivity": [
+  {
+   "left_out": "none",
+   "oman_only": {
+    "match": 4,
+    "partial": 4,
+    "gap": 9
+   },
+   "with_check_sites": {
+    "match": 7,
+    "partial": 5,
+    "gap": 5
+   }
+  },
+  {
+   "left_out": "slope_w1",
+   "oman_only": {
+    "match": 4,
+    "partial": 8,
+    "gap": 5
+   },
+   "with_check_sites": {
+    "match": 8,
+    "partial": 4,
+    "gap": 5
+   }
+  },
+  {
+   "left_out": "slope_p90",
+   "oman_only": {
+    "match": 4,
+    "partial": 5,
+    "gap": 8
+   },
+   "with_check_sites": {
+    "match": 7,
+    "partial": 6,
+    "gap": 4
+   }
+  },
+  {
+   "left_out": "steep_share",
+   "oman_only": {
+    "match": 4,
+    "partial": 4,
+    "gap": 9
+   },
+   "with_check_sites": {
+    "match": 7,
+    "partial": 5,
+    "gap": 5
+   }
+  },
+  {
+   "left_out": "ln_rough500",
+   "oman_only": {
+    "match": 5,
+    "partial": 5,
+    "gap": 7
+   },
+   "with_check_sites": {
+    "match": 8,
+    "partial": 4,
+    "gap": 5
+   }
+  },
+  {
+   "left_out": "ln_rough1k",
+   "oman_only": {
+    "match": 5,
+    "partial": 3,
+    "gap": 9
+   },
+   "with_check_sites": {
+    "match": 7,
+    "partial": 5,
+    "gap": 5
+   }
+  },
+  {
+   "left_out": "ln_relief",
+   "oman_only": {
+    "match": 6,
+    "partial": 3,
+    "gap": 8
+   },
+   "with_check_sites": {
+    "match": 7,
+    "partial": 5,
+    "gap": 5
+   }
+  }
+ ],
+ "gap": [
+  {
+   "target": "M00",
+   "name": "Shackleton rim/wall (approx. coords)",
+   "body": "Moon",
+   "best_oman_dist": 1.259,
+   "best_oman_window": "E0303",
+   "tier_oman": "gap",
+   "best_any_dist": 1.259,
+   "best_any_window": "E0303",
+   "best_any_group": "oman_dhofar",
+   "tier_any": "gap",
+   "by_group_dist": {
+    "atacama": 2.904,
+    "meteor_crater": 2.397,
+    "oman_dhofar": 1.259,
+    "oman_muscat": 1.482
+   },
+   "closing_group": null
+  },
+  {
+   "target": "M01",
+   "name": "Malapert massif",
+   "body": "Moon",
+   "best_oman_dist": 0.685,
+   "best_oman_window": "E0303",
+   "tier_oman": "gap",
+   "best_any_dist": 0.685,
+   "best_any_window": "E0303",
+   "best_any_group": "oman_dhofar",
+   "tier_any": "gap",
+   "by_group_dist": {
+    "atacama": 1.825,
+    "meteor_crater": 1.333,
+    "oman_dhofar": 0.685,
+    "oman_muscat": 0.744
+   },
+   "closing_group": null
+  },
+  {
+   "target": "M02",
+   "name": "Faustini",
+   "body": "Moon",
+   "best_oman_dist": 0.495,
+   "best_oman_window": "E0301",
+   "tier_oman": "gap",
+   "best_any_dist": 0.495,
+   "best_any_window": "E0301",
+   "best_any_group": "oman_dhofar",
+   "tier_any": "gap",
+   "by_group_dist": {
+    "atacama": 1.517,
+    "meteor_crater": 1.032,
+    "oman_dhofar": 0.495,
+    "oman_muscat": 0.555
+   },
+   "closing_group": null
+  },
+  {
+   "target": "M03",
+   "name": "Nobile",
+   "body": "Moon",
+   "best_oman_dist": 0.315,
+   "best_oman_window": "E0147",
+   "tier_oman": "gap",
+   "best_any_dist": 0.227,
+   "best_any_window": "E0595",
+   "best_any_group": "atacama",
+   "tier_any": "partial",
+   "by_group_dist": {
+    "atacama": 0.227,
+    "meteor_crater": 0.387,
+    "oman_dhofar": 0.315,
+    "oman_muscat": 0.368
+   },
+   "closing_group": "atacama"
+  },
+  {
+   "target": "M04",
+   "name": "de Gerlache",
+   "body": "Moon",
+   "best_oman_dist": 0.339,
+   "best_oman_window": "E0306",
+   "tier_oman": "gap",
+   "best_any_dist": 0.339,
+   "best_any_window": "E0306",
+   "best_any_group": "oman_dhofar",
+   "tier_any": "gap",
+   "by_group_dist": {
+    "atacama": 0.603,
+    "meteor_crater": 0.383,
+    "oman_dhofar": 0.339,
+    "oman_muscat": 0.382
+   },
+   "closing_group": null
+  },
+  {
+   "target": "M05",
+   "name": "Cabeus",
+   "body": "Moon",
+   "best_oman_dist": 0.214,
+   "best_oman_window": "E0149",
+   "tier_oman": "partial",
+   "best_any_dist": 0.121,
+   "best_any_window": "E0595",
+   "best_any_group": "atacama",
+   "tier_any": "partial",
+   "by_group_dist": {
+    "atacama": 0.121,
+    "meteor_crater": 0.305,
+    "oman_dhofar": 0.214,
+    "oman_muscat": 0.221
+   },
+   "closing_group": null
+  },
+  {
+   "target": "R06",
+   "name": "Jezero crater",
+   "body": "Mars",
+   "best_oman_dist": 0.065,
+   "best_oman_window": "E0098",
+   "tier_oman": "match",
+   "best_any_dist": 0.038,
+   "best_any_window": "E0529",
+   "best_any_group": "atacama",
+   "tier_any": "match",
+   "by_group_dist": {
+    "atacama": 0.038,
+    "meteor_crater": 0.059,
+    "oman_dhofar": 0.065,
+    "oman_muscat": 0.077
+   },
+   "closing_group": null
+  },
+  {
+   "target": "R07",
+   "name": "Gale mound south flank",
+   "body": "Mars",
+   "best_oman_dist": 0.89,
+   "best_oman_window": "E0303",
+   "tier_oman": "gap",
+   "best_any_dist": 0.89,
+   "best_any_window": "E0303",
+   "best_any_group": "oman_dhofar",
+   "tier_any": "gap",
+   "by_group_dist": {
+    "atacama": 2.522,
+    "meteor_crater": 2.034,
+    "oman_dhofar": 0.89,
+    "oman_muscat": 1.111
+   },
+   "closing_group": null
+  },
+  {
+   "target": "R08",
+   "name": "Gale mound (Aeolis Mons)",
+   "body": "Mars",
+   "best_oman_dist": 0.42,
+   "best_oman_window": "E0024",
+   "tier_oman": "gap",
+   "best_any_dist": 0.19,
+   "best_any_window": "E0534",
+   "best_any_group": "atacama",
+   "tier_any": "partial",
+   "by_group_dist": {
+    "atacama": 0.19,
+    "meteor_crater": 0.236,
+    "oman_dhofar": 0.469,
+    "oman_muscat": 0.42
+   },
+   "closing_group": "atacama"
+  },
+  {
+   "target": "R09",
+   "name": "Gale landing area (Bradbury)",
+   "body": "Mars",
+   "best_oman_dist": 0.177,
+   "best_oman_window": "E0277",
+   "tier_oman": "partial",
+   "best_any_dist": 0.072,
+   "best_any_window": "E0581",
+   "best_any_group": "atacama",
+   "tier_any": "match",
+   "by_group_dist": {
+    "atacama": 0.072,
+    "meteor_crater": 0.18,
+    "oman_dhofar": 0.177,
+    "oman_muscat": 0.202
+   },
+   "closing_group": "atacama"
+  },
+  {
+   "target": "R10",
+   "name": "Oxia Planum",
+   "body": "Mars",
+   "best_oman_dist": 0.031,
+   "best_oman_window": "E0412",
+   "tier_oman": "match",
+   "best_any_dist": 0.031,
+   "best_any_window": "E0412",
+   "best_any_group": "oman_dhofar",
+   "tier_any": "match",
+   "by_group_dist": {
+    "atacama": 0.105,
+    "meteor_crater": 0.067,
+    "oman_dhofar": 0.031,
+    "oman_muscat": 0.135
+   },
+   "closing_group": null
+  },
+  {
+   "target": "R11",
+   "name": "Meridiani Planum",
+   "body": "Mars",
+   "best_oman_dist": 0.015,
+   "best_oman_window": "E0060",
+   "tier_oman": "match",
+   "best_any_dist": 0.015,
+   "best_any_window": "E0060",
+   "best_any_group": "oman_dhofar",
+   "tier_any": "match",
+   "by_group_dist": {
+    "atacama": 0.321,
+    "meteor_crater": 0.186,
+    "oman_dhofar": 0.015,
+    "oman_muscat": 0.328
+   },
+   "closing_group": null
+  },
+  {
+   "target": "R12",
+   "name": "Gusev crater",
+   "body": "Mars",
+   "best_oman_dist": 0.022,
+   "best_oman_window": "E0412",
+   "tier_oman": "match",
+   "best_any_dist": 0.022,
+   "best_any_window": "E0412",
+   "best_any_group": "oman_dhofar",
+   "tier_any": "match",
+   "by_group_dist": {
+    "atacama": 0.133,
+    "meteor_crater": 0.036,
+    "oman_dhofar": 0.022,
+    "oman_muscat": 0.147
+   },
+   "closing_group": null
+  },
+  {
+   "target": "R13",
+   "name": "Mawrth Vallis",
+   "body": "Mars",
+   "best_oman_dist": 0.125,
+   "best_oman_window": "E0001",
+   "tier_oman": "partial",
+   "best_any_dist": 0.051,
+   "best_any_window": "E0528",
+   "best_any_group": "atacama",
+   "tier_any": "match",
+   "by_group_dist": {
+    "atacama": 0.051,
+    "meteor_crater": 0.075,
+    "oman_dhofar": 0.131,
+    "oman_muscat": 0.125
+   },
+   "closing_group": "atacama"
+  },
+  {
+   "target": "R14",
+   "name": "Melas Chasma (Valles Marineris)",
+   "body": "Mars",
+   "best_oman_dist": 0.435,
+   "best_oman_window": "E0278",
+   "tier_oman": "gap",
+   "best_any_dist": 0.169,
+   "best_any_window": "E0544",
+   "best_any_group": "atacama",
+   "tier_any": "partial",
+   "by_group_dist": {
+    "atacama": 0.169,
+    "meteor_crater": 0.362,
+    "oman_dhofar": 0.435,
+    "oman_muscat": 0.465
+   },
+   "closing_group": "atacama"
+  },
+  {
+   "target": "R15",
+   "name": "Olympus Mons flank",
+   "body": "Mars",
+   "best_oman_dist": 0.273,
+   "best_oman_window": "E0015",
+   "tier_oman": "gap",
+   "best_any_dist": 0.189,
+   "best_any_window": "E0540",
+   "best_any_group": "atacama",
+   "tier_any": "partial",
+   "by_group_dist": {
+    "atacama": 0.189,
+    "meteor_crater": 0.366,
+    "oman_dhofar": 0.356,
+    "oman_muscat": 0.273
+   },
+   "closing_group": "atacama"
+  },
+  {
+   "target": "R16",
+   "name": "Hellas floor",
+   "body": "Mars",
+   "best_oman_dist": 0.165,
+   "best_oman_window": "E0002",
+   "tier_oman": "partial",
+   "best_any_dist": 0.047,
+   "best_any_window": "E0581",
+   "best_any_group": "atacama",
+   "tier_any": "match",
+   "by_group_dist": {
+    "atacama": 0.047,
+    "meteor_crater": 0.154,
+    "oman_dhofar": 0.203,
+    "oman_muscat": 0.165
+   },
+   "closing_group": "atacama"
+  }
+ ],
+ "blind_test": [
+  {
+   "site": "AMADEE-18 area (Marmul, Dhofar; approx. 15 km radius)",
+   "n_windows": 7,
+   "top_pct_best_mars_target": 24.0,
+   "top_pct_mean_over_mars_targets": 10.7
+  },
+  {
+   "site": "Meteor Crater window",
+   "n_windows": 1,
+   "top_pct_best_mars_target": 22.4,
+   "top_pct_mean_over_mars_targets": 4.5
+  },
+  {
+   "site": "Atacama tile (all windows, median)",
+   "n_windows": 110,
+   "top_pct_best_mars_target": 24.9,
+   "top_pct_mean_over_mars_targets": 50.6
+  }
+ ],
+ "n_earth_windows": 627,
+ "n_targets": 17,
+ "tiers": "map: rank among Earth windows per target (top 5% match, 5-20% partial). Target gap: best distance vs distances between Earth-window pairs (below 5th pct match, below 20th partial, else gap)",
+ "thr_match_dist": 0.08099365572184106,
+ "thr_partial_dist": 0.24527898052185337,
+ "scales": {
+  "slope_w1": 2.43526,
+  "slope_p90": 5.53188,
+  "steep_share": 0.11418,
+  "ln_rough500": 0.94319,
+  "ln_rough1k": 1.05592,
+  "ln_relief": 1.40796
+ }
+}

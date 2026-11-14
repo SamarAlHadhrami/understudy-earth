@@ -1,4 +1,4 @@
-data/
+/data/
 *.tif
 *.tiff
 *.img
@@ -7,3 +7,5 @@ __pycache__/
 .pytest_cache/
 work/
 node_modules/
+app/data/climate_worldclim.json
+data/worldclim/

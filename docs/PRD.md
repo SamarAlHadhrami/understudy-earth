@@ -1,19 +1,22 @@
-# PRD: Understudy Earth
+# PRD: Understudy Earth (where and when test planner)
 
-**Problem.** Teams practise for Moon and Mars on Earth analog sites, mostly chosen because they look alike. Nobody checks the match with numbers for a specific task, or says where Earth has nothing good enough.
+**Problem.** Teams rehearse Moon and Mars jobs on Earth, mostly at sites chosen because they look alike, and at whatever time suits them. Nobody checks the match with numbers for a specific test, or says where Earth has nothing good enough, or which months suit the test.
 
-**User.** Mission planners and field-test teams choosing practice sites. Local story: Oman (Dhofar hosted AMADEE-18 in 2018).
+**User.** Mission planners and field-test teams choosing where and when to rehearse. Local story: Oman (Dhofar hosted AMADEE-18 in February 2018).
 
-**Goals.** Score small Earth windows against real Moon/Mars terrain windows using elevation data, for a chosen task. Show a gap map, prove the method with a blind test, show honest limits.
+**Core idea.** The user states the test. The app shows WHERE (terrain similarity to a chosen Moon or Mars target) and WHEN (months whose temperature, wind, dryness and sunlight meet the test's needs). Two separate things: MATCH THE TARGET (terrain shape) and MEET THE TEST NEEDS (user-entered needs; we do not claim Earth copies Mars temperatures).
 
-**Non-goals.** Geology or chemistry matching, matching gravity/atmosphere/radiation, a global best analog, a live server.
+**Goals.** Rank-based terrain similarity; gap result with an absolute reference; 12-month fit strip; Test Site Brief (print/PDF); AMADEE-18 replay; blind test and independent second check; honest limits everywhere.
+
+**Non-goals.** Geology/chemistry matching; matching gravity, atmosphere or radiation; a global best analog; a live server; claiming mission requirements.
 
 ## Features
-Core: Oman map (green/red), task selector (rover), target selector, live slider on task limits, score + reason + limits box, gap view, blind-test view.
-Extras (priority order): NASA Earth temperature layer; click-anywhere on Mars; walking/landing tasks (only with cited limits); world view; thermal-inertia proxy.
+Core: map, target selector, test-needs sliders and ready-made tests (our assumptions), month strip and best months, combined where+when colouring, gap card with second-site toggle, Test Site Brief, AMADEE-18 replay, blind-test and gap views.
+Extras done: sentence box with rule-based matcher and optional speech input, slope-distribution chart, compare mode, share link, confidence badge.
+Extras not done: whole-Oman 90 m tiles, click-anywhere on Mars.
 
 ## Success checks
-Unit tests pass; second-method check agrees within tolerance; blind test reported honestly; static app opens from a public link with no login; limits box on every result.
+Python and JS tests pass; second-method check agrees; blind test reported honestly; static app opens from a public link; limits box on every result.
 
 ## Judging map
-Impact: planner user + Oman. Creativity: blind test, gap map, slider. Validity: same-scale method, second check, limits. Relevance: LOLA + MOLA + HiRISE core, NASA Earth layer. Presentation: 30 s red-to-green demo.
+Impact: planner user, Oman. Creativity: where+when, gap, blind test. Validity: same-scale method, absolute gap reference, second check, limits. Relevance: LOLA, MOLA, NASA POWER. Presentation: 30 s demo.

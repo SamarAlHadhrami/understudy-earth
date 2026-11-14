@@ -1,17 +1,18 @@
 # PROGRESS
 
 ## RESUME HERE
-- Current step: Steps 1-6 done. Extras (step 7) NOT done. gh-pages branch is pushed but GitHub Pages must be enabled by the owner: repo Settings > Pages > Deploy from branch gh-pages / root. Public link then: https://samaralhadhrami.github.io/understudy-earth/
-- Next action: enable Pages, redeploy after app changes with `git subtree push --prefix app origin gh-pages`, then extras.
-- Run tests: `python -m pytest tests -q`, `node tests/check_js_score.js`, `python tests/run_browser.py` (headless browser, writes docs/screens). Rebuild data: `python pipeline/build_windows.py && python pipeline/analyse.py && python pipeline/verify.py`.
-- Open problems: reference PDF only attached in chat, not on disk. Rover limit sources need primary-source confirmation (see REFERENCES). AMADEE-18 area is approximate (Marmul 18.19N 55.23E, 15 km radius), OeWF report not read.
-- Latest commit: see `git log`.
+- Current state: core upgraded to a "where and when" planner. Stages 0, 1, 2, 3, 4 done; Stage 1b (WorldClim) processed locally but NOT published (licence forbids redistribution without permission; ask owner). Stage 5 extras 1-5 done; 6 (whole-Oman 90 m) and 7 (click on Mars) not done.
+- Deploy: `git subtree push --prefix app origin gh-pages`; owner must enable Pages (Settings > Pages > gh-pages / root). Link: https://samaralhadhrami.github.io/understudy-earth/
+- Tests: `python -m pytest tests -q`, `node tests/check_js_score.js`, `node tests/check_needs.js`, `PYTHONIOENCODING=utf-8 python tests/run_browser.py`.
+- Rebuild data: `python pipeline/build_windows.py && python pipeline/analyse.py && python pipeline/verify.py && python pipeline/power.py` (+ `python pipeline/worldclim.py` locally).
+- Open problems: rover limit sources need primary confirmation; AMADEE-18 site approximate (Marmul); reference PDF not on disk; ready-made test numbers are our assumptions.
+- Bug fixed: .gitignore `data/` also ignored app/data, so the first deploy had no data files. Now `/data/` only.
 
 ## Decisions
 - Repo root = project folder; raw data in `data/` (git-ignored). Added Copernicus N17/N18 E055 tiles (AWS open data) so the Marmul area is covered.
 - Common baseline 500 m, 10 km windows (20x20 cells); windowed reads with area-average resampling.
 - Rover limit: slope only, 17 deg (loose-sand embedding, conservative). Roughness has NO sourced limit, so it is only a distribution distance. Slider range 5-30 deg.
-- Score = 100*(1 - D), D = .5*|trav diff| + .25*min(1,W1slope/5deg) + .25*min(1,W1rough/20m). S_REF and R_REF are design constants, not physical limits. Tiers: match >=90, partial 70-90, gap <70 (design constants). Sensitivity to S_REF (3/5/10) stored in results.json; the 4 hard gaps persist at 3 and 5, 2 at 10.
+- (SUPERSEDED by rank-based similarity, see TRD) Score = 100*(1 - D), D = .5*|trav diff| + .25*min(1,W1slope/5deg) + .25*min(1,W1rough/20m). S_REF and R_REF are design constants, not physical limits. Tiers: match >=90, partial 70-90, gap <70 (design constants). Sensitivity to S_REF (3/5/10) stored in results.json; the 4 hard gaps persist at 3 and 5, 2 at 10.
 - Sea windows (>=10% cells at <=0.5 m) are dropped.
 - Moon Shackleton coordinate is approximate (lands on rim/wall); labelled so.
 
@@ -23,3 +24,9 @@
 
 ## Steps
 1 first score: done | 2 gate: passed | 3 blind test: done | 4 gap map: done | 5 web app: done (Pages not yet enabled) | 6 demo+submission text: done | 7 extras: not started (NASA Earth temperature needs Earthdata login; walking/landing need sourced limits; click-on-Mars, world view, thermal inertia still open). Jezero HiRISE not used yet.
+
+## Update (2026-11-14, where-and-when core)
+- Terrain: rank-based similarity (6 scaled terms); gap judged against Earth-pair distances (best window always ranks first, so rank alone cannot define a gap). Oman alone 4 match / 4 partial / 9 gap; with check sites 7 / 5 / 5.
+- Blind test: AMADEE-18 area top 10.7% (mean over Mars targets) / 24.0% (best target); Meteor Crater 4.5% / 22.4%; Atacama tile 50.6% / 24.9%.
+- NASA POWER: 30 cells cached; tests check units, ordering and raw-cache equality.
+- AMADEE-18 replay (assumed needs: day max <= 35 C, night min >= 5 C, sun >= 4): planner best months Jan and Dec; Feb scores 80 (good, not top). Real phase Feb 2018 (OeWF).

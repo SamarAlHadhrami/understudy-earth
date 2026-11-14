@@ -1,7 +1,9 @@
 # BACKEND SCHEMA (static files in app/data)
-No server. JSON loaded with fetch().
-- `meta.json`: baseline_m, window_km, bin edges (slope deg, roughness m), constants Sref/Rref, tasks (limits + source), threshold, limits text.
-- `earth.json`: array of {id, group (oman_muscat|oman_dhofar|meteor_crater|atacama), lat, lon, hist (flat counts, slope x rough), stats}.
-- `targets.json`: same shape for Moon/Mars targets plus {body, name, note}.
-- `results.json`: default scores, blind test, gap results, second-method checks.
-Each file should stay well under 5 MB.
+- `earth.json`: per 10 km window {id, group, lat, lon, hist (slope x roughness counts), slope_p50, slope_p90, steep_share, rough_med, rough1k_med, relief_m}.
+- `targets.json`: same fields for Moon/Mars targets plus body, name.
+- `meta.json`: bin edges, term scales, rank cut-offs, thr_match_dist, thr_partial_dist, rover task limit and source.
+- `results.json`: gap table, blind test, leave-one-out sensitivity, scales.
+- `second_check.json`: independent slope check rows.
+- `climate_power.json`: {cells: {key: {lat, lon, T2M, T2M_MAX, T2M_MIN, WS2M, RH2M, PRECTOTCORR, ALLSKY_SFC_SW_DWN (12 months each)}}, win: {window id: cell key}, source, accessed}.
+- `climate_worldclim.json`: optional, NOT committed (WorldClim licence); {win: {id: {tmax,tmin,tavg,wind,rh,srad}}}. The app falls back to POWER when absent.
+All files together are under 1 MB.

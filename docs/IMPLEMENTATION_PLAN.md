@@ -1,8 +1,6 @@
-# IMPLEMENTATION PLAN
-1. First score (terrain.py, windows, scoring, tests). Done when windows are scored and tests pass.
-2. Gate: second method agrees on a handful of windows.
-3. Blind test: ranks reported.
-4. Gap map: second-site result.
-5. Web app: static, tested headless, Pages link.
-6. Demo script and submission text.
-7. Extras in priority order, only while the core is stable.
+# IMPLEMENTATION PLAN (status)
+Stage 0 rank-based terrain similarity + absolute gap: done, tested.
+Stage 1 NASA POWER monthly climate: done, tested. Stage 1b WorldClim: processed locally, not published (licence).
+Stage 2 when strip: done. Stage 3 Test Site Brief: done. Stage 4 AMADEE-18 replay: done.
+Stage 5 extras: 1 sentence box + presets (done), 2 chart (done), 3 compare (done), 4 share link (done), 5 confidence (done), 6 whole-Oman 90 m (not done), 7 click on Mars (not done).
+Tests: `python -m pytest tests -q`, `node tests/check_js_score.js`, `node tests/check_needs.js`, `python tests/run_browser.py`.
