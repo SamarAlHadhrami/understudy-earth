@@ -102,6 +102,7 @@
       (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(function () { $('copied').textContent = 'copied'; }, function () { $('copied').textContent = 'copy the address bar'; });
     });
     $('mask').addEventListener('change', renderAll);
+    bindSky();
     $('show90').addEventListener('change', function () { set90($('show90').checked); });
     $('demobar').addEventListener('click', function (ev) { var k = ev.target.getAttribute('data-demo'); if (k) runDemo(k); });
     document.querySelectorAll('.tab').forEach(function (b) {
@@ -114,6 +115,8 @@
         if (b.dataset.view === 'cal') renderCal();
         if (b.dataset.view === 'base') renderBase();
         if (b.dataset.view === 'jez') renderJezero();
+        if (b.dataset.view === 'sky') renderSky();
+        if (b.dataset.view === 'world') renderWorld();
       });
     });
     document.addEventListener('click', function (ev) {
@@ -267,6 +270,11 @@
     return { level: low ? 'Medium-low' : 'Medium', items: items };
   }
 
+  function swingText(e) {
+    var c = climate(e), sw = c.tmax.map(function (x, i) { return x - c.tmin[i]; }), mean = sw.reduce(function (a, b) { return a + b; }, 0) / 12;
+    return 'yearly mean ' + mean.toFixed(1) + ' °C (range ' + Math.min.apply(null, sw).toFixed(1) + '-' + Math.max.apply(null, sw).toFixed(1) + '). Earth air temperature on 50 km cells: it is NOT a thermal-inertia or rock/dust measure and is not comparable with Moon or Mars surface values.';
+  }
+
   function metricRows(e) {
     var t = st.target, n = st.n;
     return [['Terrain rank for this target', 'top ' + Math.max(1, Math.round(e.rank * 100)) + '% of ' + D.earth.length + ' squares'],
@@ -274,6 +282,7 @@
       ['Roughness 500 m / 1 km', e.rough_med.toFixed(1) + ' m / ' + e.rough1k_med.toFixed(1) + ' m (target ' + t.rough_med.toFixed(1) + ' / ' + t.rough1k_med.toFixed(1) + ')'],
       ['Relief', Math.round(e.relief_m) + ' m (target ' + Math.round(t.relief_m) + ' m)'],
       ['Share of cells below ' + n.limit + '° slope (user-set)', Math.round(SC.trav(e, n.limit) * 100) + '% (target ' + Math.round(SC.trav(t, n.limit) * 100) + '%)'],
+      ['Day-night air temperature swing, NASA POWER (rough proxy, context only, not scored)', swingText(e)],
       ['Best months for your test', e._best.length ? N.monthsText(e._best) : 'none fits']];
   }
 
@@ -325,7 +334,7 @@
       '<small>★ best, ✓ good, ~ partial, × poor (number = fit 0-100, weakest factor). Source: ' + esc(c.src) + '.</small>' +
       '<table>' + rows + '</table><div class="chartbox"><canvas id="slopechart" width="340" height="90"></canvas><small><i class="dot b"></i>target slope spread <i class="dot g"></i>this square</small></div>' +
       twinHtml(e) + '<p class="sub"><b>Access:</b> ' + esc(accessLine(e)) + '</p>' + notesHtml(e) + (e.group === 'oman90' ? '<p class="note">90 m data: coarser than the 30 m squares, shown as an extra layer; land cover was not checked here.</p>' : '') + '<div class="conf"><b>Confidence: ' + cf.level + '.</b> ' + cf.items.map(esc).join('; ') + '.</div>' +
-      '<div class="limits"><b>What this test cannot copy.</b> Gravity, thin air and radiation. Real ' + (st.target.body === 'Moon' ? 'lunar' : 'Martian') + ' temperatures: Earth air temperature here only tells you when conditions suit your test. Terrain numbers only see slope and roughness, not rock type or dust. A terrain match is not a geology match. 500 m cells hide rocks and steps. Earth heights include trees and buildings. Climate is a typical-year average.</div>' +
+      '<div class="limits"><b>What this test cannot copy.</b> Gravity, thin air and radiation. Real ' + (st.target.body === 'Moon' ? 'lunar' : 'Martian') + ' temperatures: Earth air temperature here only tells you when conditions suit your test. Terrain numbers only see slope and roughness, not rock type or dust. No rock-abundance or dust measure is used. A terrain match is not a geology match. 500 m cells hide rocks and steps. Earth heights include trees and buildings. Climate is a typical-year average.</div>' +
       '<div class="btns"><button data-act="brief">Test site brief (print / PDF)</button><button data-act="addcal">Add to calendar</button><button data-act="cmp">Compare with another square</button></div>';
     if (selB) {
       var A = metricRows(sel), B = metricRows(selB);
@@ -396,6 +405,93 @@
       '<p><b>Why February is not the top month:</b> ' + febWhy + '</p><div class="limits"><b>Honest reading.</b> The mission\'s real constraints (logistics, crew schedule, local hosts) are unknown to us, so a different best month does not mean the planner or the mission was wrong. Climate is a typical-year average, not February 2018 weather. Source: ' + esc(climate(mar[0]).src) + '.</div>' +
       '<div class="btns"><button id="rp-go">Show the circle on the map</button></div>';
     var go = $('rp-go'); if (go) go.onclick = function () { FIELDS.forEach(function (f) { if (needs[f] !== undefined) st.n[f] = needs[f]; }); syncInputs(); document.querySelector('.tab[data-view=map]').click(); map.setView([18.19, 55.23], 9); if (replayCircle) map.removeLayer(replayCircle); replayCircle = L.circle([18.19, 55.23], { radius: 15000, color: '#fff', weight: 2, dashArray: '6 6', fillOpacity: 0 }).bindTooltip('AMADEE-18 area (approximate)').addTo(map); sel = mar[0]; renderAll(); };
+  }
+
+  // ---- click a planet (Mars 463 m, Moon south pole only)
+  var MARS = null, MOON = null, skyBody = 'mars';
+  function loadMars(cb) {
+    if (MARS) return cb();
+    Promise.all([fetch('data/mars_grid.json').then(function (r) { return r.json(); }), fetch('data/mars_grid.bin').then(function (r) { return r.arrayBuffer(); })]).then(function (a) {
+      var m = a[0], off = [0]; m.rows.forEach(function (n) { off.push(off[off.length - 1] + n); }); m.off = off; m.buf = new DataView(a[1]); MARS = m; cb();
+    }).catch(function () { $('skyres').innerHTML = '<p class="note">Mars grid could not be loaded.</p>'; });
+  }
+  function histFrom(shares) { var nr = D.meta.rough_edges.length - 1, h = new Array(shares.length * nr).fill(0); shares.forEach(function (v, a) { h[a * nr] = v; }); return h; }
+  function marsAt(lat, lon) {
+    var m = MARS, r = Math.max(0, Math.min(m.rows.length - 1, Math.round((lat - m.lat0) / m.dlat))), n = m.rows[r], k = Math.max(0, Math.min(n - 1, Math.floor((lon + 180) / 360 * n)));
+    var i = m.off[r] + k, o = i * m.bytes_per_window, f = [0, 1, 2, 3, 4, 5].map(function (j) { return m.buf.getFloat32(o + 4 * j, true); });
+    var clat = m.lat0 + r * m.dlat, clon = -180 + (k + 0.5) * 360 / n;
+    var dx = (clon - lon) * 59.27 * Math.cos(clat * Math.PI / 180), dy = (clat - lat) * 59.27, sh = [];
+    for (var a = 0; a < m.slope_edges.length - 1; a++) sh.push(m.buf.getUint8(o + 24 + a));
+    if (!f.every(isFinite)) return { unknown: true, clat: clat, clon: clon };
+    return { unknown: false, clat: clat, clon: clon, km: Math.sqrt(dx * dx + dy * dy), w: { id: 'MC', name: 'Mars window ' + clat.toFixed(1) + '°, ' + clon.toFixed(1) + '°', body: 'Mars', slope_p50: f[0], slope_p90: f[1], steep_share: f[2], rough_med: f[3], rough1k_med: f[4], relief_m: f[5], hist: histFrom(sh) } };
+  }
+  function skyResult(w, label, conf, extra) {
+    var rows = [['Median / 90th pct slope', w.slope_p50.toFixed(1) + '° / ' + w.slope_p90.toFixed(1) + '°'], ['Roughness 500 m / 1 km', w.rough_med.toFixed(1) + ' m / ' + w.rough1k_med.toFixed(1) + ' m'], ['Relief in 10 km', Math.round(w.relief_m) + ' m'], ['Cells above 10° slope', Math.round(w.steep_share * 100) + '%']];
+    var ds = D.earth.map(function (e) { return { e: e, d: SC.distance(e, w) }; }).sort(function (a, b) { return a.d - b.d; });
+    var om = ds.filter(function (x) { return x.e.group.indexOf('oman') === 0 && !masked(x.e); }), tier = SC.gapTier(om[0].d);
+    var tb = function (list) { return '<table><tr><th>Square</th><th>Where</th><th>Distance</th><th></th></tr>' + list.map(function (x) { return '<tr><td class="mono">' + x.e.id + '</td><td>' + esc(GROUPS[x.e.group]) + ' ' + x.e.lat.toFixed(2) + ', ' + x.e.lon.toFixed(2) + '</td><td class="mono">' + x.d.toFixed(3) + '</td><td><button data-sq="' + x.e.id + '">Show</button></td></tr>'; }).join('') + '</table>'; };
+    var keep = st.target; st.target = w; recompute(); var vh = verdictHtml(om[0].e); st.target = keep; recompute();
+    $('skyres').innerHTML = '<h3>' + esc(label) + '</h3>' + (extra || '') + '<table>' + rows.map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>' +
+      '<p><span class="chip ' + tier + '">' + GLABEL[tier] + '</span> best Oman square: distance ' + om[0].d.toFixed(3) + ' (match below ' + D.meta.thr_match_dist.toFixed(2) + ', partial below ' + D.meta.thr_partial_dist.toFixed(2) + '). Best fit among the squares searched, not a global best. Not checked for stability.</p>' +
+      '<h4>Closest Oman squares</h4>' + tb(om.slice(0, 5)) + '<h4>Closest squares anywhere in our set</h4>' + tb(ds.slice(0, 3)) + vh +
+      '<div class="conf"><b>Confidence: Low.</b> ' + esc(conf) + '</div><div class="limits"><b>What this cannot see.</b> Terrain numbers only see slope and roughness, not rock type or dust. Gravity, air and radiation are not copied. 500 m cells hide rocks and steps; Earth heights are a surface model. A terrain match is not a geology match.</div>';
+  }
+  function renderSky() {
+    $('skyhelp').innerHTML = skyBody === 'mars' ? 'Click anywhere on the map (60°S to 60°N, 463 m MOLA data; brighter = steeper). Windows are 10 km squares every 25 km, so the numbers describe the nearest window, not the exact spot. Poles are not covered: unknown.' : 'Moon: only the LOLA terrain for 80°S to 90°S is used. Click inside the circle (300 km around the pole). Anywhere else on the Moon is unknown.';
+    $('marsbox').hidden = skyBody !== 'mars'; $('moonbox').hidden = skyBody !== 'moon';
+    document.querySelectorAll('#skytabs button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-body') === skyBody); });
+    if (skyBody === 'mars') loadMars(function () {}); else drawMoon();
+  }
+  function drawMoon() {
+    var go = function () {
+      var cv = $('moonc'), c = cv.getContext('2d'); c.clearRect(0, 0, 320, 320); c.fillStyle = '#05080f'; c.beginPath(); c.arc(160, 160, 155, 0, 7); c.fill();
+      MOON.forEach(function (w) { var v = Math.min(1, Math.log1p(w.slope_p90) / Math.log1p(25)), g = Math.round(40 + 215 * v); c.fillStyle = 'rgb(' + g + ',' + g + ',' + g + ')'; c.fillRect(160 + w.x / 300 * 155 - 3, 160 - w.y / 300 * 155 - 3, 6.2, 6.2); });
+      c.strokeStyle = '#7aa2ff'; c.strokeRect(0, 0, 0, 0); c.fillStyle = '#9fb0d3'; c.font = '10px system-ui'; c.fillText('pole', 150, 158); c.fillText('300 km radius (80°S)', 90, 314);
+    };
+    if (MOON) return go(); fetch('data/moon_grid.json').then(function (r) { return r.json(); }).then(function (a) { MOON = a; go(); });
+  }
+  function bindSky() {
+    $('skytabs').addEventListener('click', function (ev) { var b = ev.target.getAttribute('data-body'); if (b) { skyBody = b; $('skyres').innerHTML = ''; renderSky(); } });
+    $('marsimg').addEventListener('click', function (ev) {
+      var r = ev.target.getBoundingClientRect(), fx = (ev.clientX - r.left) / r.width, fy = (ev.clientY - r.top) / r.height, lon = -180 + fx * 360, lat = 60 - fy * 120;
+      $('marsmark').style.left = (fx * 100) + '%'; $('marsmark').style.top = (fy * 100) + '%';
+      loadMars(function () {
+        var m = marsAt(lat, lon);
+        if (m.unknown) { $('skyres').innerHTML = '<h3>Unknown</h3><p>No valid terrain numbers for the window near ' + lat.toFixed(1) + '°, ' + lon.toFixed(1) + '°. No match is shown.</p>'; return; }
+        skyResult(m.w, 'Mars near ' + lat.toFixed(1) + '°N, ' + lon.toFixed(1) + '°E', 'Coarse 463 m data (MOLA); the window centre is ' + m.km.toFixed(0) + ' km from your click (25 km window spacing).', '');
+      });
+    });
+    $('moonc').addEventListener('click', function (ev) {
+      if (!MOON) return; var r = ev.target.getBoundingClientRect(), px = (ev.clientX - r.left) / r.width * 320, py = (ev.clientY - r.top) / r.height * 320, x = (px - 160) / 155 * 300, y = -(py - 160) / 155 * 300;
+      if (Math.hypot(x, y) > 300) { $('skyres').innerHTML = '<h3>Unknown</h3><p>Outside 80°S to 90°S: no lunar terrain data here. No match is shown.</p>'; return; }
+      var w = MOON.slice().sort(function (a, b) { return Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y); })[0], km = Math.hypot(w.x - x, w.y - y);
+      var o = Object.assign({}, w, { id: 'ML', name: 'Moon window ' + w.lat + '°, ' + w.lon + '°', body: 'Moon' });
+      skyResult(o, 'Moon near ' + w.lat.toFixed(1) + '°, ' + w.lon.toFixed(1) + '° (south pole data only)', 'LOLA 80 m data, south pole only; the window centre is ' + km.toFixed(0) + ' km from your click (20 km spacing).', '');
+    });
+    document.addEventListener('click', function (ev) {
+      var id = ev.target.getAttribute && ev.target.getAttribute('data-sq'); if (!id) return;
+      var e = D.earth.filter(function (x) { return x.id === id; })[0]; if (!e) return; document.querySelector('.tab[data-view=map]').click(); map.setView([e.lat, e.lon], 9); sel = e; renderAll();
+    });
+  }
+
+  // ---- world set: a chosen set of places, not every place on Earth
+  var wmap = null;
+  function renderWorld() {
+    if (!D.world) { fetch('data/world.json').then(function (r) { return r.json(); }).then(function (a) { D.world = a; renderWorld(); }); return; }
+    if (!wmap) { wmap = L.map('worldmap').setView([25, 20], 2); L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 8, className: 'dark-tiles', attribution: '&copy; OpenStreetMap contributors' }).addTo(wmap); wmap._layer = L.layerGroup().addTo(wmap); }
+    setTimeout(function () { wmap.invalidateSize(); }, 100);
+    var t = st.target, items = [];
+    D.world.forEach(function (x) { var d = Math.min.apply(null, x.windows.map(function (w) { return SC.distance(w, t); })); items.push({ name: x.name, kind: x.kind, lat: x.lat, lon: x.lon, d: d, n: x.windows.length, fine: false }); });
+    [['meteor_crater', 'Meteor Crater area, Arizona', 'impact crater', 35.03, -111.02], ['atacama', 'Atacama tile centre, Chile', 'desert', -24.5, -69.5]].forEach(function (g) { var d = Math.min.apply(null, D.earth.filter(function (e) { return e.group === g[0]; }).map(function (e) { return SC.distance(e, t); })); items.push({ name: g[1], kind: g[2], lat: g[3], lon: g[4], d: d, n: 0, fine: true }); });
+    var om = bestOf(function (e) { return e.group.indexOf('oman') === 0; }); items.push({ name: 'Oman (30 m squares; click to open the fine view)', kind: 'home', lat: 20.5, lon: 56.5, d: om.d, n: 0, fine: true, oman: true });
+    wmap._layer.clearLayers();
+    items.forEach(function (x) {
+      var k = SC.gapTier(x.d), m = L.circleMarker([x.lat, x.lon], { radius: x.oman ? 11 : 7, color: '#fff', weight: x.fine ? 3 : 1, fillColor: k === 'gap' ? '#a8788a' : COL[k], fillOpacity: 0.9, dashArray: x.fine ? null : '3 3' }).addTo(wmap._layer);
+      m.bindTooltip(x.name + ': ' + GLABEL[k] + ' (distance ' + x.d.toFixed(2) + ')');
+      if (x.oman) m.on('click', function () { document.querySelector('.tab[data-view=map]').click(); map.fitBounds(state_views.oman); });
+    });
+    items.sort(function (a, b) { return a.d - b.d; });
+    $('worldlist').innerHTML = '<p class="sub">For the target <b>' + esc(t.name) + '</b> (change it on the Planner tab). Dashed dots use coarse 90 m data around an approximate reference point (squares within 15 km); solid-ringed dots are the 30 m squares already in the main set. Tier = same absolute thresholds as the main method, not recalibrated for 90 m.</p><table><tr><th>Place</th><th>Kind</th><th>Squares</th><th>Closest distance</th><th>Tier</th></tr>' + items.map(function (x) { var k = SC.gapTier(x.d); return '<tr><td>' + esc(x.name) + '</td><td>' + x.kind + '</td><td>' + (x.n || 'main set') + '</td><td class="mono">' + x.d.toFixed(3) + '</td><td><span class="chip ' + k + '">' + GLABEL[k] + '</span></td></tr>'; }).join('') + '</table>';
   }
 
   // ---- Jezero story (finer-scale check, separate from the frozen 500 m method)

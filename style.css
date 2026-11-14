@@ -128,3 +128,9 @@ td.cc.gap{background:repeating-linear-gradient(45deg,#ff5a5f 0 3px,#4a1a24 3px 6
 .foot{font-size:11px;color:#9fb0d3;padding:8px 16px;border-top:1px solid #2a3555}
 .geo{background:#1a2340;border-left:4px solid #7aa2ff;padding:4px 10px;margin:8px 0;font-size:.85rem}.geo h3{margin:4px 0}.geo ul{margin:4px 0;padding-left:18px}
 @media print{.foot{color:#000}}
+.skymap{position:relative}.skymap img{width:100%;display:block;cursor:crosshair;border:1px solid #2a3555;border-radius:6px;image-rendering:pixelated}
+.skymap .mark{position:absolute;width:12px;height:12px;margin:-6px 0 0 -6px;border:2px solid #f6c453;border-radius:50%;pointer-events:none}
+#moonc{width:100%;max-width:340px;cursor:crosshair;border:1px solid #2a3555;border-radius:6px;background:#05080f}
+#worldmap{height:300px;border-radius:6px;margin:8px 0}
+#skytabs button.on{background:#7aa2ff;color:#07101f}
+@media(max-width:860px){main{flex:none}.foot{position:relative}}
