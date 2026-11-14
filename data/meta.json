@@ -62,12 +62,13 @@
  "tasks": {
   "rover": {
    "name": "Rover driving",
-   "max_slope_deg": 17.0,
+   "max_slope_deg": 15.0,
    "slider": [
     5,
     30
    ],
-   "source": "Mars-weight test vehicle: embedding near 17 deg in loose sand, 22 deg firm rock, 28 deg cohesive soil (Traverse Performance Characterization for the MSL Rover); design target ~30 deg (NASA JPL)."
+   "user_set": true,
+   "source": "User-set slope limit (not a safe driving limit). Observed reference points only: Curiosity max tilt 25.34 deg through sol 2488 (Rankin et al., JPL, 2019); Opportunity tilt 32 deg on 2016-03-10 (JPL news, 2016-03-31); Perseverance climbed about 20 deg on slippery sand (JPL news, 2024-10-28)."
   }
  }
 }
