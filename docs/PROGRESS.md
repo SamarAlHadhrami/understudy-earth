@@ -30,3 +30,5 @@
 - Blind test: AMADEE-18 area top 10.7% (mean over Mars targets) / 24.0% (best target); Meteor Crater 4.5% / 22.4%; Atacama tile 50.6% / 24.9%.
 - NASA POWER: 30 cells cached; tests check units, ordering and raw-cache equality.
 - AMADEE-18 replay (assumed needs: day max <= 35 C, night min >= 5 C, sun >= 4): planner best months Jan and Dec; Feb scores 80 (good, not top). Real phase Feb 2018 (OeWF).
+- WorldClim cross-check (627 windows, WorldClim minus NASA POWER, mean over windows): mean temperature agrees within about 1 C (mean abs 1.1); wind mean abs 0.8 m/s; sunlight mean abs 0.5 kWh/m2/day. But POWER T2M_MAX is about 7 C higher and T2M_MIN about 5 C lower than WorldClim mean daily max/min (POWER daily range is wider, likely extremes or reanalysis bias). Consequence: the published strip (POWER) is conservative for "day max / night min" needs. Aggregates only, in docs/climate_crosscheck.json; WorldClim per-window values stay local (licence). Ask owner before publishing them or asking WorldClim for permission (info@worldclim.org).
+- Public link verified live (418 squares render): https://samaralhadhrami.github.io/understudy-earth/

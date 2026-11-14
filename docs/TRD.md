@@ -20,5 +20,7 @@
 - Best months: within 90% of the best fit and at least 50, at most 3.
 - Where+when colour = worse of terrain tier and best-month tier.
 
+- Cross-check: WorldClim and POWER mean temperatures agree within about 1 C, but POWER daily max/min are about 7 C hotter / 5 C colder than WorldClim mean daily max/min, so POWER-driven strips are conservative.
+
 ## Known limits
 500 m cells hide rocks and steps; rover limit is rover-scale; DSM vs bare ground; Moon south pole only; Oman = tiles we hold; climate is a typical-year average on coarse cells; ready-made test numbers are our assumptions.
