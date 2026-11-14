@@ -5,12 +5,12 @@
   var MARGIN = { temp: 5, wind: 1.5, rh: 15, sun: 1 };
   // Ready-made tests. All numbers are OUR ASSUMPTION (no mission source); labelled in the app.
   var PRESETS = {
-    rover: { label: 'Rover test', tlo: 0, thi: 40, wmin: 0, wmax: 10, rhmax: 100, smin: 4, limit: 17 },
-    instrument: { label: 'Instrument test', tlo: 5, thi: 35, wmin: 0, wmax: 8, rhmax: 60, smin: 5, limit: 17 },
-    walking: { label: 'Walking test', tlo: 5, thi: 35, wmin: 0, wmax: 7, rhmax: 100, smin: 3, limit: 17 },
-    cold: { label: 'Cold test', tlo: -30, thi: 10, wmin: 0, wmax: 12, rhmax: 100, smin: 0, limit: 17 }
+    rover: { label: 'Rover test', tlo: 0, thi: 40, wmin: 0, wmax: 10, rhmax: 100, smin: 4, limit: 15 },
+    instrument: { label: 'Instrument test', tlo: 5, thi: 35, wmin: 0, wmax: 8, rhmax: 60, smin: 5, limit: 15 },
+    walking: { label: 'Walking test', tlo: 5, thi: 35, wmin: 0, wmax: 7, rhmax: 100, smin: 3, limit: 15 },
+    cold: { label: 'Cold test', tlo: -30, thi: 10, wmin: 0, wmax: 12, rhmax: 100, smin: 0, limit: 15 }
   };
-  var DEFAULT = { tlo: 0, thi: 40, wmin: 0, wmax: 12, rhmax: 100, smin: 4, limit: 17 };
+  var DEFAULT = { tlo: 0, thi: 40, wmin: 0, wmax: 12, rhmax: 100, smin: 4, limit: 15 };
 
   function clamp01(x) { return x < 0 ? 0 : (x > 1 ? 1 : x); }
 
@@ -46,27 +46,41 @@
   var ORDER = { match: 0, partial: 1, gap: 2 };
   function worse(a, b) { return ORDER[a] >= ORDER[b] ? a : b; }
 
-  // Rule-based word matcher. Returns {needs, said:[...]} so the user can see what was understood.
+  // Rule-based matcher (typed input only, no AI). Returns {needs, said:[{field,text}], unknown:[words], refused:bool}.
+  // It only accepts what the rules below understand; unknown input is refused, never guessed.
+  var STOP = /^(a|an|the|and|or|with|for|test|tests|please|need|needs|want|i|my|is|are|be|at|in|of|to|on|should|must|it|that|day|days|during|temperature|temperatures|about)$/;
   function parseSentence(text, base) {
-    var t = (' ' + text.toLowerCase() + ' '), n = Object.assign({}, base || DEFAULT), said = [];
+    var raw = String(text || '').toLowerCase(), t = ' ' + raw + ' ', n = Object.assign({}, base || DEFAULT), said = [], m;
+    function take(re, fn) { var mm = t.match(re); if (mm) { fn(mm); t = t.replace(mm[0], ' '); return true; } return false; }
+    var NUM = '(-?\\d+(?:\\.\\d+)?)';
     Object.keys(PRESETS).forEach(function (k) {
-      if (t.indexOf(' ' + k + ' ') >= 0 || t.indexOf(' ' + k + 'test') >= 0 || (k === 'walking' && /\b(eva|walk)/.test(t))) {
-        var p = PRESETS[k]; ['tlo', 'thi', 'wmin', 'wmax', 'rhmax', 'smin', 'limit'].forEach(function (f) { n[f] = p[f]; }); said.push(p.label + ' preset (our assumption)');
+      var re = new RegExp('\\b' + k + '(?: test)?\\b');
+      if (re.test(t) || (k === 'walking' && /\b(eva|walk)/.test(t))) {
+        var p = PRESETS[k]; ['tlo', 'thi', 'wmin', 'wmax', 'rhmax', 'smin', 'limit'].forEach(function (f) { n[f] = p[f]; });
+        said.push({ field: 'preset', text: p.label + ' preset (our assumption): ' + p.tlo + ' to ' + p.thi + ' \u00b0C, wind ' + p.wmin + '-' + p.wmax + ' m/s, humidity up to ' + p.rhmax + '%, sun at least ' + p.smin + ' kWh/m\u00b2/day' });
+        t = t.replace(re, ' ').replace(/\b(eva|walk\w*)\b/, ' ');
       }
     });
-    var m = t.match(/slopes?[^0-9\-]*(\d+(?:\.\d+)?)\s*(?:to|-|and)\s*(\d+(?:\.\d+)?)/);
-    if (m) { n.limit = Math.max(5, Math.min(30, Math.max(+m[1], +m[2]))); said.push('rover slope limit ' + n.limit + ' deg'); t = t.replace(m[0], ' '); }
-    m = t.match(/(-?\d+(?:\.\d+)?)\s*(?:to|-|and)\s*(-?\d+(?:\.\d+)?)\s*(?:degrees|degree|deg|°|c\b|celsius)/);
-    if (m) { n.tlo = Math.min(+m[1], +m[2]); n.thi = Math.max(+m[1], +m[2]); said.push('temperature ' + n.tlo + ' to ' + n.thi + ' C'); }
-    if (/\bdry|arid|no humidity/.test(t)) { n.rhmax = 40; said.push('dry: humidity at most 40%'); }
-    if (/\bhumid|damp/.test(t)) { n.rhmax = 100; said.push('humidity not limited'); }
-    if (/windy|dust/.test(t)) { n.wmin = 4; said.push('windy / dust-like: wind at least 4 m/s'); }
-    if (/\bcalm|low wind|no wind/.test(t)) { n.wmax = 4; said.push('calm: wind at most 4 m/s'); }
-    if (/sunny|sunlight|solar|bright/.test(t)) { n.smin = 6; said.push('sunny: at least 6 kWh/m2/day'); }
-    if (/\bcold\b/.test(t) && !m) { n.tlo = -30; n.thi = 10; said.push('cold: up to 10 C'); }
-    return { needs: n, said: said };
+    take(new RegExp('slopes?[^0-9\\-]{0,12}' + NUM + '\\s*(?:to|-|and)\\s*' + NUM), function (mm) { n.limit = Math.max(5, Math.min(30, Math.max(+mm[1], +mm[2]))); said.push({ field: 'limit', text: 'slope limit ' + n.limit + '\u00b0 (user-set)' }); });
+    take(new RegExp('slopes?\\s*(?:up to|below|under|max(?:imum)?(?: of)?|at most)\\s*' + NUM), function (mm) { n.limit = Math.max(5, Math.min(30, +mm[1])); said.push({ field: 'limit', text: 'slope limit ' + n.limit + '\u00b0 (user-set)' }); });
+    take(new RegExp('(?:between\\s+)?' + NUM + '\\s*(?:to|-|and)\\s*' + NUM + '\\s*(?:degrees|degree|deg|\u00b0c|\u00b0|c\\b|celsius)'), function (mm) { n.tlo = Math.min(+mm[1], +mm[2]); n.thi = Math.max(+mm[1], +mm[2]); said.push({ field: 'temp', text: 'air temperature ' + n.tlo + ' to ' + n.thi + ' \u00b0C' }); });
+    take(new RegExp('(?:below|under|up to|at most|max(?:imum)?)\\s*' + NUM + '\\s*(?:degrees|deg|\u00b0c|\u00b0|c\\b|celsius)'), function (mm) { n.thi = +mm[1]; said.push({ field: 'temp', text: 'daytime highs up to ' + n.thi + ' \u00b0C' }); });
+    take(new RegExp('(?:above|over|at least|min(?:imum)?)\\s*' + NUM + '\\s*(?:degrees|deg|\u00b0c|\u00b0|c\\b|celsius)'), function (mm) { n.tlo = +mm[1]; said.push({ field: 'temp', text: 'night lows at least ' + n.tlo + ' \u00b0C' }); });
+    take(new RegExp('wind\\s*(?:below|under|up to|at most|max(?:imum)?)\\s*' + NUM + '\\s*(?:m/s|ms|mps)?'), function (mm) { n.wmax = +mm[1]; said.push({ field: 'wind', text: 'wind at most ' + n.wmax + ' m/s' }); });
+    take(new RegExp('wind\\s*(?:above|over|at least|min(?:imum)?)\\s*' + NUM + '\\s*(?:m/s|ms|mps)?'), function (mm) { n.wmin = +mm[1]; said.push({ field: 'wind', text: 'wind at least ' + n.wmin + ' m/s' }); });
+    take(new RegExp('humidity\\s*(?:below|under|up to|at most|max(?:imum)?)\\s*' + NUM + '\\s*%?'), function (mm) { n.rhmax = Math.max(10, Math.min(100, +mm[1])); said.push({ field: 'dry', text: 'humidity at most ' + n.rhmax + '%' }); });
+    take(new RegExp('(?:sun(?:light)?|solar)\\s*(?:at least|above|over|min(?:imum)?)?\\s*' + NUM + '\\s*(?:kwh)?'), function (mm) { n.smin = Math.max(0, Math.min(8, +mm[1])); said.push({ field: 'sun', text: 'sunlight at least ' + n.smin + ' kWh/m\u00b2/day' }); });
+    take(/\b(?:dry|arid)\b/, function () { n.rhmax = 40; said.push({ field: 'dry', text: 'dry: humidity at most 40%' }); });
+    take(/\b(?:humid|damp)\b/, function () { n.rhmax = 100; said.push({ field: 'dry', text: 'humidity not limited' }); });
+    take(/\b(?:windy|dusty)\b/, function () { n.wmin = 4; said.push({ field: 'wind', text: 'windy: wind at least 4 m/s' }); });
+    take(/\b(?:calm|low wind|no wind)\b/, function () { n.wmax = 4; said.push({ field: 'wind', text: 'calm: wind at most 4 m/s' }); });
+    take(/\b(?:sunny|bright)\b/, function () { n.smin = 6; said.push({ field: 'sun', text: 'sunny: at least 6 kWh/m\u00b2/day' }); });
+    take(/\bcold\b/, function () { if (!said.some(function (x) { return x.field === 'temp'; })) { n.tlo = -30; n.thi = 10; said.push({ field: 'temp', text: 'cold: -30 to 10 \u00b0C' }); } });
+    take(/\b(?:hot|warm)\b/, function () { if (!said.some(function (x) { return x.field === 'temp'; })) { n.tlo = 10; n.thi = 45; said.push({ field: 'temp', text: 'hot: 10 to 45 \u00b0C' }); } });
+    var unknown = t.replace(/[0-9.,%\u00b0:;()\/-]+/g, ' ').split(/\s+/).filter(function (w) { return w && !STOP.test(w); });
+    var refused = !said.length;
+    return { needs: refused ? Object.assign({}, base || DEFAULT) : n, said: said, unknown: unknown, refused: refused };
   }
-
 
   // Per-factor fit for one month (0..100 each): temperature, wind, dryness, sunlight.
   function monthFactors(c, m, n) {

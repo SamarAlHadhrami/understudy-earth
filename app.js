@@ -2,17 +2,20 @@
   'use strict';
   var GROUPS = { oman_muscat: 'Oman (Muscat area)', oman_dhofar: 'Oman (Dhofar)', meteor_crater: 'Meteor Crater area, Arizona (outside Oman)', atacama: 'Atacama / Andes edge, Chile (outside Oman)' };
   var N = window.UENeeds, D = {}, SC, map, rects = {}, sel = null, selB = null, cmpNext = false;
-  var st = { weights: { terrain: 1, temp: 1, wind: 1, dry: 1, sun: 1 }, target: null, mode: 'both', month: 'best', n: Object.assign({}, N.DEFAULT) };
+  var st = { cal: [], split: false, noCand: false, nearest: null, weights: { terrain: 1, temp: 1, wind: 1, dry: 1, sun: 1 }, target: null, mode: 'both', month: 'best', n: Object.assign({}, N.DEFAULT) };
   var $ = function (id) { return document.getElementById(id); };
   var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
-  var LABEL = { match: 'GOOD', partial: 'PARTIAL', gap: 'POOR' };
-  var GLABEL = { match: 'MATCH', partial: 'PARTIAL', gap: 'GAP' };
+  var LABEL = { match: 'GOOD', partial: 'PARTIAL', gap: 'WEAK', none: 'NO CANDIDATE' };
+  var GLABEL = { match: 'MATCH', partial: 'PARTIAL', gap: 'NO QUALIFYING CANDIDATE' };
+  var SLOPE_REF = 'Observed reference points, not limits: Curiosity maximum tilt 25.34° through sol 2488 (Rankin et al., JPL, 2019); Opportunity tilt 32° on 2016-03-10 (JPL news, 2016-03-31); Perseverance climbed about 20° on slippery sand (JPL news, 2024-10-28). The slope limit here is user-set.';
+  var POWER_NOTE = 'NASA POWER climatology v2.10.1, community RE, years 2001-2025. T2M_MAX and T2M_MIN (2 m air, °C), WS2M (wind, m/s), RH2M (%), ALLSKY_SFC_SW_DWN (sunlight, kWh/m²/day). Temperature, wind and humidity cells are about 50 km (0.5 x 0.625°); solar is about 110 km (1°). Regional and approximate.';
+  var AMADEE_NEEDS = { tlo: 5, thi: 35, wmin: 0, wmax: 12, rhmax: 100, smin: 4 };
   var COL = { match: '#2ec4b6', partial: '#f6c453', gap: '#ff5a5f' };
   var FIELDS = ['tlo', 'thi', 'wmin', 'wmax', 'rhmax', 'smin', 'limit'];
 
   function load(f, opt) { return fetch('data/' + f).then(function (r) { if (!r.ok) { if (opt) return null; throw new Error(f + ' ' + r.status); } return r.json(); }).catch(function (e) { if (opt) return null; throw e; }); }
-  Promise.all([load('meta.json'), load('earth.json'), load('targets.json'), load('results.json'), load('second_check.json'), load('climate_power.json'), load('relief.json', true)]).then(function (a) {
-    D.meta = a[0]; D.earth = a[1]; D.targets = a[2]; D.results = a[3]; D.second = a[4]; D.power = a[5]; D.relief = a[6];
+  Promise.all([load('meta.json'), load('earth.json'), load('targets.json'), load('results.json'), load('second_check.json'), load('climate_power.json'), load('landcover.json', true), load('baseline.json', true), load('stability.json', true)]).then(function (a) {
+    D.meta = a[0]; D.earth = a[1]; D.targets = a[2]; D.results = a[3]; D.second = a[4]; D.power = a[5]; D.lc = a[6]; D.base = a[7]; D.stab = a[8];
     SC = UEScore(D.meta); init();
   }).catch(function (e) {
     var el = $('loaderr'); el.hidden = false; el.textContent = 'Could not load the data files (' + e.message + '). Reload the page; if it persists the site files are missing.';
@@ -21,7 +24,7 @@
   function climate(e) {
     if (e._c) return e._c;
     var c = D.power.cells[D.power.win[e.id]];
-    return (e._c = { tmax: c.T2M_MAX, tmin: c.T2M_MIN, wind: c.WS2M, rh: c.RH2M, srad: c.ALLSKY_SFC_SW_DWN, src: 'NASA POWER climatology 2001-2025, cells ~50 km wide (regional, not local)', coarse: true });
+    return (e._c = { tmax: c.T2M_MAX, tmin: c.T2M_MIN, wind: c.WS2M, rh: c.RH2M, srad: c.ALLSKY_SFC_SW_DWN, src: 'NASA POWER climatology 2001-2025 (regional and approximate: temperature, wind and humidity cells about 50 km, solar about 110 km)', coarse: true });
   }
 
   function init() {
@@ -32,17 +35,19 @@
       html += '</optgroup>';
     });
     tsel.innerHTML = html;
-    var def = D.targets.filter(function (t) { return t.name === 'Gale mound (Aeolis Mons)'; })[0];
+    var def = D.targets.filter(function (t) { return t.name === 'Jezero crater'; })[0];
     st.target = def; tsel.value = def.id;
     var mh = '<option value="best">Best month for each square</option>';
     N.MON.forEach(function (m, i) { mh += '<option value="' + i + '">' + m + '</option>'; });
     $('month').innerHTML = mh;
-    $('limsrc').textContent = 'Limit source: ' + D.meta.tasks.rover.source;
-    if (window.SpeechRecognition || window.webkitSpeechRecognition) $('mic').hidden = false;
-    readHash(); initMap(); bind(); syncInputs(); renderAll(); renderBlind(); renderSecond(); renderReplay();
+    $('limsrc').textContent = SLOPE_REF; renderChips();
+        readHash(); initMap(); bind(); syncInputs(); renderAll(); renderBlind(); renderSecond(); renderReplay();
   }
 
+  function lcflag(e) { var v = D.lc && D.lc[e.id]; return !!(v && v[0] + v[1] + v[2] >= 10); }
+  function masked(e) { return !!($('mask') && $('mask').checked && lcflag(e)); }
   function tierOf(e) {
+    if (st.noCand) return 'none';
     var tt = SC.mapTier(e.rank), nt = N.needTier(e._fit);
     return st.mode === 'terrain' ? tt : (st.mode === 'needs' ? nt : N.worse(tt, nt));
   }
@@ -52,7 +57,7 @@
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 12, className: 'dark-tiles', attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
     var r = L.svg({ padding: 0.5 }); r.addTo(map);
     var ns = 'http://www.w3.org/2000/svg', defs = document.createElementNS(ns, 'defs');
-    defs.innerHTML = '<pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#ff5a5f"/><rect width="3" height="6" fill="#5a1620"/></pattern>';
+    defs.innerHTML = '<pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#a8788a"/><rect width="3" height="6" fill="#33202e"/></pattern>';
     r._container.insertBefore(defs, r._container.firstChild);
     var bounds = [];
     D.earth.filter(function (e) { return e.group.indexOf('oman') === 0; }).forEach(function (e) {
@@ -92,16 +97,12 @@
     });
     $('go').addEventListener('click', applySentence);
     $('sentence').addEventListener('keydown', function (e) { if (e.key === 'Enter') applySentence(); });
-    $('mic').addEventListener('click', function () {
-      var R = window.SpeechRecognition || window.webkitSpeechRecognition, r = new R(); r.lang = 'en-US';
-      r.onresult = function (ev) { $('sentence').value = ev.results[0][0].transcript; applySentence(); };
-      r.onerror = function () { $('understood').textContent = 'Speech input not available here; type the sentence instead.'; };
-      r.start();
-    });
     $('copylink').addEventListener('click', function () {
       writeHash(); var u = location.href;
       (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(function () { $('copied').textContent = 'copied'; }, function () { $('copied').textContent = 'copy the address bar'; });
     });
+    $('mask').addEventListener('change', renderAll);
+    $('demobar').addEventListener('click', function (ev) { var k = ev.target.getAttribute('data-demo'); if (k) runDemo(k); });
     document.querySelectorAll('.tab').forEach(function (b) {
       b.addEventListener('click', function () {
         document.querySelectorAll('.tab').forEach(function (x) { x.classList.toggle('on', x === b); });
@@ -109,18 +110,30 @@
         $('v-' + b.dataset.view).classList.add('on');
         if (b.dataset.view === 'gap') renderGapTable();
         if (b.dataset.view === 'replay') renderReplay();
+        if (b.dataset.view === 'cal') renderCal();
+        if (b.dataset.view === 'base') renderBase();
       });
     });
     document.addEventListener('click', function (ev) {
       var a = ev.target.getAttribute && ev.target.getAttribute('data-act');
       if (a === 'brief') openBrief(); else if (a === 'cmp') { cmpNext = true; $('result').insertAdjacentHTML('afterbegin', '<p class="hint">Now click a second square to compare.</p>'); }
-      else if (a === 'closebrief') $('brief').hidden = true; else if (a === 'print') window.print(); else if (a === 'clearb') { selB = null; renderResult(); }
+      else if (a === 'addcal') { addCal(); } else if (a === 'clearcal') { st.cal = []; renderCal(); } else if (a === 'closebrief') $('brief').hidden = true; else if (a === 'print') window.print(); else if (a === 'clearb') { selB = null; renderResult(); }
     });
   }
 
+  var EXAMPLES = ['rover test, slopes up to 20 degrees, dry', 'wind below 5 m/s, sun at least 5, between 10 and 30 degrees', 'cold, calm'];
+  function renderChips() {
+    $('chips').innerHTML = '<span class="sub">Examples:</span> ' + EXAMPLES.map(function (x, i) { return '<button data-ex="' + i + '">' + esc(x) + '</button>'; }).join('');
+    $('chips').onclick = function (ev) { var k = ev.target.getAttribute('data-ex'); if (k !== null) { $('sentence').value = EXAMPLES[+k]; applySentence(); } };
+  }
   function applySentence() {
-    var r = N.parseSentence($('sentence').value, st.n); st.n = r.needs;
-    $('understood').innerHTML = r.said.length ? 'Understood: ' + r.said.map(esc).join('; ') + '. Adjust the sliders if this is wrong.' : 'Nothing recognised. Try: "rover test, slopes 10 to 20 degrees, dry, 5 to 30 degrees".';
+    var r = N.parseSentence($('sentence').value, st.n);
+    if (r.refused) {
+      $('understood').innerHTML = 'I could not understand that, so nothing was changed. I only know: preset names (rover, instrument, walking, cold), slope limits, temperature ranges in °C, wind in m/s, humidity %, sunlight kWh/m²/day, and words like dry, calm, windy, sunny, hot, cold.' + (r.unknown.length ? ' Not understood: ' + esc(r.unknown.join(', ')) + '.' : '');
+      return;
+    }
+    st.needs_said = r.said; st.n = r.needs;
+    $('understood').innerHTML = '<b>Understood:</b> ' + r.said.map(function (x) { return esc(x.text); }).join('; ') + '.' + (r.unknown.length ? ' <b>Not understood and ignored:</b> ' + esc(r.unknown.join(', ')) + '.' : '') + ' Check the sliders.';
     syncInputs(); renderAll();
   }
 
@@ -137,6 +150,8 @@
 
   function recompute() {
     SC.rankAll(D.earth, st.target);
+    var bo0 = bestOf(function (e) { return e.group.indexOf('oman') === 0; });
+    st.noCand = !!bo0 && SC.gapTier(bo0.d) === 'gap'; st.nearest = bo0 ? bo0.id : null;
     D.earth.forEach(function (e) {
       e._fits = N.allFits(climate(e), st.n); e._best = N.bestMonths(e._fits);
       e._fit = st.month === 'best' ? Math.max.apply(null, e._fits) : e._fits[+st.month];
@@ -146,20 +161,24 @@
 
   function renderAll() {
     recompute(); var t = st.target;
-    $('hook').innerHTML = '<b>Where and when</b> to rehearse a job like <b>' + esc(t.name) + '</b> (' + t.body + '). Each square is 10 km. ' +
-      (st.mode === 'terrain' ? 'Colour = terrain match.' : (st.mode === 'needs' ? 'Colour = fit to your test needs.' : 'Colour = terrain match AND a month that fits your test.'));
+    $('hook').innerHTML = '<b>Where and when</b> to rehearse a job like <b>' + esc(t.name) + '</b> (' + t.body + '). Each square is 10 km. ' + (st.noCand ? '<b>No qualifying candidate in Oman for this target:</b> squares are grey; the nearest one is outlined. ' : '') +
+      (st.noCand ? '' : st.mode === 'terrain' ? 'Colour = terrain match.' : (st.mode === 'needs' ? 'Colour = fit to your test needs.' : 'Colour = terrain match AND a month that fits your test.'));
     D.earth.forEach(function (e) {
       var rc = rects[e.id]; if (!rc) return;
       var k = e._tier, isSel = (sel && sel.id === e.id) || (selB && selB.id === e.id);
-      rc.setStyle({ fillColor: k === 'gap' ? 'url(#hatch)' : COL[k], fillOpacity: k === 'gap' ? 0.9 : 0.8, weight: isSel ? 3 : 1, color: isSel ? '#fff' : '#0a1020' });
-      if (rc._path) rc._path.setAttribute('fill', k === 'gap' ? 'url(#hatch)' : COL[k]);
+      var near = st.noCand && st.nearest === e.id, mk = masked(e);
+      var fillc = k === 'gap' ? 'url(#hatch)' : (k === 'none' ? '#4b5878' : COL[k]);
+      rc.setStyle({ fillColor: fillc, fillOpacity: mk ? 0.2 : (k === 'gap' ? 0.9 : (k === 'none' ? 0.55 : 0.8)), weight: isSel || near ? 3 : 1, color: isSel || near ? '#fff' : '#0a1020', dashArray: mk ? '3 4' : null });
+      if (rc._path) rc._path.setAttribute('fill', fillc);
     });
     renderGapCard(); renderResult(); writeHash();
     if ($('v-gap').classList.contains('on')) renderGapTable();
     if ($('v-replay').classList.contains('on')) renderReplay();
   }
 
-  function bestOf(f) { var b = null; D.earth.forEach(function (e) { if (f(e) && (!b || e.d < b.d)) b = e; }); return b; }
+  function bestOf(f) { var b = null; D.earth.forEach(function (e) { if (f(e) && !masked(e) && (!b || e.d < b.d)) b = e; }); return b; }
+
+  function stabOf(t) { if (!D.stab) return null; var r = D.stab.summary.filter(function (x) { return x.target === t.name; })[0]; return r || null; }
 
   function renderGapCard() {
     var bo = bestOf(function (e) { return e.group.indexOf('oman') === 0; }), shown = bo.d, extra = [];
@@ -167,14 +186,15 @@
       if ($(x[1]).checked) { var b = bestOf(function (e) { return e.group === x[0]; }); extra.push({ g: x[0], b: b }); if (b.d < shown) shown = b.d; }
     });
     var k0 = SC.gapTier(bo.d), kk = SC.gapTier(shown), improved = shown < bo.d;
-    $('badge').textContent = GLABEL[kk]; $('badge').className = 'badge ' + kk;
+    $('badge').textContent = GLABEL[kk]; $('badge').className = 'badge ' + (kk === 'gap' ? 'none' : kk);
     $('gcscore').textContent = 'top ' + Math.max(1, Math.round(bo.rank * 100)) + '%';
-    var txt = k0 === 'gap' ? 'Nothing in Oman is close enough to this target.' : (k0 === 'partial' ? 'Oman is a partial match only.' : 'Oman has a strong terrain match.');
+    var txt = k0 === 'gap' ? 'No qualifying candidate in Oman for this target (searched area only, not all of Earth). Nearest square is outlined on the map.' : (k0 === 'partial' ? 'Oman is a partial match only.' : 'Oman has a strong terrain match (best fit among the squares we searched).');
+    var sn = stabOf(st.target); if (sn) txt += (sn.threshold_sensitive ? ' Threshold-sensitive: the tier changes with window size, cell size or threshold; ' : ' Stable across settings; ') + 'the best Oman square is closer than ' + sn.band_pct[0] + '-' + sn.band_pct[1] + '% of Earth-square pairs.';
     if (extra.length && improved && kk !== k0) txt = 'Oman alone: ' + GLABEL[k0] + '. With the second site: ' + GLABEL[kk] + '.';
     else if (extra.length) txt = 'The second site does not improve on Oman here.';
     $('gctext').textContent = txt;
     var lines = ['Oman alone: ' + GLABEL[k0] + ' (distance ' + bo.d.toFixed(2) + ')'];
-    extra.forEach(function (x) { lines.push(GROUPS[x.g].replace(' (outside Oman)', '') + ': ' + GLABEL[SC.gapTier(x.b.d)] + ' (distance ' + x.b.d.toFixed(2) + ') at ' + x.b.lat.toFixed(2) + ', ' + x.b.lon.toFixed(2)); });
+    extra.forEach(function (x) { lines.push(GROUPS[x.g] + ': ' + GLABEL[SC.gapTier(x.b.d)] + ' (distance ' + x.b.d.toFixed(2) + ') at ' + x.b.lat.toFixed(2) + ', ' + x.b.lon.toFixed(2)); });
     $('secondres').innerHTML = lines.map(esc).join('<br>') + '<br><small>Distance: lower is closer. MATCH below ' + D.meta.thr_match_dist.toFixed(2) + ', PARTIAL below ' + D.meta.thr_partial_dist.toFixed(2) + '.</small>';
   }
 
@@ -187,11 +207,28 @@
     return h + '</div>';
   }
 
+  function monthNotes(e) {
+    var c = climate(e), n = st.n, why = [];
+    for (var m = 0; m < 12; m++) {
+      if (e._fits[m] >= 75) continue;
+      var f = N.monthFactors(c, m, n), k = Object.keys(f).sort(function (a, b) { return f[a] - f[b]; })[0], t;
+      if (k === 'temp') t = c.tmax[m] > n.thi ? 'day max ' + c.tmax[m].toFixed(0) + ' °C above ' + n.thi : 'night min ' + c.tmin[m].toFixed(0) + ' °C below ' + n.tlo;
+      else if (k === 'wind') t = 'wind ' + c.wind[m].toFixed(1) + ' m/s outside ' + n.wmin + '-' + n.wmax;
+      else if (k === 'dry') t = 'humidity ' + Math.round(c.rh[m]) + '% above ' + n.rhmax + '%';
+      else t = 'sunlight ' + c.srad[m].toFixed(1) + ' below ' + n.smin + ' kWh/m²/day';
+      why.push(N.MON[m] + ': ' + t);
+    }
+    var sorted = e._fits.map(function (f, i) { return [f, i]; }).sort(function (a, b) { return b[0] - a[0]; }), close = '';
+    if (sorted[0][0] >= 50 && sorted[1][0] >= sorted[0][0] - 5) close = '<p class="note"><b>Close months:</b> ' + sorted.filter(function (x) { return x[0] >= sorted[0][0] - 5; }).slice(0, 4).map(function (x) { return N.MON[x[1]] + ' (' + Math.round(x[0]) + ')'; }).join(', ') + ' are within 5 points, so the top month is not clearly ahead.</p>';
+    return close + '<details class="why"><summary>Why months fail, and the data behind the strip</summary><p>' + (why.length ? esc(why.join('; ')) + '.' : 'Every month fits (75 or more).') + '</p><p class="sub">' + esc(POWER_NOTE) + '</p></details>';
+  }
+
   function confidence(e) {
-    var c = climate(e), items = ['Terrain: surface model, 500 m cells'];
-    items.push('Climate: NASA POWER values are regional and approximate (about 50 km cells), typical year');
+    var c = climate(e), items = ['Terrain: surface model (includes trees and buildings), 500 m cells'];
+    items.push('Climate: NASA POWER, regional and approximate (temperature, wind, humidity about 50 km cells; solar about 110 km), typical year');
+    if (lcflag(e)) items.push('Square has 10% or more trees, crops or buildings (ESA WorldCover): the surface model may overstate roughness');
     if (e.group === 'oman_dhofar' && e.approx) items.push('Site location approximate');
-    var low = c.coarse || e.group.indexOf('oman') !== 0;
+    var low = c.coarse || e.group.indexOf('oman') !== 0 || lcflag(e);
     return { level: low ? 'Medium-low' : 'Medium', items: items };
   }
 
@@ -201,7 +238,7 @@
       ['Median / 90th pct slope', e.slope_p50.toFixed(1) + '° / ' + e.slope_p90.toFixed(1) + '° (target ' + t.slope_p50.toFixed(1) + '° / ' + t.slope_p90.toFixed(1) + '°)'],
       ['Roughness 500 m / 1 km', e.rough_med.toFixed(1) + ' m / ' + e.rough1k_med.toFixed(1) + ' m (target ' + t.rough_med.toFixed(1) + ' / ' + t.rough1k_med.toFixed(1) + ')'],
       ['Relief', Math.round(e.relief_m) + ' m (target ' + Math.round(t.relief_m) + ' m)'],
-      ['Drivable share (slope ≤ ' + n.limit + '°)', Math.round(SC.trav(e, n.limit) * 100) + '% (target ' + Math.round(SC.trav(t, n.limit) * 100) + '%)'],
+      ['Share of cells below ' + n.limit + '° slope (user-set)', Math.round(SC.trav(e, n.limit) * 100) + '% (target ' + Math.round(SC.trav(t, n.limit) * 100) + '%)'],
       ['Best months for your test', e._best.length ? N.monthsText(e._best) : 'none fits']];
   }
 
@@ -229,33 +266,17 @@
     var bars = Object.keys(f).map(function (k) {
       return '<div class="vrow"><label>' + N.FACTOR_NAMES[k] + '</label><div class="vbar"><i class="' + (f[k] >= 75 ? 'match' : (f[k] >= 50 ? 'partial' : 'gap')) + '" style="width:' + Math.round(f[k]) + '%"></i></div><b>' + Math.round(f[k]) + '</b><input type="range" min="0" max="3" step="1" value="' + st.weights[k] + '" data-w="' + k + '" aria-label="Weight for ' + N.FACTOR_NAMES[k] + '"></div>';
     }).join('');
-    return '<div class="verdict ' + cls + '"><div class="vhead">Best fit for your test: <b>' + v.overall + '%</b> &middot; ' + v.label + '</div><p class="sub">Here is what is missing: weakest factor is ' + esc(v.worstName) + ' (' + Math.round(f[v.worst]) + '). ' + fix + ' Month used: ' + N.MON[m] + '. Confidence: ' + cf + ' (terrain ' + (e.group.indexOf('oman') === 0 ? '30 m source' : 'outside site') + ', climate about 50 km).</p>' + bars + '<small>Sliders set each factor weight 0-3 (0 = ignore). Rule-based fit from our assumptions, not a mission verdict.</small></div>';
+    return '<div class="verdict ' + cls + '"><div class="vhead">Best fit for your test: <b>' + v.overall + '%</b> &middot; ' + v.label + '</div><p class="sub"><b>User-weighted soft score, not similarity and not a success chance.</b></p><p class="sub">Here is what is missing: weakest factor is ' + esc(v.worstName) + ' (' + Math.round(f[v.worst]) + '). ' + fix + ' Month used: ' + N.MON[m] + '. Confidence: ' + cf + ' (terrain ' + (e.group.indexOf('oman') === 0 ? '30 m source' : 'outside site') + ', climate about 50 km).</p>' + bars + '<small>Sliders set each factor weight 0-3 (0 = ignore). Rule-based fit from our assumptions, not a mission verdict.</small></div>';
   }
 
 
-  // Shaded relief from a 20 x 20 grid of heights (m above window mean), cells 500 m. Same sun and exaggeration for every picture.
-  function shade(cv, g) {
-    var n = 20, EX = 3, AZ = 315 * Math.PI / 180, ALT = 45 * Math.PI / 180, cell = 500;
-    cv.width = n; cv.height = n; var ctx = cv.getContext('2d'), im = ctx.createImageData(n, n);
-    function z(r, c) { r = Math.max(0, Math.min(n - 1, r)); c = Math.max(0, Math.min(n - 1, c)); return g[r * n + c] * EX; }
-    for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) {
-      var dzdx = (z(r, c + 1) - z(r, c - 1)) / (2 * cell), dzdy = (z(r + 1, c) - z(r - 1, c)) / (2 * cell);
-      var slope = Math.atan(Math.hypot(dzdx, dzdy)), asp = Math.atan2(dzdy, -dzdx);
-      var h = Math.cos(ALT) * Math.cos(slope) + Math.sin(ALT) * Math.sin(slope) * Math.cos(AZ - asp);
-      var v = Math.round(255 * Math.max(0, Math.min(1, h))), i = (r * n + c) * 4;
-      im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255;
-    }
-    ctx.putImageData(im, 0, 0);
-  }
   function twinHtml(e) {
-    if (!D.relief || !D.relief[e.id] || !D.relief[st.target.id]) return '';
-    var res = { Mars: '463 m (MOLA)', Moon: '80 m (LOLA)' }[st.target.body];
-    return '<h3>Twin pictures</h3><div class="twins"><figure><canvas id="tw_t" aria-label="Shaded relief of the target"></canvas><figcaption>' + esc(st.target.name) + '<br>source ' + res + '</figcaption></figure><figure><canvas id="tw_e" aria-label="Shaded relief of this Earth square"></canvas><figcaption>This Earth square<br>source 30 m (Copernicus)</figcaption></figure></div>' +
-      '<small>Both pictures are 10 km wide (bar = 5 km), resampled to the same 500 m cells, same sun (from top left) and 3x height exaggeration. Resampled for the picture only; the scoring uses the same cells.</small>';
+    var nat = { Mars: '463 m (MOLA), upsampled to the picture grid, no extra detail', Moon: '80 m (LOLA), area-averaged to the picture grid' }[st.target.body];
+    return '<h3>Twin pictures</h3><div class="twins"><figure><img src="data/relief/' + st.target.id + '.png" alt="Shaded relief of ' + esc(st.target.name) + '" width="64" height="64"><div class="bar5"><i></i><span>5 km</span></div><figcaption>' + esc(st.target.name) + '<br>native ' + nat + '</figcaption></figure>' +
+      '<figure><img src="data/relief/' + e.id + '.png" alt="Shaded relief of this Earth square" width="64" height="64"><div class="bar5"><i></i><span>5 km</span></div><figcaption>This Earth square<br>native 30 m (Copernicus surface model), area-averaged to the picture grid</figcaption></figure></div>' +
+      '<small>Each picture is 10 km wide on a 64 x 64 grid (156 m per pixel), same sun (from top left, 45° high) and 3x height exaggeration. Resampled for the picture only; the scores use 500 m cells.</small>';
   }
-  function drawTwins(e) {
-    var a = $('tw_t'), b = $('tw_e'); if (!a || !b) return; shade(a, D.relief[st.target.id]); shade(b, D.relief[e.id]);
-  }
+  function drawTwins() {}
 
   function renderResult() {
     var el = $('result');
@@ -263,17 +284,17 @@
     var e = sel, k = e._tier, c = climate(e), cf = confidence(e);
     var rows = metricRows(e).map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('');
     var h = '<div><span class="chip ' + k + '">' + LABEL[k] + '</span> <span class="sub">' + esc(GROUPS[e.group]) + ' &middot; ' + e.lat.toFixed(3) + ', ' + e.lon.toFixed(3) + '</span></div>' +
-      verdictHtml(e) + '<div class="best">Best months: <b>' + (e._best.length ? esc(N.monthsText(e._best)) : 'none fits your test') + '</b></div>' + stripHtml(e) +
+      verdictHtml(e) + '<div class="best">Best months: <b>' + (e._best.length ? esc(N.monthsText(e._best)) : 'none fits your test') + '</b></div>' + stripHtml(e) + monthNotes(e) +
       '<small>★ best, ✓ good, ~ partial, × poor (number = fit 0-100, weakest factor). Source: ' + esc(c.src) + '.</small>' +
       '<table>' + rows + '</table><div class="chartbox"><canvas id="slopechart" width="340" height="90"></canvas><small><i class="dot b"></i>target slope spread <i class="dot g"></i>this square</small></div>' +
       twinHtml(e) + '<div class="conf"><b>Confidence: ' + cf.level + '.</b> ' + cf.items.map(esc).join('; ') + '.</div>' +
       '<div class="limits"><b>What this test cannot copy.</b> Gravity, thin air and radiation. Real ' + (st.target.body === 'Moon' ? 'lunar' : 'Martian') + ' temperatures: Earth air temperature here only tells you when conditions suit your test. A terrain match is not a geology match. 500 m cells hide rocks and steps. Earth heights include trees and buildings. Climate is a typical-year average.</div>' +
-      '<div class="btns"><button data-act="brief">Test site brief (print / PDF)</button><button data-act="cmp">Compare with another square</button></div>';
+      '<div class="btns"><button data-act="brief">Test site brief (print / PDF)</button><button data-act="addcal">Add to calendar</button><button data-act="cmp">Compare with another square</button></div>';
     if (selB) {
       var A = metricRows(sel), B = metricRows(selB);
       h += '<h3>Compare</h3><table><tr><th></th><th>A ' + sel.lat.toFixed(2) + ', ' + sel.lon.toFixed(2) + '</th><th>B ' + selB.lat.toFixed(2) + ', ' + selB.lon.toFixed(2) + '</th></tr>' + A.map(function (r, i) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td><td>' + esc(B[i][1]) + '</td></tr>'; }).join('') + '</table><button data-act="clearb">Clear B</button>';
     }
-    el.innerHTML = h; chart(e); drawTwins(e);
+    el.innerHTML = h; chart(e);
   }
 
   function openBrief() {
@@ -287,7 +308,7 @@
       '<h2>Location</h2><p>' + esc(GROUPS[e.group]) + ', 10 km square centred at ' + e.lat.toFixed(3) + ', ' + e.lon.toFixed(3) + '.</p>' +
       '<h2>Test and target</h2><p>Stand-in for: <b>' + esc(t.name) + '</b> (' + t.body + ').</p><p>Test needs (user choice or our assumption, not a mission requirement): ' + esc(need) + '</p>' +
       '<h2>Terrain match</h2><table>' + metricRows(e).map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>' +
-      '<h2>When: 12-month fit</h2>' + stripHtml(e) + '<p>Best months: <b>' + (e._best.length ? esc(N.monthsText(e._best)) : 'none fits') + '</b>. Data: ' + esc(c.src) + '. Typical-year average, not a forecast.</p>' + second +
+      '<h2>When: 12-month fit</h2>' + stripHtml(e) + monthNotes(e) + '<p>Best months: <b>' + (e._best.length ? esc(N.monthsText(e._best)) : 'none fits') + '</b>. Data: ' + esc(c.src) + '. Typical-year average, not a forecast.</p>' + second +
       '<h2>What this test cannot copy</h2><ul><li>Gravity, thin air and radiation.</li><li>Real Moon/Mars temperatures: Earth temperature only shows when conditions suit the test.</li><li>Geology and chemistry; rocks, steps and slopes below 500 m; dust storms.</li></ul>' +
       '<h2>Confidence and data</h2><p>' + esc(cf.level) + '. ' + cf.items.map(esc).join('; ') + '.</p><p class="sub">Data: Copernicus DEM GLO-30 (ESA), LOLA and MOLA (NASA), NASA POWER climatology' + '' + '. See docs/REFERENCES.md.</p>';
     $('brief').hidden = false; window.scrollTo(0, 0);
@@ -299,15 +320,15 @@
       var bo = 1e9, ba = 1e9;
       D.earth.forEach(function (e) { var d = SC.distance(e, t); ba = Math.min(ba, d); if (e.group.indexOf('oman') === 0) bo = Math.min(bo, d); });
       var a = SC.gapTier(bo), b = SC.gapTier(ba);
-      rows += '<tr><td>' + esc(t.name) + '<br><small>' + t.body + '</small></td><td><span class="chip ' + a + '">' + GLABEL[a] + '</span></td><td><span class="chip ' + b + '">' + GLABEL[b] + '</span>' + (b !== a ? ' &larr; second site helps' : '') + '</td></tr>';
+      var sn = stabOf(t); rows += '<tr><td>' + esc(t.name) + (sn && sn.threshold_sensitive ? ' <span title="threshold-sensitive">&#9888;</span>' : '') + '<br><small>' + t.body + '</small></td><td><span class="chip ' + a + '">' + GLABEL[a] + '</span></td><td><span class="chip ' + b + '">' + GLABEL[b] + '</span>' + (b !== a ? ' &larr; second site helps' : '') + '</td></tr>';
     });
-    $('gaptable').innerHTML = '<table><tr><th>Target</th><th>Oman only</th><th>+ Meteor Crater, Atacama</th></tr>' + rows + '</table><p class="sub">GAP = no square we hold is as close to the target as the closest 5% of Earth-square pairs are to each other.</p>';
+    $('gaptable').innerHTML = '<table><tr><th>Target</th><th>Oman only</th><th>+ Meteor Crater, Atacama</th></tr>' + rows + '</table><p class="sub">NO QUALIFYING CANDIDATE = no square we searched is as close to the target as the closest 5% of Earth-square pairs are to each other. It says nothing about places we did not search. &#9888; = threshold-sensitive (tier changes with window size, cell size or threshold).</p>';
   }
 
   function renderBlind() {
-    var b = D.results.blind_test, h = '<p class="sub">The scorer never sees site names, groups or coordinates, only terrain numbers. Afterwards we look up where known practice sites landed among all ' + D.results.n_earth_windows + ' Earth squares (lower % = better).</p><table><tr><th>Known site</th><th>Rank on best Mars target</th><th>Rank on average over Mars targets</th></tr>';
+    var b = D.results.blind_test, h = '<p class="sub"><b>A sanity check, not validation.</b> The scorer never sees site names, groups or coordinates, only terrain numbers. Afterwards we look up where known practice sites landed among all ' + D.results.n_earth_windows + ' Earth squares (lower % = better).</p><table><tr><th>Known site</th><th>Rank on best Mars target</th><th>Rank on average over Mars targets</th></tr>';
     b.forEach(function (x) { h += '<tr><td>' + esc(x.site) + '</td><td class="mono">top ' + x.top_pct_best_mars_target + '%</td><td class="mono">top ' + x.top_pct_mean_over_mars_targets + '%</td></tr>'; });
-    h += '</table><div class="limits"><b>Honest reading.</b> The AMADEE-18 area (Marmul, about 15 km radius, approximate) ranks top ' + b[0].top_pct_mean_over_mars_targets + '% on average over Mars targets but only top ' + b[0].top_pct_best_mars_target + '% on its single best target. Meteor Crater ranks well on average (top ' + b[1].top_pct_mean_over_mars_targets + '%); the Atacama tile is mid-table on average (top ' + b[2].top_pct_mean_over_mars_targets + '%) because it is mostly steep Andes terrain. A site ranking high is a sanity check, not proof.</div>';
+    h += '</table><div class="limits"><b>Honest reading.</b> The AMADEE-18 area (Marmul, about 15 km radius, approximate) ranks top ' + b[0].top_pct_mean_over_mars_targets + '% on average over Mars targets but only top ' + b[0].top_pct_best_mars_target + '% on its single best target. Meteor Crater ranks well on average (top ' + b[1].top_pct_mean_over_mars_targets + '%); the Atacama tile is mid-table on average (top ' + b[2].top_pct_mean_over_mars_targets + '%) because it is mostly steep Andes terrain. A site ranking high is a sanity check, not proof. See the Baseline check tab for the comparison with random squares.</div>';
     $('blind').innerHTML = h;
   }
 
@@ -317,25 +338,94 @@
     $('second').innerHTML = h;
   }
 
+  var replayCircle = null;
   function renderReplay() {
     var t = st.target, M = 12, mar = D.earth.filter(function (e) { var dx = (e.lon - 55.23) * 111.32 * Math.cos(e.lat * Math.PI / 180), dy = (e.lat - 18.19) * 111.32; return Math.sqrt(dx * dx + dy * dy) <= 15; });
     if (!mar.length) { $('replay').innerHTML = '<p>No squares near Marmul in the data.</p>'; return; }
     SC.rankAll(D.earth, t);
     var ranks = mar.map(function (e) { return e.rank; }).sort(function (a, b) { return a - b; }), med = ranks[Math.floor(ranks.length / 2)];
-    var needs = { tlo: 5, thi: 35, wmin: 0, wmax: 12, rhmax: 100, smin: 4 };
+    var needs = AMADEE_NEEDS;
     var avg = { tmax: [], tmin: [], wind: [], rh: [], srad: [] };
     for (var m = 0; m < M; m++) Object.keys(avg).forEach(function (k) { avg[k].push(mar.reduce(function (s, e) { return s + climate(e)[k][m]; }, 0) / mar.length); });
     var fits = N.allFits(avg, needs), best = N.bestMonths(fits), feb = fits[1], mx = Math.max.apply(null, fits);
     var strip = '<div class="strip">' + fits.map(function (f, i) { var k = N.needTier(f), star = best.indexOf(i) >= 0; return '<div class="mc ' + k + (star ? ' best' : '') + '"><span>' + N.MON[i].charAt(0) + '</span><b>' + Math.round(f) + '</b><i>' + (star ? '★' : (k === 'gap' ? '×' : (k === 'partial' ? '~' : '✓'))) + '</i></div>'; }).join('') + '</div>';
-    var verdict = best.indexOf(1) >= 0 ? 'The planner picks February among its best months.' : 'The planner does NOT pick February as a best month (best: ' + N.monthsText(best) + ', fit ' + Math.round(mx) + '). February still scores ' + Math.round(feb) + ' (' + (N.needTier(feb) === 'match' ? 'a good month' : N.needTier(feb) === 'partial' ? 'a partial month' : 'a poor month') + ') under these assumptions.';
-    $('replay').innerHTML = '<p class="sub">Region: Marmul area, Dhofar (approximate; the exact AMADEE-18 site is not confirmed). ' + mar.length + ' squares within 15 km of 18.19&deg;N 55.23&deg;E.</p>' +
+    var verdict = best.indexOf(1) >= 0 ? 'The planner picks February among its best months.' : 'The planner does NOT pick February as a best month (best: ' + N.monthsText(best) + ', fit ' + Math.round(mx) + '). February scores ' + Math.round(feb) + ' (' + (N.needTier(feb) === 'match' ? 'a good month' : N.needTier(feb) === 'partial' ? 'a partial month' : 'a poor month') + ') under these assumed needs.';
+    $('replay').innerHTML = '<p class="sub"><b>Historical illustration with assumed needs.</b> The region is a 15 km circle around 18.19&deg;N 55.23&deg;E (Marmul area, Dhofar). The exact AMADEE-18 site is approximate and not confirmed. ' + mar.length + ' squares fall inside the circle.</p>' +
       '<p><b>Terrain:</b> median rank top ' + Math.max(1, Math.round(med * 100)) + '% of ' + D.earth.length + ' squares for target <b>' + esc(t.name) + '</b> (change the target on the Planner tab).</p>' +
-      '<p><b>Test needs used (our assumption, not the mission\'s):</b> field work with day max ≤ 35 °C, night min ≥ 5 °C, sunlight ≥ 4 kWh/m²/day. Source: ' + esc(climate(mar[0]).src) + '.</p>' + strip +
-      '<p class="best">Planner\'s best months: <b>' + esc(N.monthsText(best)) + '</b></p><p><b>Real mission:</b> the AMADEE-18 field phase ran in <b>February 2018</b> in the Dhofar region of Oman (Austrian Space Forum, oewf.org/en/amadee-18).</p><p><b>Verdict:</b> ' + esc(verdict) + '</p>' +
-      '<div class="limits"><b>Honest reading.</b> The mission\'s real constraints (logistics, team schedule, season for the local hosts) are unknown to us, so a different month does not mean the planner is wrong or the mission was. Climate is a typical-year average, not February 2018 weather.</div>' +
-      '<div class="btns"><button id="rp-go">Show these squares on the map</button></div>';
-    var go = $('rp-go'); if (go) go.onclick = function () { FIELDS.forEach(function (f) { if (needs[f] !== undefined) st.n[f] = needs[f]; }); syncInputs(); document.querySelector('.tab[data-view=map]').click(); map.setView([18.19, 55.23], 9); sel = mar[0]; renderAll(); };
+      '<p><b>Assumed needs (ours, written down before the replay; see docs/VALIDATION.md):</b> day highs up to 35 °C, night lows at least 5 °C, sunlight at least 4 kWh/m²/day. The OeWF page gives no numeric limits; it only says February temperatures at the site typically range 16-27 °C with under 10 mm of rain (shown for reference, not used).</p>' + strip +
+      '<p class="best">Planner\'s best months: <b>' + esc(N.monthsText(best)) + '</b></p><p><b>Real mission:</b> the AMADEE-18 field phase ran in <b>February 2018</b> in the Dhofar region of Oman (Austrian Space Forum, oewf.org/en/amadee-18, read 2026-11-14).</p><p><b>Result:</b> ' + esc(verdict) + '</p>' +
+      '<div class="limits"><b>Honest reading.</b> The mission\'s real constraints (logistics, crew schedule, local hosts) are unknown to us, so a different best month does not mean the planner or the mission was wrong. Climate is a typical-year average, not February 2018 weather. Source: ' + esc(climate(mar[0]).src) + '.</div>' +
+      '<div class="btns"><button id="rp-go">Show the circle on the map</button></div>';
+    var go = $('rp-go'); if (go) go.onclick = function () { FIELDS.forEach(function (f) { if (needs[f] !== undefined) st.n[f] = needs[f]; }); syncInputs(); document.querySelector('.tab[data-view=map]').click(); map.setView([18.19, 55.23], 9); if (replayCircle) map.removeLayer(replayCircle); replayCircle = L.circle([18.19, 55.23], { radius: 15000, color: '#fff', weight: 2, dashArray: '6 6', fillOpacity: 0 }).bindTooltip('AMADEE-18 area (approximate)').addTo(map); sel = mar[0]; renderAll(); };
   }
+
+  // ---- baseline and stability view
+  function renderBase() {
+    if (!D.base) { $('base').innerHTML = '<p>Baseline file missing.</p>'; return; }
+    var h = '<p class="sub"><b>Retrospective check, not independent validation.</b> For each target, a known site\'s median rank among all ' + D.earth.length + ' Earth squares is compared with 100 random draws of the same number of squares (random is about 50%). Lower rank = closer to the target.</p><table><tr><th>Known site</th><th>Body</th><th>Median rank</th><th>Random median</th><th>Targets better than random</th></tr>';
+    D.base.summary.forEach(function (x) { h += '<tr><td>' + esc(x.site) + '</td><td>' + x.body + '</td><td class="mono">' + x.median_rank_full_pct + '%</td><td class="mono">' + x.median_random_pct + '%</td><td class="mono">' + x.targets_beating_random + ' of ' + x.n_targets + '</td></tr>'; });
+    h += '</table><h3>Per target (rank %, bar = rank, tick = random median)</h3><table><tr><th>Target</th><th>AMADEE-18 area</th><th>Meteor Crater</th><th>Atacama tile</th></tr>';
+    D.base.rows.forEach(function (r) {
+      h += '<tr><td>' + esc(r.name) + '<br><small>' + r.body + '</small></td>' + [0, 1, 2].map(function (i) { var x = r.sites[i]; return '<td><div class="rb"><i style="width:' + x.rank_full_pct + '%"></i><u style="left:' + x.random_median_pct + '%"></u></div><small class="mono">' + x.rank_full_pct + '%' + (x.beats_random ? ' ✓' : '') + '</small></td>'; }).join('') + '</tr>';
+    });
+    h += '</table><p class="sub">✓ = better than 95% of random draws. Plain reading: the Mars analog sites (AMADEE-18 area, Meteor Crater) rank around 20% on Mars targets, better than random but not on every target. The Atacama tile, a known Mars analog region, ranks worse than random for Mars at this scale (our tile is mostly steep Andes terrain). Muscat mountains look like lunar south-pole terrain to this metric, so a good rank here is not proof of a good analog.</p>';
+    if (D.stab) {
+      h += '<h3>Stability: window size 5/10/20 km, cell size 500 m/1 km, thresholds 5-20% vs 10-30%</h3><table><tr><th>Target</th><th>Main tier</th><th>Tiers seen</th><th>Best Oman square closer than</th><th></th></tr>';
+      D.stab.summary.forEach(function (x) {
+        var res = D.results.gap.filter(function (g) { return g.name === x.target; })[0], bt = res ? res.tier_oman : x.base_tier;
+        h += '<tr><td>' + esc(x.target) + '</td><td><span class="chip ' + bt + '">' + GLABEL[bt] + '</span></td><td>' + x.tiers_seen.map(function (k) { return GLABEL[k]; }).join(', ') + '</td><td class="mono">' + x.band_pct[0] + '-' + x.band_pct[1] + '% of pairs</td><td>' + (x.threshold_sensitive ? 'threshold-sensitive' : 'stable') + '</td></tr>';
+      });
+      h += '</table><p class="sub">Treat every tier as approximate. The rank band shows how far the result moves when the method settings change.</p>';
+    }
+    $('base').innerHTML = h;
+  }
+
+  // ---- calendar and two-site plan
+  function addCal() { if (!sel) return; if (st.cal.indexOf(sel.id) < 0) st.cal.push(sel.id); if (st.cal.length > 6) st.cal.shift(); renderCal(); }
+  function renderCal() {
+    var rows = st.cal.map(function (id) { return D.earth.filter(function (e) { return e.id === id; })[0]; }).filter(Boolean);
+    var h = '<p class="sub">Months across, chosen squares down. Fit uses your test needs on the Planner tab (our assumptions unless you changed them). Symbol and pattern repeat the colour: ✓ solid = good, ~ dots = partial, × hatch = poor.</p>';
+    if (!rows.length) h += '<p class="hint">No squares yet. Click a square on the map, then "Add to calendar".</p>';
+    else {
+      h += '<table class="cal"><tr><th></th>' + N.MON.map(function (m) { return '<th>' + m + '</th>'; }).join('') + '</tr>';
+      rows.forEach(function (e) {
+        var f = N.allFits(climate(e), st.n);
+        h += '<tr><th>' + esc(GROUPS[e.group]) + '<br><small>' + e.lat.toFixed(2) + ', ' + e.lon.toFixed(2) + '</small></th>' + f.map(function (x) { var k = N.needTier(x); return '<td class="cc ' + k + '">' + Math.round(x) + '<br>' + (k === 'gap' ? '×' : (k === 'partial' ? '~' : '✓')) + '</td>'; }).join('') + '</tr>';
+      });
+      h += '</table><div class="btns"><button data-act="clearcal">Clear calendar</button></div>';
+    }
+    h += '<h3>Two-site plan (only if your test can really be split)</h3><label class="chk"><input type="checkbox" id="split"' + (st.split ? ' checked' : '') + '> The terrain part and the climate-dependent part of my test can be done at different sites and times</label><div id="splitres"></div>';
+    $('cal').innerHTML = h;
+    $('split').onchange = function () { st.split = $('split').checked; splitPlan(); };
+    splitPlan();
+  }
+  function splitPlan() {
+    var el = $('splitres'); if (!el) return;
+    if (!st.split) { el.innerHTML = '<p class="sub">No split suggested. If terrain and climate needs must be met together, one square has to satisfy both (see the Planner tab).</p>'; return; }
+    var cand = D.earth.filter(function (e) { return e.group.indexOf('oman') === 0 && !masked(e); });
+    cand.forEach(function (e) { e._tf = N.terrainFit(e.d, D.meta.thr_match_dist, D.meta.thr_partial_dist); e._cf = Math.max.apply(null, N.allFits(climate(e), st.n)); });
+    var one = cand.slice().sort(function (a, b) { return Math.min(b._tf, b._cf) - Math.min(a._tf, a._cf); })[0];
+    var A = cand.slice().sort(function (a, b) { return b._tf - a._tf; })[0], B = cand.slice().sort(function (a, b) { return b._cf - a._cf; })[0];
+    var line = function (e) { return esc(GROUPS[e.group]) + ' ' + e.lat.toFixed(2) + ', ' + e.lon.toFixed(2); };
+    if (Math.min(one._tf, one._cf) >= 75) el.innerHTML = '<p>One site is enough: ' + line(one) + ' has terrain fit ' + Math.round(one._tf) + ' and a month at fit ' + Math.round(one._cf) + '. No split needed.</p>';
+    else el.innerHTML = '<p><b>Phase 1, terrain-dependent work:</b> ' + line(A) + ' (terrain fit ' + Math.round(A._tf) + ').</p><p><b>Phase 2, climate-dependent work:</b> ' + line(B) + ' (best month fit ' + Math.round(B._cf) + ': ' + esc(N.monthsText(N.bestMonths(N.allFits(climate(B), st.n)))) + ').</p><p class="sub">Valid only if the two phases really are independent. Best single square: ' + line(one) + ', terrain ' + Math.round(one._tf) + ', climate ' + Math.round(one._cf) + '. Best fit among the squares searched, not a global best.</p>';
+  }
+
+  // ---- demo (real computed outputs only)
+  function runDemo(kind) {
+    document.querySelector('.tab[data-view=map]').click();
+    if (kind === 'good') {
+      st.target = D.targets.filter(function (t) { return t.name === 'Jezero crater'; })[0]; $('target').value = st.target.id;
+      var p = N.PRESETS.rover; FIELDS.forEach(function (f) { st.n[f] = p[f]; }); st.mode = 'both'; st.month = 'best'; $('mode').value = 'both'; $('month').value = 'best'; syncInputs(); recompute();
+      var c = D.earth.filter(function (e) { return e.group.indexOf('oman') === 0 && !masked(e) && e._fit >= 75; }).sort(function (a, b) { return a.d - b.d; })[0] || bestOf(function (e) { return e.group.indexOf('oman') === 0; });
+      sel = c; map.setView([c.lat, c.lon], 9); addCalQuiet(c);
+    } else if (kind === 'none') {
+      st.target = D.targets.filter(function (t) { return t.name.indexOf('Shackleton') === 0; })[0]; $('target').value = st.target.id; st.mode = 'both'; $('mode').value = 'both'; recompute();
+      sel = bestOf(function (e) { return e.group.indexOf('oman') === 0; }); map.setView([sel.lat, sel.lon], 8);
+    } else if (kind === 'brief') { if (sel) { renderAll(); openBrief(); } return; }
+    renderAll();
+  }
+  function addCalQuiet(e) { if (st.cal.indexOf(e.id) < 0) st.cal.push(e.id); }
 
   // share link
   function writeHash() {
