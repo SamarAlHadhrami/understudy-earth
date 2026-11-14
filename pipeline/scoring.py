@@ -12,11 +12,11 @@ NS, NR = len(SLOPE_EDGES) - 1, len(ROUGH_EDGES) - 1
 MATCH_RANK, PARTIAL_RANK = 0.05, 0.20
 FEATS = ["slope_w1", "slope_p90", "steep_share", "ln_rough500", "ln_rough1k", "ln_relief"]
 
-# Rover task: only the slope limit is sourced; used for the separate "drivable share" line.
+# Rover task: the slope limit is user-set; used for the separate "share below the chosen slope" line.
 TASKS = {
-    "rover": {"name": "Rover driving", "max_slope_deg": 17.0, "slider": [5, 30],
-              "source": "Mars-weight test vehicle: embedding near 17 deg in loose sand, 22 deg firm rock, 28 deg cohesive soil "
-                        "(Traverse Performance Characterization for the MSL Rover); design target ~30 deg (NASA JPL)."},
+    "rover": {"name": "Rover driving", "max_slope_deg": 15.0, "slider": [5, 30], "user_set": True,
+              "source": "User-set slope limit (not a safe driving limit). Observed reference points only: Curiosity max tilt 25.34 deg through sol 2488 "
+                        "(Rankin et al., JPL, 2019); Opportunity tilt 32 deg on 2016-03-10 (JPL news, 2016-03-31); Perseverance climbed about 20 deg on slippery sand (JPL news, 2024-10-28)."},
 }
 SCALES = None  # set by set_scales()
 

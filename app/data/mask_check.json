@@ -1,0 +1,125 @@
+{
+ "flagged_total": 55,
+ "flagged_oman": 7,
+ "rows": [
+  {
+   "target": "Shackleton rim/wall (approx. coords)",
+   "all": "gap",
+   "masked": "gap",
+   "dist_all": 1.259,
+   "dist_masked": 1.259
+  },
+  {
+   "target": "Malapert massif",
+   "all": "gap",
+   "masked": "gap",
+   "dist_all": 0.685,
+   "dist_masked": 0.685
+  },
+  {
+   "target": "Faustini",
+   "all": "gap",
+   "masked": "gap",
+   "dist_all": 0.495,
+   "dist_masked": 0.495
+  },
+  {
+   "target": "Nobile",
+   "all": "gap",
+   "masked": "gap",
+   "dist_all": 0.315,
+   "dist_masked": 0.315
+  },
+  {
+   "target": "de Gerlache",
+   "all": "gap",
+   "masked": "gap",
+   "dist_all": 0.339,
+   "dist_masked": 0.339
+  },
+  {
+   "target": "Cabeus",
+   "all": "partial",
+   "masked": "partial",
+   "dist_all": 0.214,
+   "dist_masked": 0.214
+  },
+  {
+   "target": "Jezero crater",
+   "all": "match",
+   "masked": "match",
+   "dist_all": 0.065,
+   "dist_masked": 0.065
+  },
+  {
+   "target": "Gale mound south flank",
+   "all": "gap",
+   "masked": "gap",
+   "dist_all": 0.89,
+   "dist_masked": 0.89
+  },
+  {
+   "target": "Gale mound (Aeolis Mons)",
+   "all": "gap",
+   "masked": "gap",
+   "dist_all": 0.42,
+   "dist_masked": 0.42
+  },
+  {
+   "target": "Gale landing area (Bradbury)",
+   "all": "partial",
+   "masked": "partial",
+   "dist_all": 0.177,
+   "dist_masked": 0.177
+  },
+  {
+   "target": "Oxia Planum",
+   "all": "match",
+   "masked": "match",
+   "dist_all": 0.031,
+   "dist_masked": 0.031
+  },
+  {
+   "target": "Meridiani Planum",
+   "all": "match",
+   "masked": "match",
+   "dist_all": 0.015,
+   "dist_masked": 0.015
+  },
+  {
+   "target": "Gusev crater",
+   "all": "match",
+   "masked": "match",
+   "dist_all": 0.022,
+   "dist_masked": 0.022
+  },
+  {
+   "target": "Mawrth Vallis",
+   "all": "partial",
+   "masked": "partial",
+   "dist_all": 0.125,
+   "dist_masked": 0.131
+  },
+  {
+   "target": "Melas Chasma (Valles Marineris)",
+   "all": "gap",
+   "masked": "gap",
+   "dist_all": 0.435,
+   "dist_masked": 0.435
+  },
+  {
+   "target": "Olympus Mons flank",
+   "all": "gap",
+   "masked": "gap",
+   "dist_all": 0.273,
+   "dist_masked": 0.273
+  },
+  {
+   "target": "Hellas floor",
+   "all": "partial",
+   "masked": "partial",
+   "dist_all": 0.165,
+   "dist_masked": 0.203
+  }
+ ]
+}
