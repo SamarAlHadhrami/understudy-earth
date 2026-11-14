@@ -1,0 +1,9 @@
+data/
+*.tif
+*.tiff
+*.img
+*.zip
+__pycache__/
+.pytest_cache/
+work/
+node_modules/
