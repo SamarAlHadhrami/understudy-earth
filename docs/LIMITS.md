@@ -17,3 +17,6 @@
 - The Jezero finer check uses one 10 km window of a 21 km DTM; 30 m cells still hide rocks and steps.
 - 90 m squares are coarser, have no land-cover check, and the box includes neighbouring countries and sea edges.
 - Meteomatics values are not used or published; NASA POWER is the only climate source in the app.
+- Click-on-Mars numbers describe the nearest 10 km window on a 25 km grid (463 m source), not the exact spot; above 60 degrees latitude and wherever data is missing the answer is "unknown". Lunar clicks work only at 80 S to 90 S.
+- The world set is a chosen set of places, not every place on Earth, with approximate reference points and 90 m data; no claim of a global best and no claim that any of them is a good analog.
+- No rock or dust measure is used; the day-night air temperature swing is context only.

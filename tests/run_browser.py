@@ -43,6 +43,16 @@ try:
             n0 = pg.locator("#map svg path.leaflet-interactive").count(); pg.check("#show90"); pg.wait_for_timeout(4000); n1 = pg.locator("#map svg path.leaflet-interactive").count(); assert n1 > n0 + 4000, (n0, n1)
             pg.evaluate("document.querySelectorAll('#map svg path.leaflet-interactive')[%d].dispatchEvent(new MouseEvent('click',{bubbles:true}))" % (n1 - 5)); pg.wait_for_timeout(400); assert "90 m data" in pg.inner_text("#result")
             pg.uncheck("#show90"); pg.wait_for_timeout(500)
+            pg.evaluate("document.getElementById('brief').hidden=true"); pg.click(".tab[data-view=sky]"); pg.wait_for_function("document.getElementById('marsimg').complete && document.getElementById('marsimg').naturalWidth>0"); pg.wait_for_timeout(1500)
+            pg.locator("#marsimg").scroll_into_view_if_needed(); bb = pg.locator("#marsimg").bounding_box(); pg.mouse.click(bb["x"] + bb["width"] * (77.5 + 180) / 360, bb["y"] + bb["height"] * (60 - 18.4) / 120); 
+            try: pg.wait_for_selector("#skyres h3", timeout=15000)
+            except Exception: print("SKY DEBUG", pg.evaluate("(function(){var e=document.elementFromPoint(%f,%f);return e.tagName+'#'+e.id+'.'+e.className})()" % (bb["x"] + bb["width"] * 0.714, bb["y"] + bb["height"] * 0.35)), errs[-3:], pg.inner_text("#skyres")[:200], pg.evaluate("document.getElementById('v-sky').className"), bb); raise
+            pg.wait_for_timeout(500)
+            assert "Mars near" in pg.inner_text("#skyres") and "coarse 463 m" in pg.inner_text("#skyres").lower() and "Closest Oman squares" in pg.inner_text("#skyres") and "Best fit for your test" in pg.inner_text("#skyres")
+            pg.click("#skytabs button[data-body=moon]"); pg.wait_for_timeout(1500); pg.locator("#moonc").scroll_into_view_if_needed(); cb = pg.locator("#moonc").bounding_box(); pg.mouse.click(cb["x"] + cb["width"] * 0.5, cb["y"] + cb["height"] * 0.5); pg.wait_for_timeout(2000); assert "Moon near" in pg.inner_text("#skyres") and "south pole" in pg.inner_text("#skyres")
+            pg.mouse.click(cb["x"] + 2, cb["y"] + 2); pg.wait_for_timeout(300); assert "Unknown" in pg.inner_text("#skyres")
+            pg.click(".tab[data-view=world]"); pg.wait_for_timeout(2500); assert "not every place on Earth" in pg.inner_text("#v-world") and pg.locator("#worldlist tr").count() > 25
+            pg.click(".tab[data-view=map]")
             pg.click("[data-demo=fail]"); pg.wait_for_timeout(300); assert "does NOT pick February" in pg.inner_text("#replay") and "Why February" in pg.inner_text("#replay"); pg.screenshot(path=os.path.join(ROOT, "docs", "screens", name + "_fail.png")); pg.click(".tab[data-view=map]"); pg.click("[data-demo=good]"); pg.wait_for_timeout(200)
             pg.click("[data-act=brief]"); pg.wait_for_timeout(200); assert "Test Site Brief" in pg.inner_text("#brief"); pg.screenshot(path=os.path.join(ROOT, "docs", "screens", name + "_brief.png"))
             pg.click("[data-act=closebrief]")

@@ -9,3 +9,5 @@
 8. Demo bar on the map: 1 Good match, 2 No qualifying candidate, 3 Brief (real computed outputs).
 9. Share link: choices are stored in the address (#t=...&tlo=...).
 10. Jezero story tab: finer-scale check against the Jezero DTM with twin pictures and the closest Oman squares. Result card also shows access (OpenStreetMap) and geology notes for Dhofar and Muscat squares. Checkbox "Show whole-Oman 90 m squares" adds an optional coarser layer.
+11. Click Mars / Moon tab: click the Mars slope map (60 S to 60 N) or the lunar south-pole disc; shows the nearest window, its numbers, closest Oman squares, Fit Verdict and a Low-confidence note. Unknown where data is missing.
+12. World set tab: dots for 27 chosen places plus Meteor Crater, Atacama and Oman, coloured by terrain tier for the chosen target; the large Oman dot opens the fine map.

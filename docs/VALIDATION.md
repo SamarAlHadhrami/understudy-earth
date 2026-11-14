@@ -72,3 +72,7 @@ Pool v1 = 627 squares (30 m tiles), recorded in meta.json. Pool v2 = v1 + 4756 s
 
 ## 10. Access factor
 OpenStreetMap distances to the nearest paved or main road and nearest town for 5174 squares inside the Oman box (`pipeline/access.py`). Not space data; permission to enter is unverified. Outside sites have no access data.
+
+## 11. Click anywhere on Mars / Moon pole, and the world set (no change to the pool or method)
+Mars grid: windows are 10 km, spaced 25 km, 60 S to 60 N; the clicked spot is mapped to the nearest window, so numbers describe that window (up to about 18 km away), not the exact spot. Spot check against the named targets (target value vs nearest grid window): Gusev p50 0.24 vs 0.46 deg; Meridiani 0.17 vs 0.31; Oxia 0.47 vs 0.57 (flat sites agree in size); Jezero 0.57 vs 4.43 deg and Hellas floor 0.80 vs 2.21 deg differ because the nearest window straddles the crater rim or basin edge. So click results near steep ground can differ a lot from a named target. Moon: south pole only (LOLA); outside the circle is "unknown". Windows with missing data show "unknown" and no match.
+World set: 27 chosen places at 90 m (dots, coarse) plus Meteor Crater, the Atacama tile and Oman from the main set. The world squares are NOT added to the reference pool, so pool v1 stays frozen and the baseline and stability checks are unchanged (nothing to re-run). Stages b (GCC region at 90 m) and c (wider Middle East) were not built.
