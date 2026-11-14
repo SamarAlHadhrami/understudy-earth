@@ -1,7 +1,7 @@
 # PROGRESS
 
 ## RESUME HERE
-- Current state: core upgraded to a "where and when" planner. Stages 0, 1, 2, 3, 4 done; the second climate source was dropped (licence); NASA POWER only. Stage 5 extras 1-5 done; 6 (whole-Oman 90 m) and 7 (click on Mars) not done.
+- Current state: core upgraded to a "where and when" planner. Stages 0, 1, 2, 3, 4 done; the second climate source was dropped (licence); NASA POWER only. Round 2: defaults realistic, second climate source removed, Fit Verdict and twin pictures done; extras 3-9 not started, 10 skipped.
 - Deploy: `git subtree push --prefix app origin gh-pages`; owner must enable Pages (Settings > Pages > gh-pages / root). Link: https://samaralhadhrami.github.io/understudy-earth/
 - Tests: `python -m pytest tests -q`, `node tests/check_js_score.js`, `node tests/check_needs.js`, `PYTHONIOENCODING=utf-8 python tests/run_browser.py`.
 - Rebuild data: `python pipeline/build_windows.py && python pipeline/analyse.py && python pipeline/verify.py && python pipeline/power.py`.

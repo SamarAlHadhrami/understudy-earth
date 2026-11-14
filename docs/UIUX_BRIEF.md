@@ -5,3 +5,5 @@ Layout: desktop = map left, panel right; phone = map on top, panel below, no hor
 States: loading error message; empty result hint.
 Print: Test Site Brief has its own print stylesheet (white, one page).
 30 s demo path: see DEMO_SCRIPT.md.
+
+Result card order: Fit Verdict (overall %, factor bars, weight sliders), 12-month strip, metrics, slope chart, twin pictures (shaded relief, same sun and scale, 5 km bar), confidence, limits.

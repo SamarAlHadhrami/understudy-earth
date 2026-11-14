@@ -100,3 +100,8 @@ th{color:var(--mut);font-weight:600}
 .vbar{background:#1a2340;height:10px;border-radius:5px;overflow:hidden}.vbar i{display:block;height:100%}
 .vbar i.match{background:#2ec4b6}.vbar i.partial{background:#f6c453}.vbar i.gap{background:#ff5a5f}
 @media print{.vrow input{display:none}}
+
+.twins{display:flex;gap:10px}.twins figure{margin:0;flex:1;position:relative}
+.twins canvas{width:100%;aspect-ratio:1;image-rendering:auto;border:1px solid #2a3555;border-radius:6px;background:#000}
+.twins figure::after{content:"5 km";position:absolute;left:6px;bottom:34px;color:#fff;font-size:10px;border-top:2px solid #fff;width:50%;padding-top:1px;text-shadow:0 0 3px #000}
+.twins figcaption{font-size:.75rem;color:#9fb0d3}

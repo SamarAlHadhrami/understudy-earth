@@ -6,3 +6,4 @@
 - `second_check.json`: independent slope check rows.
 - `climate_power.json`: {cells: {key: {lat, lon, T2M, T2M_MAX, T2M_MIN, WS2M, RH2M, PRECTOTCORR, ALLSKY_SFC_SW_DWN (12 months each)}}, win: {window id: cell key}, source, accessed}.
 All files together are under 1 MB.
+- `relief.json`: {id: [400 ints]} heights in metres above the window mean on the 20 x 20 grid of 500 m cells, for every Earth window and target (twin pictures). Built by `pipeline/relief.py`.
