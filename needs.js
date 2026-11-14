@@ -10,7 +10,7 @@
     walking: { label: 'Walking test', tlo: 5, thi: 35, wmin: 0, wmax: 7, rhmax: 100, smin: 3, limit: 17 },
     cold: { label: 'Cold test', tlo: -30, thi: 10, wmin: 0, wmax: 12, rhmax: 100, smin: 0, limit: 17 }
   };
-  var DEFAULT = { tlo: 5, thi: 35, wmin: 0, wmax: 12, rhmax: 100, smin: 0, limit: 17 };
+  var DEFAULT = { tlo: 0, thi: 40, wmin: 0, wmax: 12, rhmax: 100, smin: 4, limit: 17 };
 
   function clamp01(x) { return x < 0 ? 0 : (x > 1 ? 1 : x); }
 
