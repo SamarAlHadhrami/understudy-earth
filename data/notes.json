@@ -1,0 +1,9 @@
+{"oman_dhofar": {"title": "Dhofar (AMADEE-18 area): geology notes, not a score",
+ "notes": [
+  {"text": "The Austrian Space Forum says the Dhofar deserts resemble several Mars surface features: sedimentary structures from the Paleocene and Eocene, salt domes of the South Oman Salt Basin, and ancient river beds.", "source": "Austrian Space Forum, AMADEE-18 page, oewf.org/en/amadee-18 (opened 2026-11-14)"},
+  {"text": "The same page says the test site has a wide range of sand and rocky surfaces and a broad variability in inclination, and that the field phase ran for four weeks in February 2018.", "source": "Austrian Space Forum, AMADEE-18 page, oewf.org/en/amadee-18 (opened 2026-11-14)"}],
+ "caveat": "These are the organisers' own descriptions. Our squares are 10 km and cannot see which of these features lie inside them; the exact AMADEE-18 site is approximate."},
+ "oman_muscat": {"title": "Northern Oman (Muscat area): geology note, not a score",
+ "notes": [
+  {"text": "A 2021 study describes the large Samail ophiolite in Oman as exposing serpentinized and carbonated ultramafic rocks in a semi-arid setting with little vegetation, which makes it a Mars analog environment suited to infrared imaging spectroscopy.", "source": "Leask, Ehlmann et al. (2021), Earth and Space Science 8, doi 10.1029/2021EA001637, PMC8596454 (opened 2026-11-15)"}],
+ "caveat": "We have not checked whether our Muscat squares lie on the ophiolite; this note is about Oman in general. Terrain numbers say nothing about rock type."}}

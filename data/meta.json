@@ -70,5 +70,6 @@
    "user_set": true,
    "source": "User-set slope limit (not a safe driving limit). Observed reference points only: Curiosity max tilt 25.34 deg through sol 2488 (Rankin et al., JPL, 2019); Opportunity tilt 32 deg on 2016-03-10 (JPL news, 2016-03-31); Perseverance climbed about 20 deg on slippery sand (JPL news, 2024-10-28)."
   }
- }
+ },
+ "pool_version": "v1: 627 squares from the 30 m tiles (Muscat, Dhofar, Meteor Crater, Atacama), frozen 2026-11-15; whole-Oman 90 m squares are an optional layer ranked against this pool"
 }

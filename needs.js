@@ -97,7 +97,7 @@
     if (d <= thrMatch) return 100;
     var top = 2 * thrPartial; return Math.round(100 * (1 - clamp01((d - thrMatch) / (top - thrMatch))));
   }
-  var FACTOR_NAMES = { terrain: 'Terrain', temp: 'Temperature', wind: 'Wind', dry: 'Dryness', sun: 'Sunlight' };
+  var FACTOR_NAMES = { terrain: 'Terrain', temp: 'Temperature', wind: 'Wind', dry: 'Dryness', sun: 'Sunlight', access: 'Access (OSM)' };
   // Overall fit = weighted mean of the factors with weight > 0. Weights default to 1 (user adjustable).
   function fitVerdict(factors, weights) {
     var keys = Object.keys(factors), sw = 0, sum = 0, worst = null;

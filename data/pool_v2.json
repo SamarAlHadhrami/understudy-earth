@@ -1,0 +1,208 @@
+{
+ "pool_v1": 627,
+ "pool_v2": 5383,
+ "thr_v1": [
+  0.08099365572184106,
+  0.24527898052185337
+ ],
+ "thr_v2": [
+  0.1052411593713396,
+  0.2380962362364872
+ ],
+ "oman_counts_v1": {
+  "match": 4,
+  "partial": 4,
+  "gap": 9
+ },
+ "oman_counts_v2": {
+  "match": 7,
+  "partial": 1,
+  "gap": 9
+ },
+ "rows": [
+  {
+   "target": "Shackleton rim/wall (approx. coords)",
+   "body": "Moon",
+   "tier_v1": "gap",
+   "tier_v2": "gap",
+   "best_oman_v1": 1.259,
+   "best_oman_v2": 1.152,
+   "best_square_v2": "H4156",
+   "best_group_v2": "oman90"
+  },
+  {
+   "target": "Malapert massif",
+   "body": "Moon",
+   "tier_v1": "gap",
+   "tier_v2": "gap",
+   "best_oman_v1": 0.685,
+   "best_oman_v2": 0.694,
+   "best_square_v2": "H4139",
+   "best_group_v2": "oman90"
+  },
+  {
+   "target": "Faustini",
+   "body": "Moon",
+   "tier_v1": "gap",
+   "tier_v2": "gap",
+   "best_oman_v1": 0.495,
+   "best_oman_v2": 0.39,
+   "best_square_v2": "H4138",
+   "best_group_v2": "oman90"
+  },
+  {
+   "target": "Nobile",
+   "body": "Moon",
+   "tier_v1": "gap",
+   "tier_v2": "gap",
+   "best_oman_v1": 0.315,
+   "best_oman_v2": 0.273,
+   "best_square_v2": "H4398",
+   "best_group_v2": "oman90"
+  },
+  {
+   "target": "de Gerlache",
+   "body": "Moon",
+   "tier_v1": "gap",
+   "tier_v2": "gap",
+   "best_oman_v1": 0.339,
+   "best_oman_v2": 0.344,
+   "best_square_v2": "H4632",
+   "best_group_v2": "oman90"
+  },
+  {
+   "target": "Cabeus",
+   "body": "Moon",
+   "tier_v1": "partial",
+   "tier_v2": "partial",
+   "best_oman_v1": 0.214,
+   "best_oman_v2": 0.191,
+   "best_square_v2": "H3983",
+   "best_group_v2": "oman90"
+  },
+  {
+   "target": "Jezero crater",
+   "body": "Mars",
+   "tier_v1": "match",
+   "tier_v2": "match",
+   "best_oman_v1": 0.065,
+   "best_oman_v2": 0.037,
+   "best_square_v2": "H4379",
+   "best_group_v2": "oman90"
+  },
+  {
+   "target": "Gale mound south flank",
+   "body": "Mars",
+   "tier_v1": "gap",
+   "tier_v2": "gap",
+   "best_oman_v1": 0.89,
+   "best_oman_v2": 0.681,
+   "best_square_v2": "H4156",
+   "best_group_v2": "oman90"
+  },
+  {
+   "target": "Gale mound (Aeolis Mons)",
+   "body": "Mars",
+   "tier_v1": "gap",
+   "tier_v2": "gap",
+   "best_oman_v1": 0.42,
+   "best_oman_v2": 0.399,
+   "best_square_v2": "H4025",
+   "best_group_v2": "oman90"
+  },
+  {
+   "target": "Gale landing area (Bradbury)",
+   "body": "Mars",
+   "tier_v1": "partial",
+   "tier_v2": "match",
+   "best_oman_v1": 0.177,
+   "best_oman_v2": 0.103,
+   "best_square_v2": "H3510",
+   "best_group_v2": "oman90"
+  },
+  {
+   "target": "Oxia Planum",
+   "body": "Mars",
+   "tier_v1": "match",
+   "tier_v2": "match",
+   "best_oman_v1": 0.031,
+   "best_oman_v2": 0.016,
+   "best_square_v2": "H4304",
+   "best_group_v2": "oman90"
+  },
+  {
+   "target": "Meridiani Planum",
+   "body": "Mars",
+   "tier_v1": "match",
+   "tier_v2": "match",
+   "best_oman_v1": 0.015,
+   "best_oman_v2": 0.014,
+   "best_square_v2": "H1703",
+   "best_group_v2": "oman90"
+  },
+  {
+   "target": "Gusev crater",
+   "body": "Mars",
+   "tier_v1": "match",
+   "tier_v2": "match",
+   "best_oman_v1": 0.022,
+   "best_oman_v2": 0.023,
+   "best_square_v2": "H0541",
+   "best_group_v2": "oman90"
+  },
+  {
+   "target": "Mawrth Vallis",
+   "body": "Mars",
+   "tier_v1": "partial",
+   "tier_v2": "match",
+   "best_oman_v1": 0.125,
+   "best_oman_v2": 0.081,
+   "best_square_v2": "H4333",
+   "best_group_v2": "oman90"
+  },
+  {
+   "target": "Melas Chasma (Valles Marineris)",
+   "body": "Mars",
+   "tier_v1": "gap",
+   "tier_v2": "gap",
+   "best_oman_v1": 0.435,
+   "best_oman_v2": 0.452,
+   "best_square_v2": "H3329",
+   "best_group_v2": "oman90"
+  },
+  {
+   "target": "Olympus Mons flank",
+   "body": "Mars",
+   "tier_v1": "gap",
+   "tier_v2": "gap",
+   "best_oman_v1": 0.273,
+   "best_oman_v2": 0.245,
+   "best_square_v2": "H3265",
+   "best_group_v2": "oman90"
+  },
+  {
+   "target": "Hellas floor",
+   "body": "Mars",
+   "tier_v1": "partial",
+   "tier_v2": "match",
+   "best_oman_v1": 0.165,
+   "best_oman_v2": 0.08,
+   "best_square_v2": "H4584",
+   "best_group_v2": "oman90"
+  }
+ ],
+ "name_free_v2": {
+  "AMADEE-18 area": {
+   "top_pct_best_mars_target": 18.2,
+   "top_pct_mean_over_mars_targets": 9.8
+  },
+  "Meteor Crater window": {
+   "top_pct_best_mars_target": 17.6,
+   "top_pct_mean_over_mars_targets": 4.4
+  },
+  "Atacama tile": {
+   "top_pct_best_mars_target": 5.1,
+   "top_pct_mean_over_mars_targets": 50.7
+  }
+ }
+}
