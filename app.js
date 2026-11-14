@@ -11,8 +11,8 @@
   var FIELDS = ['tlo', 'thi', 'wmin', 'wmax', 'rhmax', 'smin', 'limit'];
 
   function load(f, opt) { return fetch('data/' + f).then(function (r) { if (!r.ok) { if (opt) return null; throw new Error(f + ' ' + r.status); } return r.json(); }).catch(function (e) { if (opt) return null; throw e; }); }
-  Promise.all([load('meta.json'), load('earth.json'), load('targets.json'), load('results.json'), load('second_check.json'), load('climate_power.json')]).then(function (a) {
-    D.meta = a[0]; D.earth = a[1]; D.targets = a[2]; D.results = a[3]; D.second = a[4]; D.power = a[5];
+  Promise.all([load('meta.json'), load('earth.json'), load('targets.json'), load('results.json'), load('second_check.json'), load('climate_power.json'), load('relief.json', true)]).then(function (a) {
+    D.meta = a[0]; D.earth = a[1]; D.targets = a[2]; D.results = a[3]; D.second = a[4]; D.power = a[5]; D.relief = a[6];
     SC = UEScore(D.meta); init();
   }).catch(function (e) {
     var el = $('loaderr'); el.hidden = false; el.textContent = 'Could not load the data files (' + e.message + '). Reload the page; if it persists the site files are missing.';
@@ -232,6 +232,31 @@
     return '<div class="verdict ' + cls + '"><div class="vhead">Best fit for your test: <b>' + v.overall + '%</b> &middot; ' + v.label + '</div><p class="sub">Here is what is missing: weakest factor is ' + esc(v.worstName) + ' (' + Math.round(f[v.worst]) + '). ' + fix + ' Month used: ' + N.MON[m] + '. Confidence: ' + cf + ' (terrain ' + (e.group.indexOf('oman') === 0 ? '30 m source' : 'outside site') + ', climate about 50 km).</p>' + bars + '<small>Sliders set each factor weight 0-3 (0 = ignore). Rule-based fit from our assumptions, not a mission verdict.</small></div>';
   }
 
+
+  // Shaded relief from a 20 x 20 grid of heights (m above window mean), cells 500 m. Same sun and exaggeration for every picture.
+  function shade(cv, g) {
+    var n = 20, EX = 3, AZ = 315 * Math.PI / 180, ALT = 45 * Math.PI / 180, cell = 500;
+    cv.width = n; cv.height = n; var ctx = cv.getContext('2d'), im = ctx.createImageData(n, n);
+    function z(r, c) { r = Math.max(0, Math.min(n - 1, r)); c = Math.max(0, Math.min(n - 1, c)); return g[r * n + c] * EX; }
+    for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) {
+      var dzdx = (z(r, c + 1) - z(r, c - 1)) / (2 * cell), dzdy = (z(r + 1, c) - z(r - 1, c)) / (2 * cell);
+      var slope = Math.atan(Math.hypot(dzdx, dzdy)), asp = Math.atan2(dzdy, -dzdx);
+      var h = Math.cos(ALT) * Math.cos(slope) + Math.sin(ALT) * Math.sin(slope) * Math.cos(AZ - asp);
+      var v = Math.round(255 * Math.max(0, Math.min(1, h))), i = (r * n + c) * 4;
+      im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255;
+    }
+    ctx.putImageData(im, 0, 0);
+  }
+  function twinHtml(e) {
+    if (!D.relief || !D.relief[e.id] || !D.relief[st.target.id]) return '';
+    var res = { Mars: '463 m (MOLA)', Moon: '80 m (LOLA)' }[st.target.body];
+    return '<h3>Twin pictures</h3><div class="twins"><figure><canvas id="tw_t" aria-label="Shaded relief of the target"></canvas><figcaption>' + esc(st.target.name) + '<br>source ' + res + '</figcaption></figure><figure><canvas id="tw_e" aria-label="Shaded relief of this Earth square"></canvas><figcaption>This Earth square<br>source 30 m (Copernicus)</figcaption></figure></div>' +
+      '<small>Both pictures are 10 km wide (bar = 5 km), resampled to the same 500 m cells, same sun (from top left) and 3x height exaggeration. Resampled for the picture only; the scoring uses the same cells.</small>';
+  }
+  function drawTwins(e) {
+    var a = $('tw_t'), b = $('tw_e'); if (!a || !b) return; shade(a, D.relief[st.target.id]); shade(b, D.relief[e.id]);
+  }
+
   function renderResult() {
     var el = $('result');
     if (!sel) { el.innerHTML = '<p class="hint">Click a square on the map to see where it fits, when it fits, and what Earth cannot copy.</p>'; return; }
@@ -241,14 +266,14 @@
       verdictHtml(e) + '<div class="best">Best months: <b>' + (e._best.length ? esc(N.monthsText(e._best)) : 'none fits your test') + '</b></div>' + stripHtml(e) +
       '<small>★ best, ✓ good, ~ partial, × poor (number = fit 0-100, weakest factor). Source: ' + esc(c.src) + '.</small>' +
       '<table>' + rows + '</table><div class="chartbox"><canvas id="slopechart" width="340" height="90"></canvas><small><i class="dot b"></i>target slope spread <i class="dot g"></i>this square</small></div>' +
-      '<div class="conf"><b>Confidence: ' + cf.level + '.</b> ' + cf.items.map(esc).join('; ') + '.</div>' +
+      twinHtml(e) + '<div class="conf"><b>Confidence: ' + cf.level + '.</b> ' + cf.items.map(esc).join('; ') + '.</div>' +
       '<div class="limits"><b>What this test cannot copy.</b> Gravity, thin air and radiation. Real ' + (st.target.body === 'Moon' ? 'lunar' : 'Martian') + ' temperatures: Earth air temperature here only tells you when conditions suit your test. A terrain match is not a geology match. 500 m cells hide rocks and steps. Earth heights include trees and buildings. Climate is a typical-year average.</div>' +
       '<div class="btns"><button data-act="brief">Test site brief (print / PDF)</button><button data-act="cmp">Compare with another square</button></div>';
     if (selB) {
       var A = metricRows(sel), B = metricRows(selB);
       h += '<h3>Compare</h3><table><tr><th></th><th>A ' + sel.lat.toFixed(2) + ', ' + sel.lon.toFixed(2) + '</th><th>B ' + selB.lat.toFixed(2) + ', ' + selB.lon.toFixed(2) + '</th></tr>' + A.map(function (r, i) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td><td>' + esc(B[i][1]) + '</td></tr>'; }).join('') + '</table><button data-act="clearb">Clear B</button>';
     }
-    el.innerHTML = h; chart(e);
+    el.innerHTML = h; chart(e); drawTwins(e);
   }
 
   function openBrief() {
