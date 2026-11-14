@@ -20,7 +20,7 @@ try:
             f0 = fills()
             pg.click("#presets button[data-p=cold]"); pg.wait_for_timeout(300); f1 = fills()
             assert f0 != f1, "cold preset did not change map"
-            pg.click("#presets button[data-p=rover]"); pg.select_option("#target", label="Nobile"); pg.select_option("#mode", "terrain"); pg.wait_for_timeout(300)
+            pg.click("#presets button[data-p=rover]"); pg.select_option("#target", label="Nobile (threshold-sensitive)"); pg.select_option("#mode", "terrain"); pg.wait_for_timeout(300)
             a = pg.inner_text("#badge"); pg.check("#s_atacama"); pg.wait_for_timeout(300); c = pg.inner_text("#badge")
             print(name, "windows", n, "| Nobile terrain badge Oman:", a, "-> +Atacama:", c)
             pg.fill("#sentence", "rover test, slopes 10 to 20 degrees, dry, 5 to 30 degrees"); pg.click("#go"); pg.wait_for_timeout(200)
@@ -34,10 +34,11 @@ try:
             print(name, "best months line:", pg.inner_text("#result .best"))
             pg.fill("#sentence", "build me a spaceship"); pg.click("#go"); pg.wait_for_timeout(100); assert "could not understand" in pg.inner_text("#understood") and pg.input_value("#thi") == "30"
             pg.click("[data-act=addcal]"); pg.click(".tab[data-view=cal]"); pg.wait_for_timeout(200); assert pg.locator("table.cal td.cc").count() == 12; pg.check("#split"); assert "Phase" in pg.inner_text("#splitres") or "One site" in pg.inner_text("#splitres") or "enough" in pg.inner_text("#splitres")
-            pg.click(".tab[data-view=base]"); pg.wait_for_timeout(200); assert "Retrospective" in pg.inner_text("#base") and "threshold-sensitive" in pg.inner_text("#base")
+            pg.click(".tab[data-view=base]"); pg.wait_for_timeout(200); assert "retrospective" in pg.inner_text("#base") and "Known failures" in pg.inner_text("#base") and "threshold-sensitive" in pg.inner_text("#base")
             pg.click(".tab[data-view=map]")
             pg.click("[data-demo=none]"); pg.wait_for_timeout(300); assert "No qualifying candidate" in pg.inner_text("#hook"); pg.screenshot(path=os.path.join(ROOT, "docs", "screens", name + "_nocand.png"))
-            pg.click("[data-demo=good]"); pg.wait_for_timeout(300); assert "No qualifying candidate" not in pg.inner_text("#hook"); assert "Best fit for your test" in pg.inner_text("#result")
+            pg.click("[data-demo=good]"); pg.wait_for_timeout(300); assert "No qualifying candidate" not in pg.inner_text("#hook"); assert "Best fit for your test" in pg.inner_text("#result") and "Meridiani" in pg.inner_text("#hook") and "robust" in pg.inner_text("#result")
+            pg.click("[data-demo=fail]"); pg.wait_for_timeout(300); assert "does NOT pick February" in pg.inner_text("#replay") and "Why February" in pg.inner_text("#replay"); pg.screenshot(path=os.path.join(ROOT, "docs", "screens", name + "_fail.png")); pg.click(".tab[data-view=map]"); pg.click("[data-demo=good]"); pg.wait_for_timeout(200)
             pg.click("[data-act=brief]"); pg.wait_for_timeout(200); assert "Test Site Brief" in pg.inner_text("#brief"); pg.screenshot(path=os.path.join(ROOT, "docs", "screens", name + "_brief.png"))
             pg.click("[data-act=closebrief]")
             pg.screenshot(path=os.path.join(ROOT, "docs", "screens", name + ".png"), full_page=(name == "phone"))

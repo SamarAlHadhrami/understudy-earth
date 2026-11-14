@@ -31,11 +31,11 @@
     var tsel = $('target'), html = '';
     ['Mars', 'Moon'].forEach(function (b) {
       html += '<optgroup label="' + b + (b === 'Moon' ? ' (south pole data only)' : '') + '">';
-      D.targets.forEach(function (t) { if (t.body === b) html += '<option value="' + t.id + '">' + esc(t.name) + '</option>'; });
+      D.targets.filter(function (t) { return t.body === b; }).sort(function (a, c) { var ra = stabOf(a) && stabOf(a).threshold_sensitive ? 1 : 0, rc = stabOf(c) && stabOf(c).threshold_sensitive ? 1 : 0; return ra - rc; }).forEach(function (t) { html += '<option value="' + t.id + '">' + esc(t.name) + ' (' + robustText(t) + ')</option>'; });
       html += '</optgroup>';
     });
     tsel.innerHTML = html;
-    var def = D.targets.filter(function (t) { return t.name === 'Jezero crater'; })[0];
+    var def = D.targets.filter(function (t) { return t.name === 'Meridiani Planum'; })[0];
     st.target = def; tsel.value = def.id;
     var mh = '<option value="best">Best month for each square</option>';
     N.MON.forEach(function (m, i) { mh += '<option value="' + i + '">' + m + '</option>'; });
@@ -178,6 +178,7 @@
 
   function bestOf(f) { var b = null; D.earth.forEach(function (e) { if (f(e) && !masked(e) && (!b || e.d < b.d)) b = e; }); return b; }
 
+  function robustText(t) { var x = stabOf(t); return x ? (x.threshold_sensitive ? 'threshold-sensitive' : 'robust') : 'not checked'; }
   function stabOf(t) { if (!D.stab) return null; var r = D.stab.summary.filter(function (x) { return x.target === t.name; })[0]; return r || null; }
 
   function renderGapCard() {
@@ -189,7 +190,7 @@
     $('badge').textContent = GLABEL[kk]; $('badge').className = 'badge ' + (kk === 'gap' ? 'none' : kk);
     $('gcscore').textContent = 'top ' + Math.max(1, Math.round(bo.rank * 100)) + '%';
     var txt = k0 === 'gap' ? 'No qualifying candidate in Oman for this target (searched area only, not all of Earth). Nearest square is outlined on the map.' : (k0 === 'partial' ? 'Oman is a partial match only.' : 'Oman has a strong terrain match (best fit among the squares we searched).');
-    var sn = stabOf(st.target); if (sn) txt += (sn.threshold_sensitive ? ' Threshold-sensitive: the tier changes with window size, cell size or threshold; ' : ' Stable across settings; ') + 'the best Oman square is closer than ' + sn.band_pct[0] + '-' + sn.band_pct[1] + '% of Earth-square pairs.';
+    var sn = stabOf(st.target); if (sn) txt += (sn.threshold_sensitive ? ' THRESHOLD-SENSITIVE: the tier changes with window size, cell size or threshold (' + sn.tiers_seen.map(function (k) { return GLABEL[k]; }).join(' / ') + '); ' : ' ROBUST: same tier in all 8 settings; ') + 'the best Oman square is closer than ' + sn.band_pct[0] + '-' + sn.band_pct[1] + '% of Earth-square pairs.';
     if (extra.length && improved && kk !== k0) txt = 'Oman alone: ' + GLABEL[k0] + '. With the second site: ' + GLABEL[kk] + '.';
     else if (extra.length) txt = 'The second site does not improve on Oman here.';
     $('gctext').textContent = txt;
@@ -283,12 +284,12 @@
     if (!sel) { el.innerHTML = '<p class="hint">Click a square on the map to see where it fits, when it fits, and what Earth cannot copy.</p>'; return; }
     var e = sel, k = e._tier, c = climate(e), cf = confidence(e);
     var rows = metricRows(e).map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('');
-    var h = '<div><span class="chip ' + k + '">' + LABEL[k] + '</span> <span class="sub">' + esc(GROUPS[e.group]) + ' &middot; ' + e.lat.toFixed(3) + ', ' + e.lon.toFixed(3) + '</span></div>' +
+    var h = '<div><span class="chip ' + k + '">' + LABEL[k] + '</span> <span class="chip ' + (stabOf(st.target) && stabOf(st.target).threshold_sensitive ? 'partial' : 'match') + '">' + robustText(st.target) + '</span> <span class="sub">' + esc(GROUPS[e.group]) + ' &middot; ' + e.lat.toFixed(3) + ', ' + e.lon.toFixed(3) + '</span></div>' +
       verdictHtml(e) + '<div class="best">Best months: <b>' + (e._best.length ? esc(N.monthsText(e._best)) : 'none fits your test') + '</b></div>' + stripHtml(e) + monthNotes(e) +
       '<small>★ best, ✓ good, ~ partial, × poor (number = fit 0-100, weakest factor). Source: ' + esc(c.src) + '.</small>' +
       '<table>' + rows + '</table><div class="chartbox"><canvas id="slopechart" width="340" height="90"></canvas><small><i class="dot b"></i>target slope spread <i class="dot g"></i>this square</small></div>' +
       twinHtml(e) + '<div class="conf"><b>Confidence: ' + cf.level + '.</b> ' + cf.items.map(esc).join('; ') + '.</div>' +
-      '<div class="limits"><b>What this test cannot copy.</b> Gravity, thin air and radiation. Real ' + (st.target.body === 'Moon' ? 'lunar' : 'Martian') + ' temperatures: Earth air temperature here only tells you when conditions suit your test. A terrain match is not a geology match. 500 m cells hide rocks and steps. Earth heights include trees and buildings. Climate is a typical-year average.</div>' +
+      '<div class="limits"><b>What this test cannot copy.</b> Gravity, thin air and radiation. Real ' + (st.target.body === 'Moon' ? 'lunar' : 'Martian') + ' temperatures: Earth air temperature here only tells you when conditions suit your test. Terrain numbers only see slope and roughness, not rock type or dust. A terrain match is not a geology match. 500 m cells hide rocks and steps. Earth heights include trees and buildings. Climate is a typical-year average.</div>' +
       '<div class="btns"><button data-act="brief">Test site brief (print / PDF)</button><button data-act="addcal">Add to calendar</button><button data-act="cmp">Compare with another square</button></div>';
     if (selB) {
       var A = metricRows(sel), B = metricRows(selB);
@@ -307,7 +308,7 @@
       '<h1>Test Site Brief</h1><p class="sub">Understudy Earth &middot; generated ' + new Date().toISOString().slice(0, 10) + ' &middot; Blue Ember</p>' +
       '<h2>Location</h2><p>' + esc(GROUPS[e.group]) + ', 10 km square centred at ' + e.lat.toFixed(3) + ', ' + e.lon.toFixed(3) + '.</p>' +
       '<h2>Test and target</h2><p>Stand-in for: <b>' + esc(t.name) + '</b> (' + t.body + ').</p><p>Test needs (user choice or our assumption, not a mission requirement): ' + esc(need) + '</p>' +
-      '<h2>Terrain match</h2><table>' + metricRows(e).map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>' +
+      '<h2>Terrain match</h2><p><b>Stability of this target\'s result:</b> ' + robustText(t) + (stabOf(t) ? ' (tiers seen across settings: ' + stabOf(t).tiers_seen.map(function (k) { return GLABEL[k]; }).join(' / ') + '; best Oman square closer than ' + stabOf(t).band_pct[0] + '-' + stabOf(t).band_pct[1] + '% of Earth-square pairs).' : '.') + '</p><table>' + metricRows(e).map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>' +
       '<h2>When: 12-month fit</h2>' + stripHtml(e) + monthNotes(e) + '<p>Best months: <b>' + (e._best.length ? esc(N.monthsText(e._best)) : 'none fits') + '</b>. Data: ' + esc(c.src) + '. Typical-year average, not a forecast.</p>' + second +
       '<h2>What this test cannot copy</h2><ul><li>Gravity, thin air and radiation.</li><li>Real Moon/Mars temperatures: Earth temperature only shows when conditions suit the test.</li><li>Geology and chemistry; rocks, steps and slopes below 500 m; dust storms.</li></ul>' +
       '<h2>Confidence and data</h2><p>' + esc(cf.level) + '. ' + cf.items.map(esc).join('; ') + '.</p><p class="sub">Data: Copernicus DEM GLO-30 (ESA), LOLA and MOLA (NASA), NASA POWER climatology' + '' + '. See docs/REFERENCES.md.</p>';
@@ -349,12 +350,14 @@
     for (var m = 0; m < M; m++) Object.keys(avg).forEach(function (k) { avg[k].push(mar.reduce(function (s, e) { return s + climate(e)[k][m]; }, 0) / mar.length); });
     var fits = N.allFits(avg, needs), best = N.bestMonths(fits), feb = fits[1], mx = Math.max.apply(null, fits);
     var strip = '<div class="strip">' + fits.map(function (f, i) { var k = N.needTier(f), star = best.indexOf(i) >= 0; return '<div class="mc ' + k + (star ? ' best' : '') + '"><span>' + N.MON[i].charAt(0) + '</span><b>' + Math.round(f) + '</b><i>' + (star ? '★' : (k === 'gap' ? '×' : (k === 'partial' ? '~' : '✓'))) + '</i></div>'; }).join('') + '</div>';
+    var ff = N.monthFactors(avg, 1, needs), fk = Object.keys(ff).sort(function (a, b) { return ff[a] - ff[b]; })[0];
+    var febWhy = ff[fk] >= 99.5 ? 'every factor is inside the assumed window.' : (fk === 'temp' ? 'day max ' + avg.tmax[1].toFixed(1) + ' °C against our assumed limit of ' + needs.thi + ' °C (night min ' + avg.tmin[1].toFixed(1) + ' °C). January has day max ' + avg.tmax[0].toFixed(1) + ' °C. The OeWF page quotes 16-27 °C for February, which looks like a mean temperature; NASA POWER daily max and min are more extreme than that, and we did not change our needs to force February.' : fk + ' is the weakest factor.');
     var verdict = best.indexOf(1) >= 0 ? 'The planner picks February among its best months.' : 'The planner does NOT pick February as a best month (best: ' + N.monthsText(best) + ', fit ' + Math.round(mx) + '). February scores ' + Math.round(feb) + ' (' + (N.needTier(feb) === 'match' ? 'a good month' : N.needTier(feb) === 'partial' ? 'a partial month' : 'a poor month') + ') under these assumed needs.';
     $('replay').innerHTML = '<p class="sub"><b>Historical illustration with assumed needs.</b> The region is a 15 km circle around 18.19&deg;N 55.23&deg;E (Marmul area, Dhofar). The exact AMADEE-18 site is approximate and not confirmed. ' + mar.length + ' squares fall inside the circle.</p>' +
       '<p><b>Terrain:</b> median rank top ' + Math.max(1, Math.round(med * 100)) + '% of ' + D.earth.length + ' squares for target <b>' + esc(t.name) + '</b> (change the target on the Planner tab).</p>' +
       '<p><b>Assumed needs (ours, written down before the replay; see docs/VALIDATION.md):</b> day highs up to 35 °C, night lows at least 5 °C, sunlight at least 4 kWh/m²/day. The OeWF page gives no numeric limits; it only says February temperatures at the site typically range 16-27 °C with under 10 mm of rain (shown for reference, not used).</p>' + strip +
       '<p class="best">Planner\'s best months: <b>' + esc(N.monthsText(best)) + '</b></p><p><b>Real mission:</b> the AMADEE-18 field phase ran in <b>February 2018</b> in the Dhofar region of Oman (Austrian Space Forum, oewf.org/en/amadee-18, read 2026-11-14).</p><p><b>Result:</b> ' + esc(verdict) + '</p>' +
-      '<div class="limits"><b>Honest reading.</b> The mission\'s real constraints (logistics, crew schedule, local hosts) are unknown to us, so a different best month does not mean the planner or the mission was wrong. Climate is a typical-year average, not February 2018 weather. Source: ' + esc(climate(mar[0]).src) + '.</div>' +
+      '<p><b>Why February is not the top month:</b> ' + febWhy + '</p><div class="limits"><b>Honest reading.</b> The mission\'s real constraints (logistics, crew schedule, local hosts) are unknown to us, so a different best month does not mean the planner or the mission was wrong. Climate is a typical-year average, not February 2018 weather. Source: ' + esc(climate(mar[0]).src) + '.</div>' +
       '<div class="btns"><button id="rp-go">Show the circle on the map</button></div>';
     var go = $('rp-go'); if (go) go.onclick = function () { FIELDS.forEach(function (f) { if (needs[f] !== undefined) st.n[f] = needs[f]; }); syncInputs(); document.querySelector('.tab[data-view=map]').click(); map.setView([18.19, 55.23], 9); if (replayCircle) map.removeLayer(replayCircle); replayCircle = L.circle([18.19, 55.23], { radius: 15000, color: '#fff', weight: 2, dashArray: '6 6', fillOpacity: 0 }).bindTooltip('AMADEE-18 area (approximate)').addTo(map); sel = mar[0]; renderAll(); };
   }
@@ -362,20 +365,23 @@
   // ---- baseline and stability view
   function renderBase() {
     if (!D.base) { $('base').innerHTML = '<p>Baseline file missing.</p>'; return; }
-    var h = '<p class="sub"><b>Retrospective check, not independent validation.</b> For each target, a known site\'s median rank among all ' + D.earth.length + ' Earth squares is compared with 100 random draws of the same number of squares (random is about 50%). Lower rank = closer to the target.</p><table><tr><th>Known site</th><th>Body</th><th>Median rank</th><th>Random median</th><th>Targets better than random</th></tr>';
-    D.base.summary.forEach(function (x) { h += '<tr><td>' + esc(x.site) + '</td><td>' + x.body + '</td><td class="mono">' + x.median_rank_full_pct + '%</td><td class="mono">' + x.median_random_pct + '%</td><td class="mono">' + x.targets_beating_random + ' of ' + x.n_targets + '</td></tr>'; });
-    h += '</table><h3>Per target (rank %, bar = rank, tick = random median)</h3><table><tr><th>Target</th><th>AMADEE-18 area</th><th>Meteor Crater</th><th>Atacama tile</th></tr>';
+    var h = '<div class="limits"><b>What this check shows and does not show.</b> It shows whether known analog areas sit closer to our Moon and Mars targets, on slope and roughness numbers, than random Earth squares do. It does NOT show that a site is a good analog: it is retrospective, uses very few known sites (3 plus two local areas), looks at terrain only (not rocks, dust, gravity or climate), and is not independent validation. We looked at results while building.</div>';
+    h += '<p class="sub">Each known site\'s median rank among all ' + D.earth.length + ' Earth squares, over the targets of one body, is compared with 100 random draws of the same number of squares (random is about 50%). Rule fixed in advance: 10 points or more below the random median = better than random, 10 or more above = worse, otherwise about random.</p><table><tr><th>Known site</th><th>Body</th><th>Median rank</th><th>Random</th><th>Reading</th></tr>';
+    D.base.summary.forEach(function (x) { h += '<tr><td>' + esc(x.site) + '</td><td>' + x.body + '</td><td class="mono">' + x.median_rank_full_pct + '%</td><td class="mono">' + x.median_random_pct + '%</td><td><b>' + esc(x.verdict) + '</b><br><small>' + x.median_rank_full_pct + '% vs about ' + x.median_random_pct + '% random; ahead of 95% of random draws on ' + x.targets_beating_random + ' of ' + x.n_targets + ' targets</small></td></tr>'; });
+    h += '</table><h3>Known failures</h3><ul class="cant"><li><b>Atacama tile, Mars:</b> worse than random as a whole 1&deg; tile (rank 66%), because the tile mixes flat desert in the west (slope about 1.3&deg;) with Andes foothills in the east (about 3.6&deg;). Using 15 km around the tile centre instead gives about random (41%). The tile was not chosen from a verified analog location.</li><li><b>Muscat mountains, Moon:</b> rank near the top (7%) only because their slopes and roughness are high. Terrain numbers only see slope and roughness, not rock type or dust, so this is not evidence of a good Moon analog.</li><li><b>AMADEE-18 month:</b> the planner picks December and January, not February (see the AMADEE-18 replay tab).</li></ul>';
+    h += '<h3>Per target (rank %, bar = rank, white tick = random median)</h3><table><tr><th>Target</th><th>AMADEE-18 area</th><th>Meteor Crater</th><th>Atacama tile</th><th>Atacama 15 km</th></tr>';
     D.base.rows.forEach(function (r) {
-      h += '<tr><td>' + esc(r.name) + '<br><small>' + r.body + '</small></td>' + [0, 1, 2].map(function (i) { var x = r.sites[i]; return '<td><div class="rb"><i style="width:' + x.rank_full_pct + '%"></i><u style="left:' + x.random_median_pct + '%"></u></div><small class="mono">' + x.rank_full_pct + '%' + (x.beats_random ? ' ✓' : '') + '</small></td>'; }).join('') + '</tr>';
+      h += '<tr><td>' + esc(r.name) + '<br><small>' + r.body + '</small></td>' + [0, 1, 2, 6].map(function (i) { var x = r.sites[i]; return '<td><div class="rb"><i style="width:' + x.rank_full_pct + '%"></i><u style="left:' + x.random_median_pct + '%"></u></div><small class="mono">' + x.rank_full_pct + '%' + (x.beats_random ? ' ✓' : '') + '</small></td>'; }).join('') + '</tr>';
     });
-    h += '</table><p class="sub">✓ = better than 95% of random draws. Plain reading: the Mars analog sites (AMADEE-18 area, Meteor Crater) rank around 20% on Mars targets, better than random but not on every target. The Atacama tile, a known Mars analog region, ranks worse than random for Mars at this scale (our tile is mostly steep Andes terrain). Muscat mountains look like lunar south-pole terrain to this metric, so a good rank here is not proof of a good analog.</p>';
+    h += '</table><p class="sub">✓ = better than 95% of random draws (this count moves by one or so with the random draws; the medians do not).</p>';
     if (D.stab) {
-      h += '<h3>Stability: window size 5/10/20 km, cell size 500 m/1 km, thresholds 5-20% vs 10-30%</h3><table><tr><th>Target</th><th>Main tier</th><th>Tiers seen</th><th>Best Oman square closer than</th><th></th></tr>';
-      D.stab.summary.forEach(function (x) {
+      var rows = D.stab.summary.slice().sort(function (a, b) { return (a.threshold_sensitive ? 1 : 0) - (b.threshold_sensitive ? 1 : 0); });
+      h += '<h3>Stability: window 5/10/20 km, cell 500 m/1 km, thresholds 5-20% vs 10-30%</h3><table><tr><th>Target</th><th>Main tier</th><th>Tier range over 8 settings</th><th>Best Oman square closer than</th><th></th></tr>';
+      rows.forEach(function (x) {
         var res = D.results.gap.filter(function (g) { return g.name === x.target; })[0], bt = res ? res.tier_oman : x.base_tier;
-        h += '<tr><td>' + esc(x.target) + '</td><td><span class="chip ' + bt + '">' + GLABEL[bt] + '</span></td><td>' + x.tiers_seen.map(function (k) { return GLABEL[k]; }).join(', ') + '</td><td class="mono">' + x.band_pct[0] + '-' + x.band_pct[1] + '% of pairs</td><td>' + (x.threshold_sensitive ? 'threshold-sensitive' : 'stable') + '</td></tr>';
+        h += '<tr><td>' + esc(x.target) + '</td><td><span class="chip ' + bt + '">' + GLABEL[bt] + '</span></td><td>' + x.tiers_seen.map(function (k) { return GLABEL[k]; }).join(', ') + '</td><td class="mono">' + x.band_pct[0] + '-' + x.band_pct[1] + '% of pairs</td><td><b>' + (x.threshold_sensitive ? 'threshold-sensitive' : 'robust') + '</b></td></tr>';
       });
-      h += '</table><p class="sub">Treat every tier as approximate. The rank band shows how far the result moves when the method settings change.</p>';
+      h += '</table><p class="sub">Robust = same tier in all 8 settings (' + rows.filter(function (x) { return !x.threshold_sensitive; }).length + ' of ' + rows.length + ' targets). Treat every tier as approximate.</p>';
     }
     $('base').innerHTML = h;
   }
@@ -415,14 +421,15 @@
   function runDemo(kind) {
     document.querySelector('.tab[data-view=map]').click();
     if (kind === 'good') {
-      st.target = D.targets.filter(function (t) { return t.name === 'Jezero crater'; })[0]; $('target').value = st.target.id;
+      st.target = D.targets.filter(function (t) { return t.name === 'Meridiani Planum'; })[0]; $('target').value = st.target.id;
       var p = N.PRESETS.rover; FIELDS.forEach(function (f) { st.n[f] = p[f]; }); st.mode = 'both'; st.month = 'best'; $('mode').value = 'both'; $('month').value = 'best'; syncInputs(); recompute();
       var c = D.earth.filter(function (e) { return e.group.indexOf('oman') === 0 && !masked(e) && e._fit >= 75; }).sort(function (a, b) { return a.d - b.d; })[0] || bestOf(function (e) { return e.group.indexOf('oman') === 0; });
       sel = c; map.setView([c.lat, c.lon], 9); addCalQuiet(c);
     } else if (kind === 'none') {
       st.target = D.targets.filter(function (t) { return t.name.indexOf('Shackleton') === 0; })[0]; $('target').value = st.target.id; st.mode = 'both'; $('mode').value = 'both'; recompute();
       sel = bestOf(function (e) { return e.group.indexOf('oman') === 0; }); map.setView([sel.lat, sel.lon], 8);
-    } else if (kind === 'brief') { if (sel) { renderAll(); openBrief(); } return; }
+    } else if (kind === 'fail') { document.querySelector('.tab[data-view=replay]').click(); return; }
+    else if (kind === 'brief') { if (sel) { renderAll(); openBrief(); } return; }
     renderAll();
   }
   function addCalQuiet(e) { if (st.cal.indexOf(e.id) < 0) st.cal.push(e.id); }

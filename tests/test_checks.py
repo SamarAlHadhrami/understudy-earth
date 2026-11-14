@@ -4,7 +4,7 @@ L = lambda f: json.load(open(os.path.join(D, f)))
 
 def test_baseline_shape():
     b = L("baseline.json")
-    assert len(b["rows"]) == 17 and all(len(r["sites"]) == 5 for r in b["rows"])
+    assert len(b["rows"]) == 17 and all(len(r["sites"]) == 7 for r in b["rows"])
     assert all(0 <= s["rank_full_pct"] <= 100 and 30 < s["random_median_pct"] < 70 for r in b["rows"] for s in r["sites"])
 
 def test_stability_flags():

@@ -1,7 +1,7 @@
 # PROGRESS
 
 ## RESUME HERE
-- Current state (2026-11-14): core frozen. Round 3 done: research doc, label fixes, cited rover references (observed, not limits), AMADEE-18 needs recorded in docs/VALIDATION.md, calm no-candidate state, 64 px twin pictures, month notes, typed sentence box, baseline + stability tabs, calendar + two-site plan, demo bar, WorldCover flag. Not built: Jezero 30 m, whole-Oman 90 m, access, click-on-Mars, world view, rocks/dust, geology notes, Meteomatics.
+- Current state (2026-11-15): Prompt 1B done. No method change. Weak results diagnosed and shown in app and docs/VALIDATION.md (Atacama tile, Muscat Moon, AMADEE-18 month). Default target and demo 1 are the robust Meridiani Planum; demo 3 is the AMADEE-18 known failure. Not built: Jezero 30 m, whole-Oman 90 m, access, click-on-Mars, world view, rocks/dust, geology notes, Meteomatics.
 - Deploy: `git subtree push --prefix app origin gh-pages`; owner must enable Pages (Settings > Pages > gh-pages / root). Link: https://samaralhadhrami.github.io/understudy-earth/
 - Tests: `python -m pytest tests -q`, `node tests/check_js_score.js`, `node tests/check_needs.js`, `PYTHONIOENCODING=utf-8 python tests/run_browser.py`.
 - Rebuild data: `python pipeline/build_windows.py && python pipeline/analyse.py && python pipeline/verify.py && python pipeline/power.py`.

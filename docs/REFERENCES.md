@@ -13,7 +13,7 @@
 - Curiosity maximum tilt 25.34 degrees (sol 2477) and maximum pitch 25.22 degrees (sol 2476) through sol 2488: Rankin, Maimone, Biesiadecki, Patel, Levine, Toupet, "Driving Curiosity: Mars Rover Mobility Trends During the First Seven Years", JPL, 2019 (robotics.jpl.nasa.gov/media/documents/2020-mobility-trending.pdf), Table 1. Observed peaks, not limits.
 - Opportunity tilt reached 32 degrees on 2016-03-10, the steepest slope driven by any Mars rover: NASA JPL news, "Rover Takes on Steepest Slope Ever Tried on Mars", 2016-03-31, jpl.nasa.gov.
 - Perseverance climbed a slope of about 20 degrees on slippery sand and dust, covering only about 50% (once 20%) of the planned distance: NASA JPL news, "NASA's Perseverance Rover Looks Back While Climbing Slippery Slope", 2024-10-28, jpl.nasa.gov.
-- No official safe-driving slope limit was found or used. The slope limit in the app is user-set. The older 17/22/28 degree values were removed because the study was not opened.
+- No official safe-driving slope limit was found or used. The slope limit in the app is user-set. An earlier set of unverified limits was removed.
 ## Test needs
 - Ready-made test numbers (rover, instrument, walking, cold) and the fade margins are OUR ASSUMPTIONS, not sourced requirements.
 ## Background
@@ -23,3 +23,9 @@ numpy, scipy, rasterio, pyproj, Playwright (testing), Leaflet 1.9.4; basemap til
 ## Research notes (not used as data)
 - Candidate extra factors with access and licence status: docs/EXTRA_FACTORS_RESEARCH.md (terms checked or marked UNVERIFIED there). No data from those candidates is published.
 - Marlow, Martins and Sephton (2010) review of Mars analogue sites, Astrobiology (seen in search results only); InSight landing-site assessment, PMC7507760 (excerpt only); NHSJS 2026 "Finding Earth's Best Testbeds for Moon and Mars Rovers" (excerpt only).
+
+## Source check for the cited rover values (opened 2026-11-14, text read in full)
+- Curiosity: https://robotics.jpl.nasa.gov/media/documents/2020-mobility-trending.pdf (opened as text). Read: Table 1 "Curiosity mobility-related mission peaks during the first seven years": Max rover pitch, sol 2476, 25.22 degrees; Max rover roll, sol 2047, 20.69 degrees; Max rover tilt, sol 2477, 25.34 degrees. Abstract: data "as of August 6, 2019 (sol 2488)".
+- Opportunity: https://www.jpl.nasa.gov/news/rover-takes-on-steepest-slope-ever-tried-on-mars. Read: "The rover's tilt hit 32 degrees on March 10 while Opportunity was making its closest approach to an intended target near the crest of 'Knudsen Ridge.'" and "a climb on the steepest slope ever tackled by any Mars rover."
+- Perseverance: https://www.jpl.nasa.gov/news/nasas-perseverance-rover-looks-back-while-climbing-slippery-slope/. Read: "Visible on the right side of the mosaic is a slope of about 20 degrees. While Perseverance has climbed 20-degree inclines before (both NASA's Curiosity and Opportunity rovers had crested hills at least 10 degrees steeper), this is the first time it's traveled that steep a grade on such a slippery surface." and "loosely packed dust and sand with a thin brittle crust ... covered only about 50% of the distance ... on one occasion ... just 20%".
+- NOT USED (seen only in a search-result summary, page not opened): a 45 degree suspension "safe tilt" claim and a 31 degree Curiosity Greenheugh tilt. Unverified, do not use.
