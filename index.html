@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Understudy Earth</title>
+<meta name="description" content="Which places on Earth can we use to practise for the Moon and Mars, and where is nothing good enough?">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="brand"><span class="logo" aria-hidden="true">&#9680;</span><div><h1>Understudy Earth</h1>
+  <p class="tag">Where on Earth can we practise for the Moon and Mars &mdash; and where is nothing good enough?</p></div></div>
+  <nav>
+    <button class="tab on" data-view="map">Match map</button>
+    <button class="tab" data-view="gap">Gap view</button>
+    <button class="tab" data-view="blind">Blind test</button>
+    <button class="tab" data-view="about">How it works</button>
+  </nav>
+</header>
+
+<main>
+  <section id="mapwrap">
+    <div id="hook" class="hook"></div>
+    <div id="map" role="application" aria-label="Map of Oman terrain windows coloured by match score"></div>
+    <div class="legend" aria-label="Legend">
+      <span><i class="sw match"></i>MATCH 90+</span>
+      <span><i class="sw partial"></i>PARTIAL 70&ndash;90</span>
+      <span><i class="sw gap"></i>GAP &lt;70</span>
+    </div>
+    <div id="loaderr" class="err" hidden></div>
+  </section>
+
+  <aside id="panel">
+    <div class="view on" id="v-map">
+      <h2>Choose a practice job and a target</h2>
+      <label>Task
+        <select id="task"><option value="rover">Rover driving</option>
+          <option disabled>Walking (EVA) &ndash; limits not sourced</option>
+          <option disabled>Landing &ndash; limits not sourced</option></select></label>
+      <label>Moon / Mars target
+        <select id="target"></select></label>
+      <label>Max slope the rover may drive: <b id="limval" class="mono">17&deg;</b>
+        <input type="range" id="limit" min="5" max="30" step="0.5" value="17">
+        <small id="limsrc"></small></label>
+
+      <div class="gapcard" id="gapcard">
+        <div class="gc-head"><span>Best match in Oman</span><span id="badge" class="badge">&ndash;</span></div>
+        <div class="bar"><i id="barfill"></i><b class="t70"></b><b class="t90"></b></div>
+        <div class="gc-score"><span class="mono" id="gcscore">&ndash;</span><small id="gctext"></small></div>
+        <div class="second">
+          <div class="s-title">Add a second site from outside Oman</div>
+          <label class="chk"><input type="checkbox" id="s_meteor"> Meteor Crater area, Arizona</label>
+          <label class="chk"><input type="checkbox" id="s_atacama"> Atacama / Andes edge, Chile</label>
+          <div id="secondres" class="mono"></div>
+        </div>
+      </div>
+
+      <div id="result" class="result"><p class="hint">Click a square on the map to see its score, the reason, and what Earth cannot copy.</p></div>
+    </div>
+
+    <div class="view" id="v-gap"><h2>Gap view</h2>
+      <p class="sub">Best Earth window for each target at the current slope limit. Oman only, then with the two check sites.</p>
+      <div id="gaptable"></div></div>
+
+    <div class="view" id="v-blind"><h2>Blind test</h2><div id="blind"></div></div>
+
+    <div class="view" id="v-about"><h2>How it works</h2>
+      <ol class="how">
+        <li><b>Same scale.</b> Every terrain model (Earth 30 m, Moon 80 m, Mars 463 m) is averaged to 500 m cells, then cut into 10 km windows.</li>
+        <li><b>Measure.</b> For each window: slope and roughness distributions.</li>
+        <li><b>Task.</b> The rover task has one sourced limit: maximum slope. The share of ground under it is the &ldquo;drivable share&rdquo;.</li>
+        <li><b>Score 0&ndash;100.</b> 100 &times; (1 &minus; D). D = 50% drivable-share difference + 25% slope-distribution distance + 25% roughness-distribution distance.</li>
+        <li><b>Gap.</b> No Earth window reaches 70 &rarr; GAP. Adding another site can lift it.</li>
+        <li><b>Blind.</b> The scorer only ever sees numbers, never site names.</li>
+      </ol>
+      <h3>What Earth cannot copy</h3>
+      <ul class="cant"><li>Gravity (Mars 0.38 g, Moon 0.16 g)</li><li>Thin air and dust (Mars), vacuum (Moon)</li><li>Radiation and temperature swings</li>
+      <li>Geology and chemistry &ndash; a terrain match is not a rock match</li></ul>
+      <h3>What our data cannot see</h3>
+      <ul class="cant"><li>Rocks, steps and slopes smaller than 500 m</li><li>Earth data is a surface model (trees, buildings); Moon and Mars are bare ground</li>
+      <li>Moon: south pole only (80&deg;S&ndash;90&deg;S). Oman: only the tiles we hold.</li></ul>
+      <h3>Checks</h3><div id="second"></div>
+      <p class="credit">Data: LOLA (NASA/GSFC), MOLA (NASA/USGS), HiRISE Jezero DTM (USGS), Copernicus DEM GLO-30 (ESA). Basemap &copy; OpenStreetMap contributors &copy; CARTO. Code: Apache 2.0.</p>
+    </div>
+  </aside>
+</main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="score.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
