@@ -14,4 +14,11 @@ assert.strictEqual(p.needs.limit, 20); assert.strictEqual(p.needs.tlo, 5); asser
 assert.ok(p.said.length >= 4);
 assert.strictEqual(N.parseSentence('windy sunny', N.DEFAULT).needs.wmin, 4);
 assert.strictEqual(N.worse('match', 'gap'), 'gap');
+const mf = N.monthFactors(c, 6, n); assert.strictEqual(mf.temp, 0); assert.strictEqual(mf.sun, 100);
+assert.strictEqual(N.terrainFit(0.05, 0.081, 0.245), 100); assert.strictEqual(N.terrainFit(0.49, 0.081, 0.245), 0);
+const v = N.fitVerdict({ terrain: 100, temp: 100, wind: 100, sun: 40 }, null); assert.strictEqual(v.overall, 85); assert.strictEqual(v.label, 'Strong fit'); assert.strictEqual(v.worst, 'sun');
+assert.strictEqual(N.fitVerdict({ terrain: 100, sun: 0 }, { terrain: 3, sun: 1 }).overall, 75);
+assert.strictEqual(N.fitVerdict({ terrain: 20, temp: 30 }, null).label, 'Poor fit');
+assert.strictEqual(N.fitVerdict({ terrain: 80, temp: 30, sun: 0 }, { sun: 0 }).overall, 55);
+assert.strictEqual(N.confidenceLevel(true, false), 'Medium'); assert.strictEqual(N.confidenceLevel(false, false), 'Low');
 console.log('needs.js tests pass');

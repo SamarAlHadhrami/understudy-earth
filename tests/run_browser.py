@@ -28,6 +28,7 @@ try:
             pg.select_option("#mode", "both")
             pg.evaluate("document.querySelectorAll('#map svg path.leaflet-interactive')[200].dispatchEvent(new MouseEvent('click',{bubbles:true}))"); pg.wait_for_timeout(300)
             assert pg.locator("#result .strip .mc").count() == 12 and "Best months" in pg.inner_text("#result")
+            assert "Best fit for your test" in pg.inner_text("#result .verdict"); a = pg.inner_text("#result .vhead"); pg.evaluate("var r=document.querySelector('[data-w=terrain]'); r.value=0; r.dispatchEvent(new Event('input',{bubbles:true}))"); pg.wait_for_timeout(150); print(name, "verdict:", a, "->", pg.inner_text("#result .vhead"))
             print(name, "best months line:", pg.inner_text("#result .best"))
             pg.click("[data-act=brief]"); pg.wait_for_timeout(200); assert "Test Site Brief" in pg.inner_text("#brief"); pg.screenshot(path=os.path.join(ROOT, "docs", "screens", name + "_brief.png"))
             pg.click("[data-act=closebrief]")

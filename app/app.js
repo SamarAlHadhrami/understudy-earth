@@ -2,7 +2,7 @@
   'use strict';
   var GROUPS = { oman_muscat: 'Oman (Muscat area)', oman_dhofar: 'Oman (Dhofar)', meteor_crater: 'Meteor Crater area, Arizona (outside Oman)', atacama: 'Atacama / Andes edge, Chile (outside Oman)' };
   var N = window.UENeeds, D = {}, SC, map, rects = {}, sel = null, selB = null, cmpNext = false;
-  var st = { target: null, mode: 'both', month: 'best', n: Object.assign({}, N.DEFAULT) };
+  var st = { weights: { terrain: 1, temp: 1, wind: 1, dry: 1, sun: 1 }, target: null, mode: 'both', month: 'best', n: Object.assign({}, N.DEFAULT) };
   var $ = function (id) { return document.getElementById(id); };
   var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
   var LABEL = { match: 'GOOD', partial: 'PARTIAL', gap: 'POOR' };
@@ -82,6 +82,7 @@
   function bind() {
     $('target').addEventListener('change', function () { st.target = D.targets.filter(function (t) { return t.id === $('target').value; })[0]; renderAll(); });
     FIELDS.forEach(function (f) { $(f).addEventListener('input', function () { st.n[f] = parseFloat($(f).value); syncInputs(true); renderAll(); }); });
+    $('result').addEventListener('input', function (ev) { var k = ev.target.getAttribute && ev.target.getAttribute('data-w'); if (k) { st.weights[k] = +ev.target.value; renderResult(); var r = $('result').querySelector('[data-w="' + k + '"]'); if (r) r.focus(); } });
     $('mode').addEventListener('change', function () { st.mode = $('mode').value; renderAll(); });
     $('month').addEventListener('change', function () { st.month = $('month').value; renderAll(); });
     ['s_meteor', 's_atacama'].forEach(function (id) { $(id).addEventListener('change', renderGapCard); });
@@ -217,13 +218,27 @@
     ctx.fillStyle = '#9fb0d3'; ctx.font = '11px system-ui'; ctx.fillText('slope 0°', 10, H - 4); ctx.fillText('15°+', W - 36, H - 4);
   }
 
+
+  function verdictHtml(e) {
+    var c = climate(e), m = e._best.length ? e._best[0] : e._fits.indexOf(Math.max.apply(null, e._fits));
+    if (st.month !== 'best') m = +st.month;
+    var mf = N.monthFactors(c, m, st.n), f = { terrain: N.terrainFit(SC.distance(e, st.target), D.meta.thr_match_dist, D.meta.thr_partial_dist), temp: mf.temp, wind: mf.wind, dry: mf.dry, sun: mf.sun };
+    var v = N.fitVerdict(f, st.weights), cf = N.confidenceLevel(e.group.indexOf('oman') === 0, !!e.approx);
+    var cls = v.overall >= 75 ? 'match' : (v.overall >= 50 ? 'partial' : 'gap');
+    var fix = v.worst === 'terrain' ? 'A second site with closer terrain would help most (tick one above).' : 'A different month or relaxed ' + v.worstName.toLowerCase() + ' needs would help most.';
+    var bars = Object.keys(f).map(function (k) {
+      return '<div class="vrow"><label>' + N.FACTOR_NAMES[k] + '</label><div class="vbar"><i class="' + (f[k] >= 75 ? 'match' : (f[k] >= 50 ? 'partial' : 'gap')) + '" style="width:' + Math.round(f[k]) + '%"></i></div><b>' + Math.round(f[k]) + '</b><input type="range" min="0" max="3" step="1" value="' + st.weights[k] + '" data-w="' + k + '" aria-label="Weight for ' + N.FACTOR_NAMES[k] + '"></div>';
+    }).join('');
+    return '<div class="verdict ' + cls + '"><div class="vhead">Best fit for your test: <b>' + v.overall + '%</b> &middot; ' + v.label + '</div><p class="sub">Here is what is missing: weakest factor is ' + esc(v.worstName) + ' (' + Math.round(f[v.worst]) + '). ' + fix + ' Month used: ' + N.MON[m] + '. Confidence: ' + cf + ' (terrain ' + (e.group.indexOf('oman') === 0 ? '30 m source' : 'outside site') + ', climate about 50 km).</p>' + bars + '<small>Sliders set each factor weight 0-3 (0 = ignore). Rule-based fit from our assumptions, not a mission verdict.</small></div>';
+  }
+
   function renderResult() {
     var el = $('result');
     if (!sel) { el.innerHTML = '<p class="hint">Click a square on the map to see where it fits, when it fits, and what Earth cannot copy.</p>'; return; }
     var e = sel, k = e._tier, c = climate(e), cf = confidence(e);
     var rows = metricRows(e).map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('');
     var h = '<div><span class="chip ' + k + '">' + LABEL[k] + '</span> <span class="sub">' + esc(GROUPS[e.group]) + ' &middot; ' + e.lat.toFixed(3) + ', ' + e.lon.toFixed(3) + '</span></div>' +
-      '<div class="best">Best months: <b>' + (e._best.length ? esc(N.monthsText(e._best)) : 'none fits your test') + '</b></div>' + stripHtml(e) +
+      verdictHtml(e) + '<div class="best">Best months: <b>' + (e._best.length ? esc(N.monthsText(e._best)) : 'none fits your test') + '</b></div>' + stripHtml(e) +
       '<small>★ best, ✓ good, ~ partial, × poor (number = fit 0-100, weakest factor). Source: ' + esc(c.src) + '.</small>' +
       '<table>' + rows + '</table><div class="chartbox"><canvas id="slopechart" width="340" height="90"></canvas><small><i class="dot b"></i>target slope spread <i class="dot g"></i>this square</small></div>' +
       '<div class="conf"><b>Confidence: ' + cf.level + '.</b> ' + cf.items.map(esc).join('; ') + '.</div>' +

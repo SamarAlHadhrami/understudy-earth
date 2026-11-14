@@ -67,7 +67,38 @@
     return { needs: n, said: said };
   }
 
-  var API = { MON: MON, MARGIN: MARGIN, PRESETS: PRESETS, DEFAULT: DEFAULT, monthFit: monthFit, allFits: allFits, bestMonths: bestMonths,
+
+  // Per-factor fit for one month (0..100 each): temperature, wind, dryness, sunlight.
+  function monthFactors(c, m, n) {
+    var f = function (x) { return 100 * (1 - clamp01(x)); };
+    return {
+      temp: f(Math.max((c.tmax[m] - n.thi) / MARGIN.temp, (n.tlo - c.tmin[m]) / MARGIN.temp)),
+      wind: f(Math.max((n.wmin - c.wind[m]) / MARGIN.wind, (c.wind[m] - n.wmax) / MARGIN.wind)),
+      dry: f((c.rh[m] - n.rhmax) / MARGIN.rh),
+      sun: f((n.smin - c.srad[m]) / MARGIN.sun)
+    };
+  }
+  // Terrain fit 0..100 from the distance to the target: 100 inside the match threshold, 0 at twice the partial threshold.
+  function terrainFit(d, thrMatch, thrPartial) {
+    if (d <= thrMatch) return 100;
+    var top = 2 * thrPartial; return Math.round(100 * (1 - clamp01((d - thrMatch) / (top - thrMatch))));
+  }
+  var FACTOR_NAMES = { terrain: 'Terrain', temp: 'Temperature', wind: 'Wind', dry: 'Dryness', sun: 'Sunlight' };
+  // Overall fit = weighted mean of the factors with weight > 0. Weights default to 1 (user adjustable).
+  function fitVerdict(factors, weights) {
+    var keys = Object.keys(factors), sw = 0, sum = 0, worst = null;
+    keys.forEach(function (k) {
+      var w = weights && weights[k] != null ? weights[k] : 1; if (w <= 0) return;
+      sw += w; sum += w * factors[k]; if (worst === null || factors[k] < factors[worst]) worst = k;
+    });
+    var overall = sw ? Math.round(sum / sw) : 0;
+    var label = overall >= 75 ? 'Strong fit' : (overall >= 50 ? 'Good with gaps' : 'Poor fit');
+    return { overall: overall, label: label, worst: worst, worstName: worst ? FACTOR_NAMES[worst] : null };
+  }
+  // Confidence from data resolution: High never (climate is about 50 km); Medium inside the 30 m Oman tiles with a firm site; else Low.
+  function confidenceLevel(inOman, approxSite) { return inOman && !approxSite ? 'Medium' : 'Low'; }
+
+  var API = { monthFactors: monthFactors, terrainFit: terrainFit, fitVerdict: fitVerdict, confidenceLevel: confidenceLevel, FACTOR_NAMES: FACTOR_NAMES, MON: MON, MARGIN: MARGIN, PRESETS: PRESETS, DEFAULT: DEFAULT, monthFit: monthFit, allFits: allFits, bestMonths: bestMonths,
     monthsText: monthsText, needTier: needTier, worse: worse, parseSentence: parseSentence };
   if (typeof module !== 'undefined') module.exports = API; else root.UENeeds = API;
 })(this);

@@ -23,3 +23,6 @@
 ## Known limits
 500 m cells hide rocks and steps; rover limit is rover-scale; DSM vs bare ground; Moon south pole only; Oman = tiles we hold; climate is a typical-year average on coarse cells; ready-made test numbers are our assumptions.
 - NASA POWER values are regional and approximate (about 50 km cells); the strip and Fit Verdict use POWER only.
+
+## Fit Verdict (extra 1)
+Factors, each 0-100: terrain (100 at or inside the match distance, 0 at twice the partial distance, linear between), temperature, wind, dryness, sunlight (month fit split by factor, using the best month or the chosen month; margins are our assumptions). Overall = weighted mean of factors with weight above 0 (user weights 0-3, default 1). Verdict: 75+ Strong fit, 50-74 Good with gaps, below 50 Poor fit. The weakest factor gives the "what would improve it" line. Confidence: Medium for squares inside the 30 m Oman tiles with a firm site, Low for outside sites or approximate sites; never High, because climate cells are about 50 km. Tests: tests/check_needs.js.
