@@ -36,8 +36,12 @@ def window_features(z):
     sl = slope_deg(z)
     ro = roughness_m(z)
     h, _, _ = np.histogram2d(sl.ravel(), ro.ravel(), bins=[SLOPE_EDGES, ROUGH_EDGES])
+    z2 = z.reshape(N // 2, 2, N // 2, 2).mean((1, 3))  # 1 km baseline
+    ro2 = roughness_m(z2)
     return {
         "hist": h.astype(int).ravel().tolist(),
+        "steep_share": float((sl > 10).mean()),
+        "rough1k_med": float(np.median(ro2)),
         "slope_p50": float(np.percentile(sl, 50)),
         "slope_p90": float(np.percentile(sl, 90)),
         "rough_med": float(np.median(ro)),

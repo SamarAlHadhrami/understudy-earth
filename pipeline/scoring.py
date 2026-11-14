@@ -1,43 +1,42 @@
-"""Match score between two windows for a task. Mirrors app/app.js exactly."""
+"""Terrain similarity between two windows. Mirrors app/score.js (checked by tests/check_js_score.js).
+
+Distance D = mean of six scaled differences (slope distribution W1, 90th percentile slope, steep share,
+log roughness at 500 m and 1 km, log relief). Each term is divided by its spread (std) across all Earth
+windows, so no term dominates. Rank = share of Earth windows closer to the target than this one.
+Tiers by rank: top 5% MATCH, 5-20% PARTIAL, rest GAP (relative to the windows we hold).
+"""
 import numpy as np
 from terrain import SLOPE_EDGES, ROUGH_EDGES
 
 NS, NR = len(SLOPE_EDGES) - 1, len(ROUGH_EDGES) - 1
-S_REF = 5.0    # degrees: slope distance at which that term saturates (design constant, not a physical limit)
-R_REF = 20.0   # metres: same for roughness
-W_TRAV, W_SLOPE, W_ROUGH = 0.5, 0.25, 0.25
-GAP_THRESHOLD = 70    # below = gap (red)
-MATCH_THRESHOLD = 90  # at or above = match (green); between = partial (amber)
+MATCH_RANK, PARTIAL_RANK = 0.05, 0.20
+FEATS = ["slope_w1", "slope_p90", "steep_share", "ln_rough500", "ln_rough1k", "ln_relief"]
 
-# rover task: only the slope limit is sourced (see docs/REFERENCES.md); roughness has no sourced limit,
-# so it enters only as a distribution distance, never as a pass/fail limit.
+# Rover task: only the slope limit is sourced; used for the separate "drivable share" line.
 TASKS = {
     "rover": {"name": "Rover driving", "max_slope_deg": 17.0, "slider": [5, 30],
               "source": "Mars-weight test vehicle: embedding near 17 deg in loose sand, 22 deg firm rock, 28 deg cohesive soil "
                         "(Traverse Performance Characterization for the MSL Rover); design target ~30 deg (NASA JPL)."},
 }
+SCALES = None  # set by set_scales()
 
 
 def _h(hist):
     return np.asarray(hist, float).reshape(NS, NR)
 
 
-def _w(edges):
-    w = np.diff(np.asarray(edges, float))
-    w[-1] = min(w[-1], 160.0 if edges[-1] > 1e6 else w[-1])
-    return w
+def slope_marg(w):
+    return _h(w["hist"]).sum(1)
 
 
 def trav_share(hist, max_slope):
-    """Share of cells with slope <= max_slope (linear within bin)."""
     sm = _h(hist).sum(1)
-    tot = sm.sum()
     acc = 0.0
     for i in range(NS):
         lo, hi = SLOPE_EDGES[i], SLOPE_EDGES[i + 1]
         if max_slope >= hi: acc += sm[i]
         elif max_slope > lo: acc += sm[i] * (max_slope - lo) / (hi - lo)
-    return acc / tot
+    return acc / sm.sum()
 
 
 def w1(pa, pb, widths):
@@ -45,10 +44,44 @@ def w1(pa, pb, widths):
     return float(np.sum(np.abs(ca - cb) * widths))
 
 
-def score(ha, hb, max_slope):
-    A, B = _h(ha), _h(hb)
-    d_trav = abs(trav_share(ha, max_slope) - trav_share(hb, max_slope))
-    d_s = min(1.0, w1(A.sum(1), B.sum(1), _w(SLOPE_EDGES)) / S_REF)
-    d_r = min(1.0, w1(A.sum(0), B.sum(0), _w(ROUGH_EDGES)) / R_REF)
-    D = W_TRAV * d_trav + W_SLOPE * d_s + W_ROUGH * d_r
-    return 100.0 * (1.0 - D), {"d_trav": d_trav, "d_slope": d_s, "d_rough": d_r}
+_SW = np.diff(np.asarray(SLOPE_EDGES, float))
+
+
+def terms(a, b):
+    return np.array([
+        w1(slope_marg(a), slope_marg(b), _SW),
+        abs(a["slope_p90"] - b["slope_p90"]),
+        abs(a["steep_share"] - b["steep_share"]),
+        abs(np.log1p(a["rough_med"]) - np.log1p(b["rough_med"])),
+        abs(np.log1p(a["rough1k_med"]) - np.log1p(b["rough1k_med"])),
+        abs(np.log1p(a["relief_m"]) - np.log1p(b["relief_m"])),
+    ])
+
+
+def feature_scales(earth):
+    """Spread of each feature across Earth windows (the divisor for each term)."""
+    p50 = [e["slope_p50"] for e in earth]
+    raw = [float(np.std(p50)), float(np.std([e["slope_p90"] for e in earth])), float(np.std([e["steep_share"] for e in earth])),
+            float(np.std([np.log1p(e["rough_med"]) for e in earth])), float(np.std([np.log1p(e["rough1k_med"]) for e in earth])),
+            float(np.std([np.log1p(e["relief_m"]) for e in earth]))]
+    return [max(x, 1e-3) for x in raw]  # floor avoids dividing by ~0 on degenerate sets
+
+
+def set_scales(sc):
+    global SCALES
+    SCALES = np.asarray(sc, float)
+
+
+def distance(a, b):
+    return float(np.mean(terms(a, b) / SCALES))
+
+
+def ranks(earth, target):
+    """Rank fraction (0 = closest) of every Earth window for this target, plus raw distances."""
+    d = np.array([distance(e, target) for e in earth])
+    order = d.argsort().argsort()
+    return order / len(d), d
+
+
+def tier(rank_frac):
+    return "match" if rank_frac < MATCH_RANK else ("partial" if rank_frac < PARTIAL_RANK else "gap")
