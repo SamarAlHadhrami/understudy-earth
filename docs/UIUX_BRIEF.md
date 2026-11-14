@@ -6,3 +6,4 @@ States: loading error message; empty result hint; no-candidate calm card; refuse
 Print: Test Site Brief has its own print stylesheet (white, one page).
 Result card order: Fit Verdict (overall %, factor bars, weight sliders; labelled user-weighted soft score), 12-month strip with notes, metrics, slope chart, twin pictures (own 5 km scale bar under each picture, native resolution in caption), confidence, limits.
 30 s demo path: see DEMO_SCRIPT.md.
+Footer carries the OpenStreetMap (ODbL), WorldCover (CC BY 4.0) and data credits. Geology notes use a blue-edged box (notes, not a score). 90 m squares are thinner-outlined and labelled coarser.

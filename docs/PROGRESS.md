@@ -1,7 +1,7 @@
 # PROGRESS
 
 ## RESUME HERE
-- Current state (2026-11-15): Prompt 1B done. No method change. Weak results diagnosed and shown in app and docs/VALIDATION.md (Atacama tile, Muscat Moon, AMADEE-18 month). Default target and demo 1 are the robust Meridiani Planum; demo 3 is the AMADEE-18 known failure. Not built: Jezero 30 m, whole-Oman 90 m, access, click-on-Mars, world view, rocks/dust, geology notes, Meteomatics.
+- Current state (2026-11-15): Prompt 2A done except Meteomatics (needs the owner to sign up and set environment variables; terms do not clearly allow publishing). Items 1-4 built: geology notes, OSM access, Jezero 30 m story, optional whole-Oman 90 m layer (pool v1 frozen; pool v2 what-if in VALIDATION.md). Earlier: Prompt 1B done. No method change. Weak results diagnosed and shown in app and docs/VALIDATION.md (Atacama tile, Muscat Moon, AMADEE-18 month). Default target and demo 1 are the robust Meridiani Planum; demo 3 is the AMADEE-18 known failure. Not built: Jezero 30 m, whole-Oman 90 m, access, click-on-Mars, world view, rocks/dust, geology notes, Meteomatics.
 - Deploy: `git subtree push --prefix app origin gh-pages`; owner must enable Pages (Settings > Pages > gh-pages / root). Link: https://samaralhadhrami.github.io/understudy-earth/
 - Tests: `python -m pytest tests -q`, `node tests/check_js_score.js`, `node tests/check_needs.js`, `PYTHONIOENCODING=utf-8 python tests/run_browser.py`.
 - Rebuild data: `python pipeline/build_windows.py && python pipeline/analyse.py && python pipeline/verify.py && python pipeline/power.py`.
@@ -11,7 +11,7 @@
 ## Decisions
 - Repo root = project folder; raw data in `data/` (git-ignored). Added Copernicus N17/N18 E055 tiles (AWS open data) so the Marmul area is covered.
 - Common baseline 500 m, 10 km windows (20x20 cells); windowed reads with area-average resampling.
-- Rover limit: slope only, 17 deg (loose-sand embedding, conservative). Roughness has NO sourced limit, so it is only a distribution distance. Slider range 5-30 deg.
+- Rover slope limit: user-set (default 15 deg, slider 5-30); cited rover values are observed peaks, not limits (see REFERENCES). Roughness has no sourced limit, so it is only a distribution distance.
 - (SUPERSEDED by rank-based similarity, see TRD) Score = 100*(1 - D), D = .5*|trav diff| + .25*min(1,W1slope/5deg) + .25*min(1,W1rough/20m). S_REF and R_REF are design constants, not physical limits. Tiers: match >=90, partial 70-90, gap <70 (design constants). Sensitivity to S_REF (3/5/10) stored in results.json; the 4 hard gaps persist at 3 and 5, 2 at 10.
 - Sea windows (>=10% cells at <=0.5 m) are dropped.
 - Moon Shackleton coordinate is approximate (lands on rim/wall); labelled so.

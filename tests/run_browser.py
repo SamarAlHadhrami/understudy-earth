@@ -38,6 +38,11 @@ try:
             pg.click(".tab[data-view=map]")
             pg.click("[data-demo=none]"); pg.wait_for_timeout(300); assert "No qualifying candidate" in pg.inner_text("#hook"); pg.screenshot(path=os.path.join(ROOT, "docs", "screens", name + "_nocand.png"))
             pg.click("[data-demo=good]"); pg.wait_for_timeout(300); assert "No qualifying candidate" not in pg.inner_text("#hook"); assert "Best fit for your test" in pg.inner_text("#result") and "Meridiani" in pg.inner_text("#hook") and "robust" in pg.inner_text("#result")
+            pg.click(".tab[data-view=jez]"); pg.wait_for_timeout(300); assert "finer-scale check" in pg.inner_text("#jez") and pg.evaluate("document.querySelector('#jez img').naturalWidth") == 64
+            pg.click(".tab[data-view=map]"); pg.click("[data-demo=good]"); pg.wait_for_timeout(300); assert "paved or main road" in pg.inner_text("#result") and "geology note" in pg.inner_text("#result")
+            n0 = pg.locator("#map svg path.leaflet-interactive").count(); pg.check("#show90"); pg.wait_for_timeout(4000); n1 = pg.locator("#map svg path.leaflet-interactive").count(); assert n1 > n0 + 4000, (n0, n1)
+            pg.evaluate("document.querySelectorAll('#map svg path.leaflet-interactive')[%d].dispatchEvent(new MouseEvent('click',{bubbles:true}))" % (n1 - 5)); pg.wait_for_timeout(400); assert "90 m data" in pg.inner_text("#result")
+            pg.uncheck("#show90"); pg.wait_for_timeout(500)
             pg.click("[data-demo=fail]"); pg.wait_for_timeout(300); assert "does NOT pick February" in pg.inner_text("#replay") and "Why February" in pg.inner_text("#replay"); pg.screenshot(path=os.path.join(ROOT, "docs", "screens", name + "_fail.png")); pg.click(".tab[data-view=map]"); pg.click("[data-demo=good]"); pg.wait_for_timeout(200)
             pg.click("[data-act=brief]"); pg.wait_for_timeout(200); assert "Test Site Brief" in pg.inner_text("#brief"); pg.screenshot(path=os.path.join(ROOT, "docs", "screens", name + "_brief.png"))
             pg.click("[data-act=closebrief]")

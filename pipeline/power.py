@@ -33,6 +33,8 @@ def series(d, p): return [d["properties"]["parameter"][p][m] for m in MONTHS]
 
 if __name__ == "__main__":
     earth = json.load(open(os.path.join(ROOT, "app", "data", "earth.json")))
+    f90 = os.path.join(ROOT, "app", "data", "earth90.json")
+    if os.path.exists(f90): earth += json.load(open(f90))  # whole-Oman 90 m squares
     cells, win = {}, {}
     for e in earth:
         k, la, lo = cell(e["lat"], e["lon"]); cells[k] = (la, lo); win[e["id"]] = k

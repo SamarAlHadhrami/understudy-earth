@@ -12,3 +12,8 @@
 - The slope limit is user-set. Cited rover numbers are observed peaks, not safe limits.
 - Squares with trees, crops or buildings are flagged using ESA WorldCover (10 m, 2021); the surface model can still overstate roughness elsewhere.
 - Baseline and name-free checks are retrospective sanity checks, not independent validation.
+- Access distances come from OpenStreetMap (volunteer data), are not space data, and say nothing about permission to enter.
+- Geology notes are the sources' own statements; our 10 km squares cannot see which features lie inside them.
+- The Jezero finer check uses one 10 km window of a 21 km DTM; 30 m cells still hide rocks and steps.
+- 90 m squares are coarser, have no land-cover check, and the box includes neighbouring countries and sea edges.
+- Meteomatics values are not used or published; NASA POWER is the only climate source in the app.

@@ -34,3 +34,9 @@ Factors, each 0-100: terrain (100 at or inside the match distance, 0 at twice th
 - Land cover (pipeline/landcover.py): ESA WorldCover 2021 v200 10 m read by HTTP windows; squares with 10% or more tree, crop or built-up are flagged and hidden by default from best-square choices; ranks are not changed. pipeline/mask_check.py shows no tier changes.
 - Twin pictures (pipeline/relief.py): 64 x 64 grid per 10 km window (156 m per pixel); Earth and Moon area-averaged, Mars bilinear upsampling; sun 315/45 deg, 3x exaggeration.
 - Fit score is a user-weighted soft score, not similarity and not a success chance.
+
+## Prompt 2A additions (method unchanged)
+- Access (pipeline/access.py): nearest vertex of OpenStreetMap paved/main roads and nearest place=city/town node, great-circle distance from the square centre via a KD-tree on unit-sphere coordinates (vertex spacing makes the error well below 1 km). Access fit in the Fit Verdict = 100 within 5 km of a paved or main road, 0 at 50 km or more (our assumption); default weight 0.
+- Jezero (pipeline/jezero.py): strip reads, NaN-aware block means (cells with more than 5% empty stay empty), the same terrain features at 500 m, plus a separate 30 m-baseline check (slope p50/p90, steep share, log roughness, scaled by Earth spreads).
+- Whole Oman (pipeline/get_glo90.py, build_oman90.py, pool_v2.py): GLO-90 tiles averaged to 500 m cells; the 30 m squares are kept where they exist; pool v1 stays frozen for the app, pool v2 is reported in docs/VALIDATION.md.
+- Meteomatics (pipeline/meteomatics.py): private cross-check, credentials from environment variables, raw responses saved under data/meteomatics, nothing read by the app.

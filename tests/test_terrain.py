@@ -44,3 +44,13 @@ def test_features_hist_total():
     z = np.random.default_rng(0).normal(0, 5, (20, 20)).cumsum(0)
     f = t.window_features(z)
     assert sum(f["hist"]) == 18 * 18
+
+
+def test_jezero_block_mean_synthetic():
+    import jezero
+    a = np.arange(36, dtype=float).reshape(6, 6)
+    m = jezero.block_mean(a, 3)
+    assert m.shape == (2, 2) and np.isclose(m[0, 0], a[:3, :3].mean()) and np.isclose(m[1, 1], a[3:, 3:].mean())
+    b = a.copy(); b[0, 0] = np.nan                      # one NaN in nine cells (11%) is too many: the block becomes NaN
+    assert np.isnan(jezero.block_mean(b, 3)[0, 0]) and np.isfinite(jezero.block_mean(b, 3)[1, 1])
+    c = np.full((6, 6), 5.0); assert np.allclose(jezero.block_mean(c, 2), 5.0)

@@ -8,3 +8,4 @@
 7. Gap view, Name-free check, AMADEE-18 replay (historical illustration with assumed needs, circle on map), How it works.
 8. Demo bar on the map: 1 Good match, 2 No qualifying candidate, 3 Brief (real computed outputs).
 9. Share link: choices are stored in the address (#t=...&tlo=...).
+10. Jezero story tab: finer-scale check against the Jezero DTM with twin pictures and the closest Oman squares. Result card also shows access (OpenStreetMap) and geology notes for Dhofar and Muscat squares. Checkbox "Show whole-Oman 90 m squares" adds an optional coarser layer.

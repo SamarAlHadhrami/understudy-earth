@@ -16,6 +16,7 @@
     <button class="tab on" data-view="map">Planner</button>
     <button class="tab" data-view="gap">Gap view</button>
     <button class="tab" data-view="cal">Calendar</button>
+    <button class="tab" data-view="jez">Jezero story</button>
     <button class="tab" data-view="base">Baseline check</button>
     <button class="tab" data-view="blind">Name-free check</button>
     <button class="tab" data-view="replay">AMADEE-18 replay</button>
@@ -60,6 +61,7 @@
         <small id="assume">Test-need numbers are the user's choice or <b>our assumption</b>; they are not mission requirements. Earth temperatures are not Mars or Moon temperatures.</small>
       </div>
       <label class="chk"><input type="checkbox" id="mask" checked> Hide squares with 10% or more trees, crops or buildings (surface-model bias; ESA WorldCover)</label>
+      <label class="chk"><input type="checkbox" id="show90"> Show whole-Oman 90 m squares (extra layer; coarser data, no twin pictures or land-cover check; the box 16.5-26.5 N, 52-60 E includes neighbouring land and sea edges)</label>
       <label>Map shows
         <select id="mode"><option value="both">Where + when (terrain match and test needs)</option><option value="terrain">Terrain match only</option><option value="needs">Test needs only</option></select></label>
       <label>Month
@@ -81,6 +83,7 @@
     </div>
 
     <div class="view" id="v-gap"><h2>Gap view</h2><p class="sub">Terrain match only. Best Earth square for each target, Oman alone, then with the two outside check sites.</p><div id="gaptable"></div></div>
+    <div class="view" id="v-jez"><h2>Jezero story</h2><div id="jez"></div></div>
     <div class="view" id="v-cal"><h2>Rehearsal calendar</h2><div id="cal"></div></div>
     <div class="view" id="v-base"><h2>Baseline and stability check</h2><div id="base"></div></div>
     <div class="view" id="v-blind"><h2>Name-free check</h2><div id="blind"></div></div>
@@ -102,6 +105,7 @@
     </div>
   </aside>
 </main>
+<footer class="foot">Map data &copy; OpenStreetMap contributors (ODbL); access distances are derived from OpenStreetMap and are not space data. Contains ESA WorldCover data (CC BY 4.0). Terrain: Copernicus DEM (ESA), LOLA and MOLA (NASA), HiRISE Jezero DTM (USGS). Climate: NASA POWER. A screening tool, not a validated site selector.</footer>
 <div id="brief" class="brief" hidden></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="score.js"></script>

@@ -9,3 +9,8 @@
 - `stability.json`: {configs, summary: per target tiers seen, rank band, threshold_sensitive}. Built by `pipeline/stability.py`.
 - `landcover.json`: {window id: [tree %, crop %, built %]} from ESA WorldCover 2021 v200. Built by `pipeline/landcover.py`. `mask_check.json`: tier change when flagged squares are hidden.
 - `relief/<id>.png`: 64 x 64 shaded relief per window and target, built by `pipeline/relief.py` (about 1.4 MB for 644 files).
+- `notes.json`: geology notes per group with the source text for each statement.
+- `access.json`: {id: [km to paved/main road, km to town, town name]} derived from OpenStreetMap (ODbL).
+- `jezero.json`: Jezero window statistics at 500 m and 30 m and the closest squares (both checks).
+- `earth90.json`: 4756 squares from GLO-90 (same fields as earth.json, group oman90), loaded only when the 90 m layer is switched on. `pool_v2.json`: summary of the what-if with the combined pool.
+- `climate_power.json` now covers 189 cells (the 90 m squares included).

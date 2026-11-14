@@ -95,7 +95,7 @@ results = {"method": "rank-based terrain similarity", "sensitivity": sens, "gap"
            "scales": dict(zip(sc.FEATS, [round(float(x), 5) for x in sc.SCALES]))}
 json.dump(results, open(os.path.join(OUT, "results.json"), "w"), indent=1)
 meta = {"baseline_m": t.BASELINE_M, "window_km": t.WINDOW_KM, "slope_edges": t.SLOPE_EDGES, "rough_edges": [e if e < 1e6 else 320 for e in t.ROUGH_EDGES],
-        "scales": [float(x) for x in sc.SCALES], "thr_match_dist": THR_MATCH, "thr_partial_dist": THR_PARTIAL, "match_rank": sc.MATCH_RANK, "partial_rank": sc.PARTIAL_RANK, "tasks": sc.TASKS}
+        "scales": [float(x) for x in sc.SCALES], "thr_match_dist": THR_MATCH, "thr_partial_dist": THR_PARTIAL, "match_rank": sc.MATCH_RANK, "partial_rank": sc.PARTIAL_RANK, "tasks": sc.TASKS, "pool_version": "v1: 627 squares from the 30 m tiles (Muscat, Dhofar, Meteor Crater, Atacama), frozen 2026-11-15; whole-Oman 90 m squares are an optional layer ranked against this pool"}
 json.dump(meta, open(os.path.join(OUT, "meta.json"), "w"), indent=1)
 
 for g in gap:

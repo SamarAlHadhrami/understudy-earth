@@ -13,7 +13,7 @@
 ## Features
 Core: map, target selector, test-needs sliders and ready-made tests (our assumptions), month strip, reasons and close-month note, combined where+when colouring, calm "no qualifying candidate" state, second-site toggle, Test Site Brief, name-free check, baseline and stability tab, one-click demo.
 Extras: typed sentence box (rule-based, refuses unknown input), Fit Verdict (user-weighted soft score), twin shaded-relief pictures (64 x 64), slope chart, compare mode, rehearsal calendar and two-site plan, share link, confidence badge, tree/crop/building flag (ESA WorldCover).
-Not built: whole-Oman 90 m tiles, click-anywhere on Mars, Jezero at 30 m, access factor, world view, rocks/dust proxy, geology notes (see docs/EXTRA_FACTORS_RESEARCH.md).
+Also built: geology notes, access factor (OpenStreetMap), Jezero story at 30 m, optional whole-Oman 90 m layer. Not built: click-anywhere on Mars, world view, rocks/dust proxy (see docs/EXTRA_FACTORS_RESEARCH.md).
 
 ## Success checks
 Python and JS tests pass; second-method check agrees; checks reported plainly; static app opens from a public link; limits box on every result.
