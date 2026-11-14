@@ -14,7 +14,7 @@ Limits: 500 m cells hide rocks and steps; rover slope limit is a rover-scale ben
 
 **NASA data used:** LRO LOLA south-pole elevation and slope products; Mars Global Surveyor MOLA 463 m global DEM; NASA POWER monthly climatology.
 
-**Space Agency partner data and references:** Copernicus DEM GLO-30 (ESA). Libraries: numpy, scipy, rasterio, pyproj, Playwright (testing), Leaflet. Basemap (c) OpenStreetMap contributors. AMADEE-18: Austrian Space Forum (OeWF). Rover benchmarks and all other sources: docs/REFERENCES.md. (WorldClim was evaluated locally only; its licence does not allow redistribution, so it is not used in the published app. Do not list it as used unless permission is obtained.)
+**Space Agency partner data and references:** Copernicus DEM GLO-30 (ESA). Libraries: numpy, scipy, rasterio, pyproj, Playwright (testing), Leaflet. Basemap (c) OpenStreetMap contributors. AMADEE-18: Austrian Space Forum (OeWF). Rover benchmarks and all other sources: docs/REFERENCES.md.
 
 **Use of AI (SI) - draft, edit before use:**
 The project idea and its direction were chosen by me. I used AI tools for research, checking sources, help writing and debugging code, and help with text. AI-assisted code and text are described in the repository README. No AI-made images or videos are used.

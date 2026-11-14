@@ -5,5 +5,4 @@
 - `results.json`: gap table, blind test, leave-one-out sensitivity, scales.
 - `second_check.json`: independent slope check rows.
 - `climate_power.json`: {cells: {key: {lat, lon, T2M, T2M_MAX, T2M_MIN, WS2M, RH2M, PRECTOTCORR, ALLSKY_SFC_SW_DWN (12 months each)}}, win: {window id: cell key}, source, accessed}.
-- `climate_worldclim.json`: optional, NOT committed (WorldClim licence); {win: {id: {tmax,tmin,tavg,wind,rh,srad}}}. The app falls back to POWER when absent.
 All files together are under 1 MB.

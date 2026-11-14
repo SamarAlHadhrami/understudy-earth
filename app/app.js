@@ -11,8 +11,8 @@
   var FIELDS = ['tlo', 'thi', 'wmin', 'wmax', 'rhmax', 'smin', 'limit'];
 
   function load(f, opt) { return fetch('data/' + f).then(function (r) { if (!r.ok) { if (opt) return null; throw new Error(f + ' ' + r.status); } return r.json(); }).catch(function (e) { if (opt) return null; throw e; }); }
-  Promise.all([load('meta.json'), load('earth.json'), load('targets.json'), load('results.json'), load('second_check.json'), load('climate_power.json'), load('climate_worldclim.json', true)]).then(function (a) {
-    D.meta = a[0]; D.earth = a[1]; D.targets = a[2]; D.results = a[3]; D.second = a[4]; D.power = a[5]; D.wc = a[6];
+  Promise.all([load('meta.json'), load('earth.json'), load('targets.json'), load('results.json'), load('second_check.json'), load('climate_power.json')]).then(function (a) {
+    D.meta = a[0]; D.earth = a[1]; D.targets = a[2]; D.results = a[3]; D.second = a[4]; D.power = a[5];
     SC = UEScore(D.meta); init();
   }).catch(function (e) {
     var el = $('loaderr'); el.hidden = false; el.textContent = 'Could not load the data files (' + e.message + '). Reload the page; if it persists the site files are missing.';
@@ -20,8 +20,6 @@
 
   function climate(e) {
     if (e._c) return e._c;
-    var w = D.wc && D.wc.win[e.id];
-    if (w) return (e._c = { tmax: w.tmax, tmin: w.tmin, wind: w.wind, rh: w.rh, srad: w.srad, src: 'WorldClim 2.1, 1970-2000 average, ~4.5 km cells', coarse: false });
     var c = D.power.cells[D.power.win[e.id]];
     return (e._c = { tmax: c.T2M_MAX, tmin: c.T2M_MIN, wind: c.WS2M, rh: c.RH2M, srad: c.ALLSKY_SFC_SW_DWN, src: 'NASA POWER climatology 2001-2025, cells ~50 km wide (regional, not local)', coarse: true });
   }
@@ -190,7 +188,7 @@
 
   function confidence(e) {
     var c = climate(e), items = ['Terrain: surface model, 500 m cells'];
-    items.push(c.coarse ? 'Climate: coarse (about 50 km cells), typical year' : 'Climate: about 4.5 km, 1970-2000 average');
+    items.push('Climate: NASA POWER values are regional and approximate (about 50 km cells), typical year');
     if (e.group === 'oman_dhofar' && e.approx) items.push('Site location approximate');
     var low = c.coarse || e.group.indexOf('oman') !== 0;
     return { level: low ? 'Medium-low' : 'Medium', items: items };
@@ -251,7 +249,7 @@
       '<h2>Terrain match</h2><table>' + metricRows(e).map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>' +
       '<h2>When: 12-month fit</h2>' + stripHtml(e) + '<p>Best months: <b>' + (e._best.length ? esc(N.monthsText(e._best)) : 'none fits') + '</b>. Data: ' + esc(c.src) + '. Typical-year average, not a forecast.</p>' + second +
       '<h2>What this test cannot copy</h2><ul><li>Gravity, thin air and radiation.</li><li>Real Moon/Mars temperatures: Earth temperature only shows when conditions suit the test.</li><li>Geology and chemistry; rocks, steps and slopes below 500 m; dust storms.</li></ul>' +
-      '<h2>Confidence and data</h2><p>' + esc(cf.level) + '. ' + cf.items.map(esc).join('; ') + '.</p><p class="sub">Data: Copernicus DEM GLO-30 (ESA), LOLA and MOLA (NASA), NASA POWER climatology' + (D.wc ? ', WorldClim 2.1' : '') + '. See docs/REFERENCES.md.</p>';
+      '<h2>Confidence and data</h2><p>' + esc(cf.level) + '. ' + cf.items.map(esc).join('; ') + '.</p><p class="sub">Data: Copernicus DEM GLO-30 (ESA), LOLA and MOLA (NASA), NASA POWER climatology' + '' + '. See docs/REFERENCES.md.</p>';
     $('brief').hidden = false; window.scrollTo(0, 0);
   }
 

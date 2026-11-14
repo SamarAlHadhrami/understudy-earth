@@ -41,6 +41,6 @@ try:
         b.close()
 finally:
     srv.terminate()
-real = [e for e in errs if "favicon" not in e and not ("404" in e and miss and all("climate_worldclim" in u for u in miss))]
+real = [e for e in errs if "favicon" not in e]
 print("console errors:", real or "none")
 sys.exit(1 if real else 0)

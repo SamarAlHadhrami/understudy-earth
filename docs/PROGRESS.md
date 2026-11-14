@@ -1,10 +1,10 @@
 # PROGRESS
 
 ## RESUME HERE
-- Current state: core upgraded to a "where and when" planner. Stages 0, 1, 2, 3, 4 done; Stage 1b (WorldClim) processed locally but NOT published (licence forbids redistribution without permission; ask owner). Stage 5 extras 1-5 done; 6 (whole-Oman 90 m) and 7 (click on Mars) not done.
+- Current state: core upgraded to a "where and when" planner. Stages 0, 1, 2, 3, 4 done; the second climate source was dropped (licence); NASA POWER only. Stage 5 extras 1-5 done; 6 (whole-Oman 90 m) and 7 (click on Mars) not done.
 - Deploy: `git subtree push --prefix app origin gh-pages`; owner must enable Pages (Settings > Pages > gh-pages / root). Link: https://samaralhadhrami.github.io/understudy-earth/
 - Tests: `python -m pytest tests -q`, `node tests/check_js_score.js`, `node tests/check_needs.js`, `PYTHONIOENCODING=utf-8 python tests/run_browser.py`.
-- Rebuild data: `python pipeline/build_windows.py && python pipeline/analyse.py && python pipeline/verify.py && python pipeline/power.py` (+ `python pipeline/worldclim.py` locally).
+- Rebuild data: `python pipeline/build_windows.py && python pipeline/analyse.py && python pipeline/verify.py && python pipeline/power.py`.
 - Open problems: rover limit sources need primary confirmation; AMADEE-18 site approximate (Marmul); reference PDF not on disk; ready-made test numbers are our assumptions.
 - Bug fixed: .gitignore `data/` also ignored app/data, so the first deploy had no data files. Now `/data/` only.
 
@@ -30,5 +30,4 @@
 - Blind test: AMADEE-18 area top 10.7% (mean over Mars targets) / 24.0% (best target); Meteor Crater 4.5% / 22.4%; Atacama tile 50.6% / 24.9%.
 - NASA POWER: 30 cells cached; tests check units, ordering and raw-cache equality.
 - AMADEE-18 replay (assumed needs: day max <= 35 C, night min >= 5 C, sun >= 4): planner best months Jan and Dec; Feb scores 80 (good, not top). Real phase Feb 2018 (OeWF).
-- WorldClim cross-check (627 windows, WorldClim minus NASA POWER, mean over windows): mean temperature agrees within about 1 C (mean abs 1.1); wind mean abs 0.8 m/s; sunlight mean abs 0.5 kWh/m2/day. But POWER T2M_MAX is about 7 C higher and T2M_MIN about 5 C lower than WorldClim mean daily max/min (POWER daily range is wider, likely extremes or reanalysis bias). Consequence: the published strip (POWER) is conservative for "day max / night min" needs. Aggregates only, in docs/climate_crosscheck.json; WorldClim per-window values stay local (licence). Ask owner before publishing them or asking WorldClim for permission (info@worldclim.org).
 - Public link verified live (418 squares render): https://samaralhadhrami.github.io/understudy-earth/
