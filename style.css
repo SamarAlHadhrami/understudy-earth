@@ -123,3 +123,5 @@ td.cc.match{background:#2ec4b6;color:#07101f}
 td.cc.partial{background:#f6c453 radial-gradient(#07101f55 1.5px,transparent 1.5px) 0 0/6px 6px;color:#07101f}
 td.cc.gap{background:repeating-linear-gradient(45deg,#ff5a5f 0 3px,#4a1a24 3px 6px);color:#fff;text-shadow:0 0 3px #000}
 @media print{.demobar{display:none}}
+
+@media(max-width:700px){.demobar{bottom:100px;left:6px;right:6px}}
