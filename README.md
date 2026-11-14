@@ -1,6 +1,6 @@
 # Understudy Earth
 
-NASA Space Apps 2026, Challenge 10, team Blue Ember (Muscat). Scores Earth windows (Oman and check sites) against real Moon and Mars terrain for a chosen task, shows where nothing matches, and tests itself blind.
+NASA Space Apps 2026, Challenge 10, team Blue Ember (Muscat). Scores Earth windows (Oman and check sites) against real Moon and Mars terrain for a chosen task, shows where no searched square qualifies, and tests itself blind.
 
 Status: in progress. See docs/PROGRESS.md.
 

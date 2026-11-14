@@ -11,8 +11,10 @@ assert.strictEqual(N.monthsText([0, 1]), 'Jan to Feb'); assert.strictEqual(N.mon
 assert.strictEqual(N.monthsText([]), 'no month fits');
 const p = N.parseSentence('rover test, slopes 10 to 20 degrees, dry, 5 to 30 degrees', N.DEFAULT);
 assert.strictEqual(p.needs.limit, 20); assert.strictEqual(p.needs.tlo, 5); assert.strictEqual(p.needs.thi, 30); assert.strictEqual(p.needs.rhmax, 40);
-assert.ok(p.said.length >= 4);
+assert.ok(p.said.length >= 3); assert.strictEqual(p.refused, false);
 assert.strictEqual(N.parseSentence('windy sunny', N.DEFAULT).needs.wmin, 4);
+const r1 = N.parseSentence('build me a spaceship', N.DEFAULT); assert.strictEqual(r1.refused, true); assert.deepStrictEqual(r1.needs, N.DEFAULT);
+const r2 = N.parseSentence('wind below 5 m/s, humidity below 30%, sun at least 5, between 10 and 25 degrees, banana', N.DEFAULT); assert.strictEqual(r2.needs.wmax, 5); assert.strictEqual(r2.needs.rhmax, 30); assert.strictEqual(r2.needs.smin, 5); assert.strictEqual(r2.needs.tlo, 10); assert.strictEqual(r2.needs.thi, 25); assert.ok(r2.unknown.indexOf('banana') >= 0);
 assert.strictEqual(N.worse('match', 'gap'), 'gap');
 const mf = N.monthFactors(c, 6, n); assert.strictEqual(mf.temp, 0); assert.strictEqual(mf.sun, 100);
 assert.strictEqual(N.terrainFit(0.05, 0.081, 0.245), 100); assert.strictEqual(N.terrainFit(0.49, 0.081, 0.245), 0);

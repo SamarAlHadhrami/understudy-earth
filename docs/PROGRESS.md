@@ -1,11 +1,11 @@
 # PROGRESS
 
 ## RESUME HERE
-- Current state: core upgraded to a "where and when" planner. Stages 0, 1, 2, 3, 4 done; the second climate source was dropped (licence); NASA POWER only. Round 2: defaults realistic, second climate source removed, Fit Verdict and twin pictures done; extras 3-9 not started, 10 skipped.
+- Current state (2026-11-14): core frozen. Round 3 done: research doc, label fixes, cited rover references (observed, not limits), AMADEE-18 needs recorded in docs/VALIDATION.md, calm no-candidate state, 64 px twin pictures, month notes, typed sentence box, baseline + stability tabs, calendar + two-site plan, demo bar, WorldCover flag. Not built: Jezero 30 m, whole-Oman 90 m, access, click-on-Mars, world view, rocks/dust, geology notes, Meteomatics.
 - Deploy: `git subtree push --prefix app origin gh-pages`; owner must enable Pages (Settings > Pages > gh-pages / root). Link: https://samaralhadhrami.github.io/understudy-earth/
 - Tests: `python -m pytest tests -q`, `node tests/check_js_score.js`, `node tests/check_needs.js`, `PYTHONIOENCODING=utf-8 python tests/run_browser.py`.
 - Rebuild data: `python pipeline/build_windows.py && python pipeline/analyse.py && python pipeline/verify.py && python pipeline/power.py`.
-- Open problems: rover limit sources need primary confirmation; AMADEE-18 site approximate (Marmul); reference PDF not on disk; ready-made test numbers are our assumptions.
+- Open problems: AMADEE-18 site approximate (Marmul); reference PDF not on disk; ready-made test numbers are our assumptions.
 - Bug fixed: .gitignore `data/` also ignored app/data, so the first deploy had no data files. Now `/data/` only.
 
 ## Decisions

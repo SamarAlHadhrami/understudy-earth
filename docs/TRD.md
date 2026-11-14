@@ -7,10 +7,10 @@
 ## Terrain similarity
 1. Each 10 km window is area-averaged to 500 m cells (windowed reads, `Resampling.average`). Slope by central differences; roughness = deviation from 3x3 mean, at 500 m and at 1 km (2x2 block mean); relief; steep share (>10 deg); 2D slope x roughness histogram.
 2. Distance D = mean of six terms, each divided by its spread (std) across all Earth windows: W1 distance of slope distributions, |difference of 90th percentile slope|, |steep share|, |log roughness 500 m|, |log roughness 1 km|, |log relief|.
-3. Map colouring: rank of each window among all Earth windows for the target (top 5% match, 5-20% partial, rest gap).
-4. Target gap (absolute): best-window distance compared with distances between random pairs of Earth windows: below their 5th percentile = MATCH, below 20th = PARTIAL, else GAP. This avoids the trap that the best window always ranks first.
-5. Separate "drivable share" line: share of cells with slope under the rover limit (17 deg, sourced; slider 5-30).
-6. Blind test: scorer sees only numbers; known sites looked up afterwards. Leave-one-term-out sensitivity in results.json.
+3. Map colouring: rank of each window among all Earth windows for the target (top 5% match, 5-20% partial, rest weak).
+4. Target gap (absolute): best-window distance compared with distances between random pairs of Earth windows: below their 5th percentile = MATCH, below 20th = PARTIAL, else NO QUALIFYING CANDIDATE in the searched area (internally "gap"). This avoids the trap that the best window always ranks first.
+5. Separate line "share of cells below the chosen slope": the limit is user-set (slider 5-30, default 15). It is not a safe driving limit; observed rover reference points are shown with citations (REFERENCES.md).
+6. Name-free check (a sanity check, not validation): scorer sees only numbers; known sites looked up afterwards. Leave-one-term-out sensitivity in results.json.
 7. Second method: slope recomputed with integer block means + Sobel on native reads for 17 windows (tolerance max(0.3 deg, 25%)).
 
 ## Climate and "when"
@@ -26,3 +26,11 @@
 
 ## Fit Verdict (extra 1)
 Factors, each 0-100: terrain (100 at or inside the match distance, 0 at twice the partial distance, linear between), temperature, wind, dryness, sunlight (month fit split by factor, using the best month or the chosen month; margins are our assumptions). Overall = weighted mean of factors with weight above 0 (user weights 0-3, default 1). Verdict: 75+ Strong fit, 50-74 Good with gaps, below 50 Poor fit. The weakest factor gives the "what would improve it" line. Confidence: Medium for squares inside the 30 m Oman tiles with a firm site, Low for outside sites or approximate sites; never High, because climate cells are about 50 km. Tests: tests/check_needs.js.
+
+## Round 3 additions (method unchanged)
+- Climate grids: NASA POWER temperature, wind and humidity about 0.5 x 0.625 deg (about 50 km); solar about 1 deg (about 110 km).
+- Baseline check (pipeline/baseline.py): per target, a known site's median rank among all squares vs 100 random draws of the same size. Retrospective.
+- Stability check (pipeline/stability.py): window 5/10/20 km, cell 500 m/1 km, thresholds 5-20% vs 10-30%; "threshold-sensitive" when the tier changes.
+- Land cover (pipeline/landcover.py): ESA WorldCover 2021 v200 10 m read by HTTP windows; squares with 10% or more tree, crop or built-up are flagged and hidden by default from best-square choices; ranks are not changed. pipeline/mask_check.py shows no tier changes.
+- Twin pictures (pipeline/relief.py): 64 x 64 grid per 10 km window (156 m per pixel); Earth and Moon area-averaged, Mars bilinear upsampling; sun 315/45 deg, 3x exaggeration.
+- Fit score is a user-weighted soft score, not similarity and not a success chance.

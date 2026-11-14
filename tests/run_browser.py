@@ -29,8 +29,15 @@ try:
             pg.evaluate("document.querySelectorAll('#map svg path.leaflet-interactive')[200].dispatchEvent(new MouseEvent('click',{bubbles:true}))"); pg.wait_for_timeout(300)
             assert pg.locator("#result .strip .mc").count() == 12 and "Best months" in pg.inner_text("#result")
             assert "Best fit for your test" in pg.inner_text("#result .verdict"); a = pg.inner_text("#result .vhead"); pg.evaluate("var r=document.querySelector('[data-w=terrain]'); r.value=0; r.dispatchEvent(new Event('input',{bubbles:true}))"); pg.wait_for_timeout(150); print(name, "verdict:", a, "->", pg.inner_text("#result .vhead"))
-            assert pg.locator("#tw_t").count() == 1 and pg.locator("#tw_e").count() == 1; assert pg.evaluate("(function(){var d=document.getElementById('tw_e').getContext('2d').getImageData(0,0,20,20).data,s=new Set();for(var i=0;i<d.length;i+=4)s.add(d[i]);return s.size})()") > 3
+            assert pg.locator(".twins img").count() == 2 and pg.evaluate("[...document.querySelectorAll('.twins img')].every(i=>i.complete&&i.naturalWidth==64)"), "twin pictures missing"
+            assert "Why months fail" in pg.inner_text("#result")
             print(name, "best months line:", pg.inner_text("#result .best"))
+            pg.fill("#sentence", "build me a spaceship"); pg.click("#go"); pg.wait_for_timeout(100); assert "could not understand" in pg.inner_text("#understood") and pg.input_value("#thi") == "30"
+            pg.click("[data-act=addcal]"); pg.click(".tab[data-view=cal]"); pg.wait_for_timeout(200); assert pg.locator("table.cal td.cc").count() == 12; pg.check("#split"); assert "Phase" in pg.inner_text("#splitres") or "One site" in pg.inner_text("#splitres") or "enough" in pg.inner_text("#splitres")
+            pg.click(".tab[data-view=base]"); pg.wait_for_timeout(200); assert "Retrospective" in pg.inner_text("#base") and "threshold-sensitive" in pg.inner_text("#base")
+            pg.click(".tab[data-view=map]")
+            pg.click("[data-demo=none]"); pg.wait_for_timeout(300); assert "No qualifying candidate" in pg.inner_text("#hook"); pg.screenshot(path=os.path.join(ROOT, "docs", "screens", name + "_nocand.png"))
+            pg.click("[data-demo=good]"); pg.wait_for_timeout(300); assert "No qualifying candidate" not in pg.inner_text("#hook"); assert "Best fit for your test" in pg.inner_text("#result")
             pg.click("[data-act=brief]"); pg.wait_for_timeout(200); assert "Test Site Brief" in pg.inner_text("#brief"); pg.screenshot(path=os.path.join(ROOT, "docs", "screens", name + "_brief.png"))
             pg.click("[data-act=closebrief]")
             pg.screenshot(path=os.path.join(ROOT, "docs", "screens", name + ".png"), full_page=(name == "phone"))

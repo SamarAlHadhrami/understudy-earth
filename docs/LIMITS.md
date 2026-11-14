@@ -6,3 +6,9 @@
 - A 500 m baseline cannot see rocks, steps or small slopes. Rover limits apply at metre scale, so a pass here is necessary, not sufficient.
 - Oman coverage = only the tiles we hold (Muscat area, Dhofar), not all of Oman.
 - Unmatched results are not proof of anything untested.
+- "No qualifying candidate" means none of the squares we searched qualifies. It says nothing about places we did not search, and tiers are threshold-sensitive (see the stability check).
+- NASA POWER temperature, wind and humidity cells are about 50 km and solar about 110 km: regional and approximate.
+- The fit percentage is a user-weighted soft score, not similarity and not a success chance.
+- The slope limit is user-set. Cited rover numbers are observed peaks, not safe limits.
+- Squares with trees, crops or buildings are flagged using ESA WorldCover (10 m, 2021); the surface model can still overstate roughness elsewhere.
+- Baseline and name-free checks are retrospective sanity checks, not independent validation.

@@ -4,18 +4,20 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Understudy Earth</title>
-<meta name="description" content="Where and when on Earth can we rehearse a Moon or Mars job, and where is nothing good enough?">
+<meta name="description" content="Where and when on Earth can we rehearse a Moon or Mars job, and where does nothing we searched qualify?">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <header>
   <div class="brand"><span class="logo" aria-hidden="true">&#9680;</span><div><h1>Understudy Earth</h1>
-  <p class="tag">Where and when on Earth can we rehearse a Moon or Mars job &mdash; and where is nothing good enough?</p></div></div>
+  <p class="tag">Where and when on Earth can we rehearse a Moon or Mars job?</p></div></div>
   <nav>
     <button class="tab on" data-view="map">Planner</button>
     <button class="tab" data-view="gap">Gap view</button>
-    <button class="tab" data-view="blind">Blind test</button>
+    <button class="tab" data-view="cal">Calendar</button>
+    <button class="tab" data-view="base">Baseline check</button>
+    <button class="tab" data-view="blind">Name-free check</button>
     <button class="tab" data-view="replay">AMADEE-18 replay</button>
     <button class="tab" data-view="about">How it works</button>
   </nav>
@@ -26,8 +28,9 @@
     <div id="hook" class="hook"></div>
     <div id="map" role="application" aria-label="Map of Oman terrain windows coloured by fit for the chosen test"></div>
     <div class="legend" aria-label="Legend">
-      <span><i class="sw match"></i>GOOD</span><span><i class="sw partial"></i>PARTIAL</span><span><i class="sw gap"></i>POOR</span>
+      <span><i class="sw match"></i>GOOD</span><span><i class="sw partial"></i>PARTIAL</span><span><i class="sw gap"></i>WEAK (hatched)</span><span><i class="sw none"></i>no qualifying candidate (grey)</span>
     </div>
+    <div class="demobar" id="demobar"><b>Demo</b> <button data-demo="good">1 Good match</button><button data-demo="none">2 No qualifying candidate</button><button data-demo="brief">3 Brief</button></div>
     <div id="loaderr" class="err" hidden></div>
   </section>
 
@@ -41,8 +44,9 @@
         <button data-p="rover">Rover test</button><button data-p="instrument">Instrument test</button>
         <button data-p="walking">Walking test</button><button data-p="cold">Cold test</button>
       </div>
-      <div class="sentence"><input id="sentence" type="text" placeholder='e.g. rover test, slopes 10 to 20 degrees, dry, 5 to 30 degrees' aria-label="Describe your test in one sentence">
-        <button id="go" title="Fill the sliders from the sentence">Apply</button><button id="mic" title="Speak (if your browser supports it)" hidden>&#127908;</button></div>
+      <div class="sentence"><input id="sentence" type="text" placeholder='type, e.g. rover test, slopes up to 20 degrees, dry, 5 to 30 degrees' aria-label="Describe your test in one sentence">
+        <button id="go" title="Fill the sliders from the sentence">Apply</button></div>
+      <div class="chips" id="chips"></div>
       <div id="understood" class="understood"></div>
       <div class="needs">
         <label>Air temperature window: <b id="tv" class="mono"></b>
@@ -51,10 +55,11 @@
           <span class="two"><input type="range" id="wmin" min="0" max="12" step="0.5" value="0"><input type="range" id="wmax" min="0" max="12" step="0.5" value="12"></span></label>
         <label>Dryness (max humidity): <b id="rv" class="mono"></b><input type="range" id="rhmax" min="10" max="100" step="5" value="100"></label>
         <label>Sunlight (min per day): <b id="sv" class="mono"></b><input type="range" id="smin" min="0" max="8" step="0.5" value="0"></label>
-        <label>Max rover slope (drivable share line): <b id="limval" class="mono">17&deg;</b><input type="range" id="limit" min="5" max="30" step="0.5" value="17">
+        <label>Slope limit (user-set, not a safe driving limit): <b id="limval" class="mono">15&deg;</b><input type="range" id="limit" min="5" max="30" step="0.5" value="15">
           <small id="limsrc"></small></label>
         <small id="assume">Test-need numbers are the user's choice or <b>our assumption</b>; they are not mission requirements. Earth temperatures are not Mars or Moon temperatures.</small>
       </div>
+      <label class="chk"><input type="checkbox" id="mask" checked> Hide squares with 10% or more trees, crops or buildings (surface-model bias; ESA WorldCover)</label>
       <label>Map shows
         <select id="mode"><option value="both">Where + when (terrain match and test needs)</option><option value="terrain">Terrain match only</option><option value="needs">Test needs only</option></select></label>
       <label>Month
@@ -76,22 +81,24 @@
     </div>
 
     <div class="view" id="v-gap"><h2>Gap view</h2><p class="sub">Terrain match only. Best Earth square for each target, Oman alone, then with the two outside check sites.</p><div id="gaptable"></div></div>
-    <div class="view" id="v-blind"><h2>Blind test</h2><div id="blind"></div></div>
+    <div class="view" id="v-cal"><h2>Rehearsal calendar</h2><div id="cal"></div></div>
+    <div class="view" id="v-base"><h2>Baseline and stability check</h2><div id="base"></div></div>
+    <div class="view" id="v-blind"><h2>Name-free check</h2><div id="blind"></div></div>
     <div class="view" id="v-replay"><h2>AMADEE-18 replay</h2><div id="replay"></div></div>
     <div class="view" id="v-about"><h2>How it works</h2>
       <ol class="how">
         <li><b>Same scale.</b> Moon, Mars and Earth terrain models are averaged to 500 m cells and cut into 10 km squares.</li>
-        <li><b>Terrain match.</b> Slope, steepness, roughness at two scales and relief are compared. Each square gets a rank for the chosen target (top 5% = good, 5&ndash;20% = partial). A target is a GAP when no square is as close as the closest 5% of Earth-square pairs are to each other.</li>
+        <li><b>Terrain match.</b> Slope, steepness, roughness at two scales and relief are compared. Each square gets a rank for the chosen target (top 5% = good, 5&ndash;20% = partial). A target has no qualifying candidate in the searched area when no square is as close as the closest 5% of Earth-square pairs are to each other (it says nothing about all of Earth).</li>
         <li><b>Test needs.</b> You enter the temperature window, wind, dryness and sunlight your test needs. Each month is scored by its weakest factor.</li>
         <li><b>Where and when.</b> The map combines both: a square is only GOOD if the terrain matches and a month fits.</li>
-        <li><b>Blind.</b> The scorer only sees terrain numbers, never site names.</li>
+        <li><b>Name-free check.</b> The scorer only sees terrain numbers, never site names. It is a sanity check, not validation.</li>
       </ol>
       <h3>What Earth cannot copy</h3>
       <ul class="cant"><li>Gravity (Mars 0.38 g, Moon 0.16 g)</li><li>Thin air and Martian dust, lunar vacuum</li><li>Radiation and real Moon/Mars temperatures</li><li>Geology and chemistry: a terrain match is not a rock match</li></ul>
       <h3>What our data cannot see</h3>
-      <ul class="cant"><li>Rocks, steps and slopes smaller than 500 m</li><li>Earth heights are a surface model (trees, buildings); Moon and Mars are bare ground</li><li>Climate is a typical-year average on a coarse grid (NASA POWER cells about 50 km wide), not local weather</li><li>Moon: south pole only. Oman: only the tiles we hold.</li></ul>
+      <ul class="cant"><li>Rocks, steps and slopes smaller than 500 m</li><li>Earth heights are a surface model (trees, buildings); Moon and Mars are bare ground</li><li>Climate is a typical-year average on a coarse grid (NASA POWER temperature, wind and humidity cells about 50 km, solar about 110 km), not local weather</li><li>Moon: south pole only. Oman: only the tiles we hold.</li></ul>
       <h3>Checks</h3><div id="second"></div>
-      <p class="credit">Data: LOLA (NASA/GSFC), MOLA (NASA/USGS), NASA POWER climatology, Copernicus DEM GLO-30 (ESA). Basemap &copy; OpenStreetMap contributors. Code: Apache 2.0.</p>
+      <p class="credit">Data: LOLA (NASA/GSFC), MOLA (NASA/USGS), NASA POWER climatology, Copernicus DEM GLO-30 (ESA), ESA WorldCover 2021 (CC BY 4.0). Basemap &copy; OpenStreetMap contributors. Code: Apache 2.0.</p>
     </div>
   </aside>
 </main>
