@@ -71,7 +71,7 @@
     base.on('tileerror', fb);
   }
   function initMap() {
-    map = L.map('map', { zoomControl: true, maxBounds: [[-85, -180], [85, 180]], maxBoundsViscosity: 1, worldCopyJump: false }).setView([20.3, 56.4], 6);
+    map = L.map('map', { zoomControl: true, maxBounds: [[-85, -180], [85, 180]], maxBoundsViscosity: 1, worldCopyJump: false, zoomSnap: 0.25 }).setView([20.3, 56.4], 6);
     function fitMin() { map.setMinZoom(Math.max(1, map.getBoundsZoom([[-60, -180], [80, 180]], true))); }
     fitMin(); window.addEventListener('resize', function () { map.invalidateSize(); fitMin(); });
     baseTiles(map, 12);
@@ -94,7 +94,7 @@
       rects[e.id] = rc; bounds.push(b[0], b[1]);
     });
     state_views = { dhofar: [[16.9, 53.9], [19.0, 56.1]], muscat: [[22.9, 57.9], [24.1, 59.1]], all: bounds, oman: [[16.5, 52], [26.5, 60]] };
-    state_views.world = [[-50, -125], [65, 135]]; map.fitBounds(state_views.world, { padding: [10, 10] });
+    state_views.world = [[-50, -125], [65, 135]]; map.fitBounds(state_views.world, { padding: [0, 0] });
     var ctl = L.control({ position: 'topright' });
     ctl.onAdd = function () {
       var d = L.DomUtil.create('div', 'viewbtns');
