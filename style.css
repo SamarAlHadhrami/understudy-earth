@@ -32,7 +32,7 @@ a{color:var(--link)}
 button{font:inherit;color:inherit}
 
 /* layout */
-main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 420px;min-height:0}
+main{flex:1;display:grid;grid-template-columns:minmax(0,1fr) 420px;min-height:auto}
 #mapwrap{position:relative;min-height:420px;background:var(--sunken)}
 #map{position:absolute;inset:0;background:var(--sunken)}
 
