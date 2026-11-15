@@ -9,3 +9,14 @@ work/
 node_modules/
 Claude outputs/
 demo/
+.impeccable/
+.claude/
+Claude outputs/
+docs/RESUME_PROMPT.md
+docs/RULES.md
+docs/PROGRESS.md
+docs/UI_AUDIT.md
+docs/screens/before/
+docs/screens/after/
+docs/screens/redesign/
+docs/screens/
