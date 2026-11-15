@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   var GROUPS = { oman_muscat: 'Oman (Muscat area)', oman_dhofar: 'Oman (Dhofar)', oman90: 'Searched area, 90 m data (whole Oman box; includes land near the border)', meteor_crater: 'Meteor Crater area, Arizona (outside Oman)', atacama: 'Atacama / Andes edge, Chile (outside Oman)' };
-  var N = window.UENeeds, D = {}, SC, map, rects = {}, sel = null, selB = null, cmpNext = false;
+  var N = window.UENeeds, D = {}, SC, map, rects = {}, sel = null, selB = null, cmpNext = false, R3D_META = null;
   var st = { cal: [], split: false, noCand: false, nearest: null, weights: { terrain: 1, temp: 1, wind: 1, dry: 1, sun: 1, swing: 1, access: 0 }, target: null, mode: 'both', month: 'best', n: Object.assign({}, N.DEFAULT) };
   var $ = function (id) { return document.getElementById(id); };
   var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
@@ -14,8 +14,8 @@
   var FIELDS = ['tlo', 'thi', 'wmin', 'wmax', 'rhmax', 'smin', 'swmax', 'limit'];
 
   function load(f, opt) { return fetch('data/' + f).then(function (r) { if (!r.ok) { if (opt) return null; throw new Error(f + ' ' + r.status); } return r.json(); }).catch(function (e) { if (opt) return null; throw e; }); }
-  Promise.all([load('meta.json'), load('earth.json'), load('targets.json'), load('results.json'), load('second_check.json'), load('climate_power.json'), load('landcover.json', true), load('baseline.json', true), load('stability.json', true), load('notes.json', true), load('access.json', true), load('jezero.json', true), load('meteomatics.json', true), load('gale.json', true), load('lithology.json', true), load('thermal_mars.json', true)]).then(function (a) {
-    D.meta = a[0]; D.earth = a[1]; D.targets = a[2]; D.results = a[3]; D.second = a[4]; D.power = a[5]; D.lc = a[6]; D.base = a[7]; D.stab = a[8]; D.notes = a[9]; D.acc = a[10]; D.jez = a[11]; D.mm = a[12]; D.gale = a[13]; D.lith = a[14]; D.thermal = a[15];
+  Promise.all([load('meta.json'), load('earth.json'), load('targets.json'), load('results.json'), load('second_check.json'), load('climate_power.json'), load('landcover.json', true), load('baseline.json', true), load('stability.json', true), load('notes.json', true), load('access.json', true), load('jezero.json', true), load('meteomatics.json', true), load('gale.json', true), load('lithology.json', true), load('thermal_mars.json', true), load('relief3d.json', true)]).then(function (a) {
+    D.meta = a[0]; D.earth = a[1]; D.targets = a[2]; D.results = a[3]; D.second = a[4]; D.power = a[5]; D.lc = a[6]; D.base = a[7]; D.stab = a[8]; D.notes = a[9]; D.acc = a[10]; D.jez = a[11]; D.mm = a[12]; D.gale = a[13]; D.lith = a[14]; D.thermal = a[15]; R3D_META = a[16];
     SC = UEScore(D.meta); init();
   }).catch(function (e) {
     var el = $('loaderr'); el.hidden = false; el.textContent = 'Could not load the data files (' + e.message + '). Reload the page; if it persists the site files are missing.';
@@ -138,6 +138,7 @@
       var a = ev.target.getAttribute && ev.target.getAttribute('data-act');
       if (a === 'brief') openBrief(); else if (a === 'cmp') { cmpNext = true; $('result').insertAdjacentHTML('afterbegin', '<p class="hint">Now click a second square to compare.</p>'); }
       else if (a === 'addcal') { addCal(); } else if (a === 'clearcal') { st.cal = []; renderCal(); } else if (a === 'closebrief') $('brief').hidden = true; else if (a === 'print') window.print(); else if (a === 'clearb') { selB = null; renderResult(); }
+      else if (a === 't3d') openT3D(); else if (a === 'rot3d') { t3d.angle += (+ev.target.getAttribute('data-dir')) * 0.35; renderT3D(); } else if (a === 'closet3d') $('t3d').hidden = true;
     });
   }
 
@@ -366,11 +367,54 @@
   function twinHtml(e) {
     if (e.group === 'oman90') return '';
     var nat = { Mars: '463 m (MOLA), upsampled to the picture grid, no extra detail', Moon: '80 m (LOLA), area-averaged to the picture grid' }[st.target.body];
+    var can3d = R3D_META && R3D_META.by_id[st.target.id] && R3D_META.by_id[e.id];
     return '<h3>Twin pictures</h3><div class="twins"><figure><img src="data/relief/' + st.target.id + '.png" alt="Shaded relief of ' + esc(st.target.name) + '" width="64" height="64"><div class="bar5"><i></i><span>5 km</span></div><figcaption>' + esc(st.target.name) + '<br>native ' + nat + '</figcaption></figure>' +
       '<figure><img src="data/relief/' + e.id + '.png" alt="Shaded relief of this Earth square" width="64" height="64"><div class="bar5"><i></i><span>5 km</span></div><figcaption>This Earth square<br>native 30 m (Copernicus surface model), area-averaged to the picture grid</figcaption></figure></div>' +
-      '<small>Each picture is 10 km wide on a 64 x 64 grid (156 m per pixel), same sun (from top left, 45° high) and 3x height exaggeration. Resampled for the picture only; the scores use 500 m cells.</small>';
+      '<small>Each picture is 10 km wide on a 64 x 64 grid (156 m per pixel), same sun (from top left, 45° high) and 3x height exaggeration. Resampled for the picture only; the scores use 500 m cells.</small>' +
+      (can3d ? '<div class="btns"><button data-act="t3d">View in 3D (same data as the twin pictures)</button></div>' : '');
   }
-  function drawTwins() {}
+
+  // ---- 3D view: the SAME 64x64 relief grid as the twin pictures (pipeline/relief3d.py), real elevation,
+  // never invented. Lazy-loaded once (about 5 MB), same 3x height exaggeration as the pictures.
+  var R3D = null, t3d = { tid: null, eid: null, angle: 0.78 };
+  function loadR3D(cb) {
+    if (R3D || !R3D_META) return cb();
+    fetch('data/relief3d.bin').then(function (r) { return r.arrayBuffer(); }).then(function (buf) { R3D = new DataView(buf); cb(); }).catch(function () { cb(); });
+  }
+  function heightsFor(id) {
+    var m = R3D_META.by_id[id]; if (!m) return null;
+    var px = R3D_META.px, n = px * px, h = new Float64Array(n);
+    for (var i = 0; i < n; i++) h[i] = R3D.getInt16(m.off + 2 * i, true);
+    return { px: px, h: h, z_min: m.z_min, z_max: m.z_max };
+  }
+  function draw3D(cv, id, label, nativeTxt) {
+    var hf = heightsFor(id); if (!hf) return;
+    var PX = hf.px, h = hf.h, EXAG = R3D_META.exag || 3, c = cv.getContext('2d'), W = cv.width, H = cv.height;
+    c.clearRect(0, 0, W, H); c.fillStyle = '#05080f'; c.fillRect(0, 0, W, H);
+    var scale = Math.min(W, H) / (PX * 1.15), cx = W / 2, cy = H * 0.22, maxh = Math.max.apply(null, h) * EXAG || 1, a = t3d.angle;
+    var ca = Math.cos(a), sa = Math.sin(a);
+    function proj(x, y, z) {
+      var rx = x * ca - y * sa, ry = x * sa + y * ca;
+      return [cx + rx * scale * 0.86, cy + ry * scale * 0.5 - z / maxh * scale * (PX * 0.55)];
+    }
+    for (var y = 0; y < PX - 1; y++) for (var x = 0; x < PX - 1; x++) {
+      var z00 = h[y * PX + x] * EXAG, z10 = h[y * PX + x + 1] * EXAG, z01 = h[(y + 1) * PX + x] * EXAG, z11 = h[(y + 1) * PX + x + 1] * EXAG;
+      var p00 = proj(x, y, z00), p10 = proj(x + 1, y, z10), p11 = proj(x + 1, y + 1, z11), p01 = proj(x, y + 1, z01);
+      var light = 0.35 + 0.65 * ((z00 + z10 + z01 + z11) / 4 / maxh), g = Math.max(25, Math.min(235, Math.round(60 + 175 * light)));
+      c.fillStyle = 'rgb(' + g + ',' + Math.round(g * 0.93) + ',' + Math.round(g * 0.85) + ')';
+      c.beginPath(); c.moveTo(p00[0], p00[1]); c.lineTo(p10[0], p10[1]); c.lineTo(p11[0], p11[1]); c.lineTo(p01[0], p01[1]); c.closePath(); c.fill();
+    }
+    $('t3dcap').innerHTML = esc(label) + ' &middot; same data as the twin picture, shown in 3D, vertical exaggeration x' + EXAG + '. Relief ' + Math.round(hf.z_max - hf.z_min) + ' m in this 10 km square (' + esc(nativeTxt) + ').';
+  }
+  function openT3D() {
+    var e = sel, t = st.target; if (!e || !t) return; t3d.eid = e.id; t3d.tid = t.id; t3d.angle = 0.78;
+    loadR3D(function () { $('t3d').hidden = false; renderT3D(); });
+  }
+  function renderT3D() {
+    var nat = { Mars: '463 m MOLA, upsampled', Moon: '80 m LOLA, area-averaged' }[st.target.body] || '30 m Copernicus, area-averaged';
+    draw3D($('t3dcvA'), t3d.tid, st.target.name, nat);
+    draw3D($('t3dcvB'), t3d.eid, 'This Earth square', '30 m Copernicus, area-averaged');
+  }
 
   function renderResult() {
     var el = $('result');
