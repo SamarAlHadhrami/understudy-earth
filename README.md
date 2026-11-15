@@ -4,9 +4,11 @@
 
 NASA Space Apps Challenge 2026, Challenge 10 ("Identify Earth Locations that Analog the Permanent Moon Base Locations and Mars"). Team **Blue Ember**, Muscat Local Event.
 
-**Live app:** https://samaralhadhrami.github.io/understudy-earth/  (no login, no install, works on phone)
-**30-second demo:** https://youtu.be/aroFrw2WrdM
-**Slide deck:** [docs/Understudy-Earth-deck.pdf](https://github.com/SamarAlHadhrami/understudy-earth/blob/main/docs/Understudy-Earth-deck.pdf)
+**Live app:** [samaralhadhrami.github.io/understudy-earth](https://samaralhadhrami.github.io/understudy-earth/) (no login, no install, works on phone)
+
+**30-second demo video:** [youtu.be/aroFrw2WrdM](https://youtu.be/aroFrw2WrdM)
+
+**Slide deck:** [Understudy-Earth-deck.pdf](https://github.com/SamarAlHadhrami/understudy-earth/blob/main/docs/Understudy-Earth-deck.pdf)
 
 ![Understudy Earth planner](docs/img/hero-planner.png)
 
