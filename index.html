@@ -58,6 +58,8 @@
           <span class="two"><input type="range" id="wmin" min="0" max="12" step="0.5" value="0"><input type="range" id="wmax" min="0" max="12" step="0.5" value="12"></span></label>
         <label>Dryness (max humidity): <b id="rv" class="mono"></b><input type="range" id="rhmax" min="10" max="100" step="5" value="100"></label>
         <label>Sunlight (min per day): <b id="sv" class="mono"></b><input type="range" id="smin" min="0" max="8" step="0.5" value="0"></label>
+        <label>Day-night air temperature swing (max tolerated): <b id="swv" class="mono"></b><input type="range" id="swmax" min="5" max="60" step="1" value="60">
+          <small>NASA POWER day max minus night min; a test need, not a terrain match. Moon and Mars surface swings are far larger than Earth air swings, so this checks your test's tolerance, not a target match.</small></label>
         <label>Slope limit (user-set, not a safe driving limit): <b id="limval" class="mono">15&deg;</b><input type="range" id="limit" min="5" max="30" step="0.5" value="15">
           <small id="limsrc"></small></label>
         <small id="assume">Test-need numbers are the user's choice or <b>our assumption</b>; they are not mission requirements. Earth temperatures are not Mars or Moon temperatures.</small>

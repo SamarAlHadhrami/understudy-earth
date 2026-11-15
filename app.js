@@ -1,17 +1,17 @@
 (function () {
   'use strict';
-  var GROUPS = { oman_muscat: 'Oman (Muscat area)', oman_dhofar: 'Oman (Dhofar)', oman90: 'Oman box, 90 m data (may include neighbouring land)', meteor_crater: 'Meteor Crater area, Arizona (outside Oman)', atacama: 'Atacama / Andes edge, Chile (outside Oman)' };
+  var GROUPS = { oman_muscat: 'Oman (Muscat area)', oman_dhofar: 'Oman (Dhofar)', oman90: 'Searched area, 90 m data (whole Oman box; includes land near the border)', meteor_crater: 'Meteor Crater area, Arizona (outside Oman)', atacama: 'Atacama / Andes edge, Chile (outside Oman)' };
   var N = window.UENeeds, D = {}, SC, map, rects = {}, sel = null, selB = null, cmpNext = false;
-  var st = { cal: [], split: false, noCand: false, nearest: null, weights: { terrain: 1, temp: 1, wind: 1, dry: 1, sun: 1, access: 0 }, target: null, mode: 'both', month: 'best', n: Object.assign({}, N.DEFAULT) };
+  var st = { cal: [], split: false, noCand: false, nearest: null, weights: { terrain: 1, temp: 1, wind: 1, dry: 1, sun: 1, swing: 1, access: 0 }, target: null, mode: 'both', month: 'best', n: Object.assign({}, N.DEFAULT) };
   var $ = function (id) { return document.getElementById(id); };
   var esc = function (s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
   var LABEL = { match: 'GOOD', partial: 'PARTIAL', gap: 'WEAK', none: 'NO CANDIDATE' };
   var GLABEL = { match: 'MATCH', partial: 'PARTIAL', gap: 'NO QUALIFYING CANDIDATE' };
   var SLOPE_REF = 'Observed reference points, not limits: Curiosity maximum tilt 25.34° through sol 2488 (Rankin et al., JPL, 2019); Opportunity tilt 32° on 2016-03-10 (JPL news, 2016-03-31); Perseverance climbed about 20° on slippery sand (JPL news, 2024-10-28). The slope limit here is user-set.';
   var POWER_NOTE = 'NASA POWER climatology v2.10.1, community RE, years 2001-2025. T2M_MAX and T2M_MIN (2 m air, °C), WS2M (wind, m/s), RH2M (%), ALLSKY_SFC_SW_DWN (sunlight, kWh/m²/day). Temperature, wind and humidity cells are about 50 km (0.5 x 0.625°); solar is about 110 km (1°). Regional and approximate.';
-  var AMADEE_NEEDS = { tlo: 5, thi: 35, wmin: 0, wmax: 12, rhmax: 100, smin: 4 };
+  var AMADEE_NEEDS = { tlo: 5, thi: 35, wmin: 0, wmax: 12, rhmax: 100, smin: 4, swmax: 60 };
   var COL = { match: '#2ec4b6', partial: '#f6c453', gap: '#ff5a5f' };
-  var FIELDS = ['tlo', 'thi', 'wmin', 'wmax', 'rhmax', 'smin', 'limit'];
+  var FIELDS = ['tlo', 'thi', 'wmin', 'wmax', 'rhmax', 'smin', 'swmax', 'limit'];
 
   function load(f, opt) { return fetch('data/' + f).then(function (r) { if (!r.ok) { if (opt) return null; throw new Error(f + ' ' + r.status); } return r.json(); }).catch(function (e) { if (opt) return null; throw e; }); }
   Promise.all([load('meta.json'), load('earth.json'), load('targets.json'), load('results.json'), load('second_check.json'), load('climate_power.json'), load('landcover.json', true), load('baseline.json', true), load('stability.json', true), load('notes.json', true), load('access.json', true), load('jezero.json', true)]).then(function (a) {
@@ -150,6 +150,7 @@
     $('wv').textContent = (n.wmin > 0 ? n.wmin : 0) + ' to ' + (n.wmax >= 12 ? '12+' : n.wmax) + ' m/s';
     $('rv').textContent = n.rhmax >= 100 ? 'not limited' : '≤ ' + n.rhmax + '%';
     $('sv').textContent = n.smin > 0 ? '≥ ' + n.smin + ' kWh/m²/day' : 'not limited';
+    $('swv').textContent = n.swmax < 60 ? '≤ ' + n.swmax + ' °C' : 'not limited';
     $('limval').textContent = n.limit + '°';
   }
 
@@ -188,7 +189,7 @@
 
   function renderAll() {
     recompute(); var t = st.target;
-    $('hook').innerHTML = '<b>Where and when</b> to rehearse a job like <b>' + esc(t.name) + '</b> (' + t.body + '). Each square is 10 km. ' + (st.noCand ? '<b>No qualifying candidate in Oman for this target:</b> squares are grey; the nearest one is outlined. ' : '') +
+    $('hook').innerHTML = '<b>Where and when</b> to rehearse a job like <b>' + esc(t.name) + '</b> (' + t.body + '). Each square is 10 km. ' + (st.noCand ? '<b>No qualifying candidate in the searched area for this target:</b> squares are grey; the nearest one is outlined. ' : '') +
       (st.noCand ? '' : st.mode === 'terrain' ? 'Colour = terrain match.' : (st.mode === 'needs' ? 'Colour = fit to your test needs.' : 'Colour = terrain match AND a month that fits your test.'));
     allSq().forEach(function (e) {
       var rc = rects[e.id]; if (!rc) return;
@@ -225,12 +226,12 @@
     var k0 = SC.gapTier(bo.d), kk = SC.gapTier(shown), improved = shown < bo.d;
     $('badge').textContent = GLABEL[kk]; $('badge').className = 'badge ' + (kk === 'gap' ? 'none' : kk);
     $('gcscore').textContent = 'top ' + Math.max(1, Math.round(bo.rank * 100)) + '%';
-    var txt = k0 === 'gap' ? 'No qualifying candidate in Oman for this target (searched area only, not all of Earth). Nearest square is outlined on the map.' : (k0 === 'partial' ? 'Oman is a partial match only.' : 'Oman has a strong terrain match (best fit among the squares we searched).');
-    var sn = stabOf(st.target); if (sn) txt += (sn.threshold_sensitive ? ' THRESHOLD-SENSITIVE: the tier changes with window size, cell size or threshold (' + sn.tiers_seen.map(function (k) { return GLABEL[k]; }).join(' / ') + '); ' : ' ROBUST: same tier in all 8 settings; ') + 'the best Oman square is closer than ' + sn.band_pct[0] + '-' + sn.band_pct[1] + '% of Earth-square pairs.';
-    if (extra.length && improved && kk !== k0) txt = 'Oman alone: ' + GLABEL[k0] + '. With the second site: ' + GLABEL[kk] + '.';
-    else if (extra.length) txt = 'The second site does not improve on Oman here.';
+    var txt = k0 === 'gap' ? 'No qualifying candidate in the searched area for this target (not all of Earth). Nearest square is outlined on the map.' : (k0 === 'partial' ? 'The searched area is a partial match only.' : 'The searched area has a strong terrain match (best fit among the squares we searched).');
+    var sn = stabOf(st.target); if (sn) txt += (sn.threshold_sensitive ? ' THRESHOLD-SENSITIVE: the tier changes with window size, cell size or threshold (' + sn.tiers_seen.map(function (k) { return GLABEL[k]; }).join(' / ') + '); ' : ' ROBUST: same tier in all 8 settings; ') + 'the best square in the searched area is closer than ' + sn.band_pct[0] + '-' + sn.band_pct[1] + '% of Earth-square pairs.';
+    if (extra.length && improved && kk !== k0) txt = 'Searched area alone: ' + GLABEL[k0] + '. With the second site: ' + GLABEL[kk] + '.';
+    else if (extra.length) txt = 'The second site does not improve on the searched area here.';
     $('gctext').textContent = txt;
-    var lines = ['Oman alone: ' + GLABEL[k0] + ' (distance ' + bo.d.toFixed(2) + ')'];
+    var lines = ['Searched area alone: ' + GLABEL[k0] + ' (distance ' + bo.d.toFixed(2) + ')'];
     extra.forEach(function (x) { lines.push(GROUPS[x.g] + ': ' + GLABEL[SC.gapTier(x.b.d)] + ' (distance ' + x.b.d.toFixed(2) + ') at ' + x.b.lat.toFixed(2) + ', ' + x.b.lon.toFixed(2)); });
     $('secondres').innerHTML = lines.map(esc).join('<br>') + '<br><small>Distance: lower is closer. MATCH below ' + D.meta.thr_match_dist.toFixed(2) + ', PARTIAL below ' + D.meta.thr_partial_dist.toFixed(2) + '.</small>';
   }
@@ -252,6 +253,7 @@
       if (k === 'temp') t = c.tmax[m] > n.thi ? 'day max ' + c.tmax[m].toFixed(0) + ' °C above ' + n.thi : 'night min ' + c.tmin[m].toFixed(0) + ' °C below ' + n.tlo;
       else if (k === 'wind') t = 'wind ' + c.wind[m].toFixed(1) + ' m/s outside ' + n.wmin + '-' + n.wmax;
       else if (k === 'dry') t = 'humidity ' + Math.round(c.rh[m]) + '% above ' + n.rhmax + '%';
+      else if (k === 'swing') t = 'day-night swing ' + (c.tmax[m] - c.tmin[m]).toFixed(0) + ' °C above ' + n.swmax + ' °C';
       else t = 'sunlight ' + c.srad[m].toFixed(1) + ' below ' + n.smin + ' kWh/m²/day';
       why.push(N.MON[m] + ': ' + t);
     }
@@ -303,7 +305,7 @@
   function verdictHtml(e) {
     var c = climate(e), m = e._best.length ? e._best[0] : e._fits.indexOf(Math.max.apply(null, e._fits));
     if (st.month !== 'best') m = +st.month;
-    var mf = N.monthFactors(c, m, st.n), f = { terrain: N.terrainFit(SC.distance(e, st.target), D.meta.thr_match_dist, D.meta.thr_partial_dist), temp: mf.temp, wind: mf.wind, dry: mf.dry, sun: mf.sun };
+    var mf = N.monthFactors(c, m, st.n), f = { terrain: N.terrainFit(SC.distance(e, st.target), D.meta.thr_match_dist, D.meta.thr_partial_dist), temp: mf.temp, wind: mf.wind, dry: mf.dry, sun: mf.sun, swing: mf.swing };
     var ac = accessOf(e); if (ac) f.access = Math.round(100 * (1 - Math.max(0, Math.min(1, (ac[0] - 5) / 45))));
     var v = N.fitVerdict(f, st.weights), cf = N.confidenceLevel(e.group.indexOf('oman') === 0, !!e.approx);
     var cls = v.overall >= 75 ? 'match' : (v.overall >= 50 ? 'partial' : 'gap');
@@ -348,7 +350,7 @@
     var second = '';
     var gt = SC.gapTier(bestOf(function (x) { return x.group.indexOf('oman') === 0; }).d);
     if (gt !== 'match') { var alt = bestOf(function (x) { return x.group.indexOf('oman') !== 0; }); if (alt) second = '<p><b>Second-site suggestion:</b> best outside square is ' + esc(GROUPS[alt.group]) + ' at ' + alt.lat.toFixed(2) + ', ' + alt.lon.toFixed(2) + ' (terrain: ' + GLABEL[SC.gapTier(alt.d)] + ').</p>'; }
-    var need = 'Air temperature ' + n.tlo + ' to ' + n.thi + ' °C; wind ' + n.wmin + ' to ' + (n.wmax >= 12 ? '12+' : n.wmax) + ' m/s; humidity ' + (n.rhmax >= 100 ? 'not limited' : '≤ ' + n.rhmax + '%') + '; sunlight ' + (n.smin > 0 ? '≥ ' + n.smin + ' kWh/m2/day' : 'not limited') + '.';
+    var need = 'Air temperature ' + n.tlo + ' to ' + n.thi + ' °C; wind ' + n.wmin + ' to ' + (n.wmax >= 12 ? '12+' : n.wmax) + ' m/s; humidity ' + (n.rhmax >= 100 ? 'not limited' : '≤ ' + n.rhmax + '%') + '; sunlight ' + (n.smin > 0 ? '≥ ' + n.smin + ' kWh/m2/day' : 'not limited') + '; day-night swing ' + (n.swmax < 60 ? '≤ ' + n.swmax + ' °C' : 'not limited') + '.';
     $('brief').innerHTML = '<div class="bar-top"><button data-act="print">Print / save as PDF</button><button data-act="closebrief">Close</button></div>' +
       '<h1>Test Site Brief</h1><p class="sub">Understudy Earth &middot; generated ' + new Date().toISOString().slice(0, 10) + ' &middot; Blue Ember</p>' +
       '<h2>Location</h2><p>' + esc(GROUPS[e.group]) + ', 10 km square centred at ' + e.lat.toFixed(3) + ', ' + e.lon.toFixed(3) + '.</p>' +
@@ -368,7 +370,7 @@
       var a = SC.gapTier(bo), b = SC.gapTier(ba);
       var sn = stabOf(t); rows += '<tr><td>' + esc(t.name) + (sn && sn.threshold_sensitive ? ' <span title="threshold-sensitive">&#9888;</span>' : '') + '<br><small>' + t.body + '</small></td><td><span class="chip ' + a + '">' + GLABEL[a] + '</span></td><td><span class="chip ' + b + '">' + GLABEL[b] + '</span>' + (b !== a ? ' &larr; second site helps' : '') + '</td></tr>';
     });
-    $('gaptable').innerHTML = '<table><tr><th>Target</th><th>Oman only</th><th>+ Meteor Crater, Atacama</th></tr>' + rows + '</table><p class="sub">NO QUALIFYING CANDIDATE = no square we searched is as close to the target as the closest 5% of Earth-square pairs are to each other. It says nothing about places we did not search. &#9888; = threshold-sensitive (tier changes with window size, cell size or threshold).</p>';
+    $('gaptable').innerHTML = '<table><tr><th>Target</th><th>Searched area only</th><th>+ Meteor Crater, Atacama</th></tr>' + rows + '</table><p class="sub">NO QUALIFYING CANDIDATE = no square we searched is as close to the target as the closest 5% of Earth-square pairs are to each other. It says nothing about places we did not search. &#9888; = threshold-sensitive (tier changes with window size, cell size or threshold).</p>';
   }
 
   function renderBlind() {
@@ -380,7 +382,7 @@
 
   function renderSecond() {
     var s = D.second, h = '<p class="sub">Slope recomputed by an independent code path (integer block means + Sobel, native reads): ' + s.rows.filter(function (r) { return r.pass; }).length + ' of ' + s.rows.length + ' windows agree (' + esc(s.tolerance) + ').</p>';
-    h += '<p class="sub">Leave-one-out sensitivity (targets in GAP, Oman only): ' + D.results.sensitivity.map(function (x) { return x.left_out + ': ' + x.oman_only.gap; }).join(', ') + '.</p>';
+    h += '<p class="sub">Leave-one-out sensitivity (targets in GAP, searched area only): ' + D.results.sensitivity.map(function (x) { return x.left_out + ': ' + x.oman_only.gap; }).join(', ') + '.</p>';
     $('second').innerHTML = h;
   }
 
@@ -431,9 +433,11 @@
     var om = ds.filter(function (x) { return x.e.group.indexOf('oman') === 0 && !masked(x.e); }), tier = SC.gapTier(om[0].d);
     var tb = function (list) { return '<table><tr><th>Square</th><th>Where</th><th>Distance</th><th></th></tr>' + list.map(function (x) { return '<tr><td class="mono">' + x.e.id + '</td><td>' + esc(GROUPS[x.e.group]) + ' ' + x.e.lat.toFixed(2) + ', ' + x.e.lon.toFixed(2) + '</td><td class="mono">' + x.d.toFixed(3) + '</td><td><button data-sq="' + x.e.id + '">Show</button></td></tr>'; }).join('') + '</table>'; };
     var keep = st.target; st.target = w; recompute(); var vh = verdictHtml(om[0].e); st.target = keep; recompute();
-    $('skyres').innerHTML = '<h3>' + esc(label) + '</h3>' + (extra || '') + '<table>' + rows.map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>' +
-      '<p><span class="chip ' + tier + '">' + GLABEL[tier] + '</span> best Oman square: distance ' + om[0].d.toFixed(3) + ' (match below ' + D.meta.thr_match_dist.toFixed(2) + ', partial below ' + D.meta.thr_partial_dist.toFixed(2) + '). Best fit among the squares searched, not a global best. Not checked for stability.</p>' +
-      '<h4>Closest Oman squares</h4>' + tb(om.slice(0, 5)) + '<h4>Closest squares anywhere in our set</h4>' + tb(ds.slice(0, 3)) + vh +
+    var steepWarn = (w.slope_p90 > 8 || w.relief_m > 300) ?
+      '<p class="note">Caution: this window has steep or uneven ground (90th-pct slope ' + w.slope_p90.toFixed(1) + '°, relief ' + Math.round(w.relief_m) + ' m in 10 km). On steep ground the nearest precomputed window can read very differently from the exact spot clicked, sometimes by several degrees of slope (for example, Jezero\'s window-average slope is 4.4° while a finer 1 m check nearby reads 0.57°). Treat this result as a rough area reading, not the exact point.</p>' : '';
+    $('skyres').innerHTML = '<h3>' + esc(label) + '</h3>' + steepWarn + (extra || '') + '<table>' + rows.map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>' +
+      '<p><span class="chip ' + tier + '">' + GLABEL[tier] + '</span> best square in the searched area: distance ' + om[0].d.toFixed(3) + ' (match below ' + D.meta.thr_match_dist.toFixed(2) + ', partial below ' + D.meta.thr_partial_dist.toFixed(2) + '). Best fit among the squares searched, not a global best. Not checked for stability.</p>' +
+      '<h4>Closest squares in the searched area</h4>' + tb(om.slice(0, 5)) + '<h4>Closest squares anywhere in our set</h4>' + tb(ds.slice(0, 3)) + vh +
       '<div class="conf"><b>Confidence: Low.</b> ' + esc(conf) + '</div><div class="limits"><b>What this cannot see.</b> Terrain numbers only see slope and roughness, not rock type or dust. Gravity, air and radiation are not copied. 500 m cells hide rocks and steps; Earth heights are a surface model. A terrain match is not a geology match.</div>';
   }
   function renderSky() {
@@ -483,7 +487,7 @@
     var t = st.target, items = [];
     D.world.forEach(function (x) { var d = Math.min.apply(null, x.windows.map(function (w) { return SC.distance(w, t); })); items.push({ name: x.name, kind: x.kind, lat: x.lat, lon: x.lon, d: d, n: x.windows.length, fine: false }); });
     [['meteor_crater', 'Meteor Crater area, Arizona', 'impact crater', 35.03, -111.02], ['atacama', 'Atacama tile centre, Chile', 'desert', -24.5, -69.5]].forEach(function (g) { var d = Math.min.apply(null, D.earth.filter(function (e) { return e.group === g[0]; }).map(function (e) { return SC.distance(e, t); })); items.push({ name: g[1], kind: g[2], lat: g[3], lon: g[4], d: d, n: 0, fine: true }); });
-    var om = bestOf(function (e) { return e.group.indexOf('oman') === 0; }); items.push({ name: 'Oman (30 m squares; click to open the fine view)', kind: 'home', lat: 20.5, lon: 56.5, d: om.d, n: 0, fine: true, oman: true });
+    var om = bestOf(function (e) { return e.group.indexOf('oman') === 0; }); items.push({ name: 'Searched area (30 m and 90 m squares; click to open the fine view)', kind: 'home', lat: 20.5, lon: 56.5, d: om.d, n: 0, fine: true, oman: true });
     wmap._layer.clearLayers();
     items.forEach(function (x) {
       var k = SC.gapTier(x.d), m = L.circleMarker([x.lat, x.lon], { radius: x.oman ? 11 : 7, color: '#fff', weight: x.fine ? 3 : 1, fillColor: k === 'gap' ? '#a8788a' : COL[k], fillOpacity: 0.9, dashArray: x.fine ? null : '3 3' }).addTo(wmap._layer);
@@ -500,15 +504,17 @@
     var w = J.windows[0], t = D.targets.filter(function (x) { return x.id === J.source_mola_target; })[0];
     var sq = function (list) { return '<table><tr><th>Square</th><th>Where</th><th>Distance</th><th></th></tr>' + list.map(function (x) { return '<tr><td class="mono">' + x.id + '</td><td>' + esc(GROUPS[x.group]) + ' ' + x.lat.toFixed(2) + ', ' + x.lon.toFixed(2) + '</td><td class="mono">' + x.dist + '</td><td><button data-jz="' + x.id + '">Show</button></td></tr>'; }).join('') + '</table>'; };
     var best = w.top500_oman[0];
-    $('jez').innerHTML = '<p class="sub"><b>Practise the Perseverance Jezero drive in Oman?</b> A finer-scale check than the 463 m global map. It is separate from the main method and one window only.</p>' +
+    var jverdict = GLABEL[SC.gapTier(best.dist)] + ': ' + best.id + ' scores ' + best.dist + ' against Jezero (lower is closer; threshold ' + D.meta.thr_match_dist.toFixed(3) + '; best in the searched area ' + best.dist + '; closest anywhere in our set ' + w.top500[0].dist + ' at ' + GROUPS[w.top500[0].group] + '); the 30 m check below has no calibrated threshold, so it is a ranking only, not a pass or fail.';
+    $('jez').innerHTML = '<p class="sub"><b>Practise the Perseverance Jezero drive in the searched area?</b> A finer-scale check than the 463 m global map. It is separate from the main method and one window only.</p>' +
+      '<p class="best">' + esc(jverdict) + '</p>' +
       '<div class="twins"><figure><img src="data/relief/JEZ0.png" alt="Shaded relief of the Jezero 10 km window" width="64" height="64"><div class="bar5"><i></i><span>5 km</span></div><figcaption>Jezero delta region, 10 km window<br>native 1 m (HiRISE-based DTM), area-averaged to the picture grid</figcaption></figure>' +
-      '<figure><img src="data/relief/' + best.id + '.png" alt="Shaded relief of the closest Oman square" width="64" height="64"><div class="bar5"><i></i><span>5 km</span></div><figcaption>Closest Oman square (500 m method)<br>native 30 m (Copernicus surface model)</figcaption></figure></div>' +
+      '<figure><img src="data/relief/' + best.id + '.png" alt="Shaded relief of the closest square in the searched area" width="64" height="64"><div class="bar5"><i></i><span>5 km</span></div><figcaption>Closest square in the searched area (500 m method)<br>native 30 m (Copernicus surface model)</figcaption></figure></div>' +
       '<table><tr><th></th><th>Slope median / 90th pct</th><th>Roughness (median)</th></tr>' +
-      '<tr><th>Jezero window, 500 m cells (same method as Oman)</th><td>' + w.feat500.slope_p50.toFixed(2) + '° / ' + w.feat500.slope_p90.toFixed(2) + '°</td><td>' + w.feat500.rough_med.toFixed(2) + ' m</td></tr>' +
+      '<tr><th>Jezero window, 500 m cells (same method as the searched area)</th><td>' + w.feat500.slope_p50.toFixed(2) + '° / ' + w.feat500.slope_p90.toFixed(2) + '°</td><td>' + w.feat500.rough_med.toFixed(2) + ' m</td></tr>' +
       '<tr><th>Jezero 463 m global map (target "' + esc(t.name) + '")</th><td>' + t.slope_p50.toFixed(2) + '° / ' + t.slope_p90.toFixed(2) + '°</td><td>' + t.rough_med.toFixed(2) + ' m</td></tr>' +
       '<tr><th>Jezero window, 30 m cells (finer check)</th><td>' + w.feat30.slope_p50.toFixed(2) + '° / ' + w.feat30.slope_p90.toFixed(2) + '°</td><td>' + w.feat30.rough_med.toFixed(2) + ' m; ' + Math.round(w.feat30.steep_share * 100) + '% of cells above 10°</td></tr></table>' +
-      '<h3>Closest Oman squares, main method (500 m cells)</h3>' + sq(w.top500_oman) + '<p class="sub">Best distance ' + w.top500_oman[0].dist + ' (match below ' + D.meta.thr_match_dist.toFixed(2) + ', partial below ' + D.meta.thr_partial_dist.toFixed(2) + '): tier ' + GLABEL[SC.gapTier(w.top500_oman[0].dist)] + ' for the Oman squares (the closest square anywhere is in the Meteor Crater area).</p>' +
-      '<h3>Closest Oman squares, 30 m check (slope, steepness, roughness at 30 m)</h3>' + sq(w.top30_oman) + '<p class="sub">The 30 m check has no calibrated threshold, so it gives a ranking only.</p>' +
+      '<h3>Closest squares in the searched area, main method (500 m cells)</h3>' + sq(w.top500_oman) + '<p class="sub">Best distance ' + w.top500_oman[0].dist + ' (match below ' + D.meta.thr_match_dist.toFixed(2) + ', partial below ' + D.meta.thr_partial_dist.toFixed(2) + '): tier ' + GLABEL[SC.gapTier(w.top500_oman[0].dist)] + ' for the searched area (the closest square anywhere is in the Meteor Crater area).</p>' +
+      '<h3>Closest squares in the searched area, 30 m check (slope, steepness, roughness at 30 m)</h3>' + sq(w.top30_oman) + '<p class="sub">The 30 m check has no calibrated threshold, so it gives a ranking only.</p>' +
       '<div class="limits"><b>Limits.</b> ' + esc(J.note) + ' Only one 10 km window had at most 2% empty cells (the data footprint is slanted). Earth heights are a surface model (trees, buildings); Mars heights are bare ground. 30 m cells still hide rocks and steps that matter to a rover. A terrain match is not a geology match. Source: USGS Astrogeology Mars 2020 TRN HiRISE DTM mosaic of Jezero (see REFERENCES).</div>';
     $('jez').onclick = function (ev) { var id = ev.target.getAttribute('data-jz'); if (!id) return; var e = D.earth.filter(function (x) { return x.id === id; })[0]; if (!e) return; document.querySelector('.tab[data-view=map]').click(); map.setView([e.lat, e.lon], 9); sel = e; renderAll(); };
   }
@@ -527,7 +533,7 @@
     h += '</table><p class="sub">✓ = better than 95% of random draws (this count moves by one or so with the random draws; the medians do not).</p>';
     if (D.stab) {
       var rows = D.stab.summary.slice().sort(function (a, b) { return (a.threshold_sensitive ? 1 : 0) - (b.threshold_sensitive ? 1 : 0); });
-      h += '<h3>Stability: window 5/10/20 km, cell 500 m/1 km, thresholds 5-20% vs 10-30%</h3><table><tr><th>Target</th><th>Main tier</th><th>Tier range over 8 settings</th><th>Best Oman square closer than</th><th></th></tr>';
+      h += '<h3>Stability: window 5/10/20 km, cell 500 m/1 km, thresholds 5-20% vs 10-30%</h3><table><tr><th>Target</th><th>Main tier</th><th>Tier range over 8 settings</th><th>Best square in the searched area closer than</th><th></th></tr>';
       rows.forEach(function (x) {
         var res = D.results.gap.filter(function (g) { return g.name === x.target; })[0], bt = res ? res.tier_oman : x.base_tier;
         h += '<tr><td>' + esc(x.target) + '</td><td><span class="chip ' + bt + '">' + GLABEL[bt] + '</span></td><td>' + x.tiers_seen.map(function (k) { return GLABEL[k]; }).join(', ') + '</td><td class="mono">' + x.band_pct[0] + '-' + x.band_pct[1] + '% of pairs</td><td><b>' + (x.threshold_sensitive ? 'threshold-sensitive' : 'robust') + '</b></td></tr>';

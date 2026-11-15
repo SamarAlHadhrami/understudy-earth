@@ -2,15 +2,15 @@
 (function (root) {
   var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   // Margins over which a factor fades from fully met to not met. OUR ASSUMPTION, not a mission requirement.
-  var MARGIN = { temp: 5, wind: 1.5, rh: 15, sun: 1 };
-  // Ready-made tests. All numbers are OUR ASSUMPTION (no mission source); labelled in the app.
+  var MARGIN = { temp: 5, wind: 1.5, rh: 15, sun: 1, swing: 5 };
+  // Ready-made tests. All numbers are OUR ASSUMPTION (no mission source); labelled in the app. swmax 60 = effectively not limited.
   var PRESETS = {
-    rover: { label: 'Rover test', tlo: 0, thi: 40, wmin: 0, wmax: 10, rhmax: 100, smin: 4, limit: 15 },
-    instrument: { label: 'Instrument test', tlo: 5, thi: 35, wmin: 0, wmax: 8, rhmax: 60, smin: 5, limit: 15 },
-    walking: { label: 'Walking test', tlo: 5, thi: 35, wmin: 0, wmax: 7, rhmax: 100, smin: 3, limit: 15 },
-    cold: { label: 'Cold test', tlo: -30, thi: 10, wmin: 0, wmax: 12, rhmax: 100, smin: 0, limit: 15 }
+    rover: { label: 'Rover test', tlo: 0, thi: 40, wmin: 0, wmax: 10, rhmax: 100, smin: 4, swmax: 60, limit: 15 },
+    instrument: { label: 'Instrument test', tlo: 5, thi: 35, wmin: 0, wmax: 8, rhmax: 60, smin: 5, swmax: 25, limit: 15 },
+    walking: { label: 'Walking test', tlo: 5, thi: 35, wmin: 0, wmax: 7, rhmax: 100, smin: 3, swmax: 60, limit: 15 },
+    cold: { label: 'Cold test', tlo: -30, thi: 10, wmin: 0, wmax: 12, rhmax: 100, smin: 0, swmax: 60, limit: 15 }
   };
-  var DEFAULT = { tlo: 0, thi: 40, wmin: 0, wmax: 12, rhmax: 100, smin: 4, limit: 15 };
+  var DEFAULT = { tlo: 0, thi: 40, wmin: 0, wmax: 12, rhmax: 100, smin: 4, swmax: 60, limit: 15 };
 
   function clamp01(x) { return x < 0 ? 0 : (x > 1 ? 1 : x); }
 
@@ -19,7 +19,8 @@
     var p = [
       (c.tmax[m] - n.thi) / MARGIN.temp, (n.tlo - c.tmin[m]) / MARGIN.temp,
       (n.wmin - c.wind[m]) / MARGIN.wind, (c.wind[m] - n.wmax) / MARGIN.wind,
-      (c.rh[m] - n.rhmax) / MARGIN.rh, (n.smin - c.srad[m]) / MARGIN.sun
+      (c.rh[m] - n.rhmax) / MARGIN.rh, (n.smin - c.srad[m]) / MARGIN.sun,
+      ((c.tmax[m] - c.tmin[m]) - n.swmax) / MARGIN.swing
     ];
     return 100 * (1 - clamp01(Math.max.apply(null, p)));
   }
@@ -56,8 +57,8 @@
     Object.keys(PRESETS).forEach(function (k) {
       var re = new RegExp('\\b' + k + '(?: test)?\\b');
       if (re.test(t) || (k === 'walking' && /\b(eva|walk)/.test(t))) {
-        var p = PRESETS[k]; ['tlo', 'thi', 'wmin', 'wmax', 'rhmax', 'smin', 'limit'].forEach(function (f) { n[f] = p[f]; });
-        said.push({ field: 'preset', text: p.label + ' preset (our assumption): ' + p.tlo + ' to ' + p.thi + ' \u00b0C, wind ' + p.wmin + '-' + p.wmax + ' m/s, humidity up to ' + p.rhmax + '%, sun at least ' + p.smin + ' kWh/m\u00b2/day' });
+        var p = PRESETS[k]; ['tlo', 'thi', 'wmin', 'wmax', 'rhmax', 'smin', 'swmax', 'limit'].forEach(function (f) { n[f] = p[f]; });
+        said.push({ field: 'preset', text: p.label + ' preset (our assumption): ' + p.tlo + ' to ' + p.thi + ' \u00b0C, wind ' + p.wmin + '-' + p.wmax + ' m/s, humidity up to ' + p.rhmax + '%, sun at least ' + p.smin + ' kWh/m\u00b2/day, swing up to ' + p.swmax + ' \u00b0C' });
         t = t.replace(re, ' ').replace(/\b(eva|walk\w*)\b/, ' ');
       }
     });
@@ -77,6 +78,7 @@
     take(/\b(?:sunny|bright)\b/, function () { n.smin = 6; said.push({ field: 'sun', text: 'sunny: at least 6 kWh/m\u00b2/day' }); });
     take(/\bcold\b/, function () { if (!said.some(function (x) { return x.field === 'temp'; })) { n.tlo = -30; n.thi = 10; said.push({ field: 'temp', text: 'cold: -30 to 10 \u00b0C' }); } });
     take(/\b(?:hot|warm)\b/, function () { if (!said.some(function (x) { return x.field === 'temp'; })) { n.tlo = 10; n.thi = 45; said.push({ field: 'temp', text: 'hot: 10 to 45 \u00b0C' }); } });
+    take(new RegExp('swing\\s*(?:below|under|up to|at most|max(?:imum)?)\\s*' + NUM), function (mm) { n.swmax = Math.max(5, Math.min(60, +mm[1])); said.push({ field: 'swing', text: 'day-night swing at most ' + n.swmax + ' \u00b0C' }); });
     var unknown = t.replace(/[0-9.,%\u00b0:;()\/-]+/g, ' ').split(/\s+/).filter(function (w) { return w && !STOP.test(w); });
     var refused = !said.length;
     return { needs: refused ? Object.assign({}, base || DEFAULT) : n, said: said, unknown: unknown, refused: refused };
@@ -89,7 +91,8 @@
       temp: f(Math.max((c.tmax[m] - n.thi) / MARGIN.temp, (n.tlo - c.tmin[m]) / MARGIN.temp)),
       wind: f(Math.max((n.wmin - c.wind[m]) / MARGIN.wind, (c.wind[m] - n.wmax) / MARGIN.wind)),
       dry: f((c.rh[m] - n.rhmax) / MARGIN.rh),
-      sun: f((n.smin - c.srad[m]) / MARGIN.sun)
+      sun: f((n.smin - c.srad[m]) / MARGIN.sun),
+      swing: f(((c.tmax[m] - c.tmin[m]) - n.swmax) / MARGIN.swing)
     };
   }
   // Terrain fit 0..100 from the distance to the target: 100 inside the match threshold, 0 at twice the partial threshold.
@@ -97,7 +100,7 @@
     if (d <= thrMatch) return 100;
     var top = 2 * thrPartial; return Math.round(100 * (1 - clamp01((d - thrMatch) / (top - thrMatch))));
   }
-  var FACTOR_NAMES = { terrain: 'Terrain', temp: 'Temperature', wind: 'Wind', dry: 'Dryness', sun: 'Sunlight', access: 'Access (OSM)' };
+  var FACTOR_NAMES = { terrain: 'Terrain', temp: 'Temperature', wind: 'Wind', dry: 'Dryness', sun: 'Sunlight', swing: 'Day-night swing', access: 'Access (OSM)' };
   // Overall fit = weighted mean of the factors with weight > 0. Weights default to 1 (user adjustable).
   function fitVerdict(factors, weights) {
     var keys = Object.keys(factors), sw = 0, sum = 0, worst = null;
