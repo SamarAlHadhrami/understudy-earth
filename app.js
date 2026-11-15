@@ -138,7 +138,6 @@
       var a = ev.target.getAttribute && ev.target.getAttribute('data-act');
       if (a === 'brief') openBrief(); else if (a === 'cmp') { cmpNext = true; $('result').insertAdjacentHTML('afterbegin', '<p class="hint">Now click a second square to compare.</p>'); }
       else if (a === 'addcal') { addCal(); } else if (a === 'clearcal') { st.cal = []; renderCal(); } else if (a === 'closebrief') $('brief').hidden = true; else if (a === 'print') window.print(); else if (a === 'clearb') { selB = null; renderResult(); }
-      else if (a === 't3d') openT3D(t3d.e, t3d.label); else if (a === 'rot3d') { t3d.angle += (+ev.target.getAttribute('data-dir')) * 0.35; draw3D(); } else if (a === 'closet3d') $('t3d').hidden = true;
     });
   }
 
@@ -335,47 +334,6 @@
       ['Best months for your test', e._best.length ? N.monthsText(e._best) : 'none fits']];
   }
 
-  // ---- 3D terrain impression: NOT real elevation data. A synthetic surface generated to match
-  // this window's own real, measured numbers (relief, roughness, slope), deterministic per window,
-  // so the same square always draws the same shape. Illustrative only, never scored.
-  var t3d = { e: null, label: '', angle: 0.78 };
-  function hash32(s) { var h = 0; for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return h; }
-  function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var x = Math.imul(a ^ a >>> 15, 1 | a); x = x + Math.imul(x ^ x >>> 7, 61 | x) ^ x; return ((x ^ x >>> 14) >>> 0) / 4294967296; }; }
-  function heightfield(e) {
-    var N = 17, rnd = mulberry32(hash32(e.id || e.name || 'w')), h = new Array(N * N), oct = [[2, 1], [4, 0.5], [8, 0.25]];
-    var ph = oct.map(function () { return rnd() * 6.28; });
-    for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) {
-      var v = 0; oct.forEach(function (o, k) { v += o[1] * Math.sin(x / (N - 1) * o[0] * 2.1 + ph[k]) * Math.cos(y / (N - 1) * o[0] * 1.7 + ph[k] * 1.3); });
-      h[y * N + x] = v;
-    }
-    var mn = Math.min.apply(null, h), mx = Math.max.apply(null, h), relief = e.relief_m || 50, rough = e.rough_med || 5;
-    for (var i = 0; i < h.length; i++) h[i] = (h[i] - mn) / ((mx - mn) || 1) * relief + (rnd() - 0.5) * rough * 1.5;
-    return { N: N, h: h };
-  }
-  function draw3D() {
-    var e = t3d.e; if (!e) return;
-    var hf = heightfield(e), N = hf.N, h = hf.h, cv = $('t3dcv'), c = cv.getContext('2d'), W = cv.width, H = cv.height;
-    c.clearRect(0, 0, W, H); c.fillStyle = '#05080f'; c.fillRect(0, 0, W, H);
-    var scale = Math.min(W, H) / (N * 1.5), cx = W / 2, cy = H * 0.26, maxh = Math.max.apply(null, h) || 1, a = t3d.angle;
-    var ca = Math.cos(a), sa = Math.sin(a);
-    function proj(x, y, z) {
-      var rx = x * ca - y * sa, ry = x * sa + y * ca;
-      return [cx + rx * scale * 0.86, cy + ry * scale * 0.5 - z / maxh * scale * 2.0];
-    }
-    var cells = []; for (var y = 0; y < N - 1; y++) for (var x = 0; x < N - 1; x++) cells.push([x, y]);
-    cells.sort(function (p, q) { return (p[0] + p[1]) - (q[0] + q[1]); });
-    cells.forEach(function (xy) {
-      var x = xy[0], y = xy[1], z00 = h[y * N + x], z10 = h[y * N + x + 1], z01 = h[(y + 1) * N + x], z11 = h[(y + 1) * N + x + 1];
-      var p00 = proj(x, y, z00), p10 = proj(x + 1, y, z10), p11 = proj(x + 1, y + 1, z11), p01 = proj(x, y + 1, z01);
-      var light = 0.4 + 0.6 * ((z00 + z10 + z01 + z11) / 4 / maxh + 0.5), g = Math.max(30, Math.min(230, Math.round(90 * light)));
-      c.fillStyle = 'rgb(' + g + ',' + Math.round(g * 0.92) + ',' + Math.round(g * 0.82) + ')';
-      c.beginPath(); c.moveTo(p00[0], p00[1]); c.lineTo(p10[0], p10[1]); c.lineTo(p11[0], p11[1]); c.lineTo(p01[0], p01[1]); c.closePath();
-      c.fill(); c.strokeStyle = 'rgba(0,0,0,0.25)'; c.stroke();
-    });
-    $('t3dcap').innerHTML = esc(t3d.label) + ' &middot; Not real elevation data: a synthetic surface generated to match this window\'s own measured relief (' + Math.round(e.relief_m) + ' m), roughness (' + e.rough_med.toFixed(1) + ' m) and slope, so you can picture the numbers in the table. The real terrain is not shaped like this; only the statistics match. Illustrative only, never scored.';
-  }
-  function openT3D(e, label) { t3d.e = e; t3d.label = label; t3d.angle = 0.78; $('t3d').hidden = false; draw3D(); }
-
   function chart(e) {
     var cv = $('slopechart'); if (!cv) return;
     var ctx = cv.getContext('2d'), W = cv.width, H = cv.height, t = st.target, nb = 16;
@@ -418,7 +376,6 @@
     var el = $('result');
     if (!sel) { el.innerHTML = '<p class="hint">Click a square on the map to see where it fits, when it fits, and what Earth cannot copy.</p>'; return; }
     var e = sel, k = e._tier, c = climate(e), cf = confidence(e);
-    t3d.e = e; t3d.label = 'Earth square ' + e.lat.toFixed(2) + ', ' + e.lon.toFixed(2);
     var rows = metricRows(e).map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('');
     var h = '<div><span class="chip ' + k + '">' + LABEL[k] + '</span> <span class="chip ' + (stabOf(st.target) && stabOf(st.target).threshold_sensitive ? 'partial' : 'match') + '">' + robustText(st.target) + '</span> <span class="sub">' + esc(GROUPS[e.group]) + ' &middot; ' + e.lat.toFixed(3) + ', ' + e.lon.toFixed(3) + '</span></div>' +
       verdictHtml(e) + '<div class="best">Best months: <b>' + (e._best.length ? esc(N.monthsText(e._best)) : 'none fits your test') + '</b></div>' + stripHtml(e) + monthNotes(e) +
@@ -426,7 +383,7 @@
       '<table>' + rows + '</table><div class="chartbox"><canvas id="slopechart" width="340" height="90"></canvas><small><i class="dot b"></i>target slope spread <i class="dot g"></i>this square</small></div>' +
       twinHtml(e) + '<p class="sub"><b>Access:</b> ' + esc(accessLine(e)) + '</p>' + notesHtml(e) + (e.group === 'oman90' ? '<p class="note">90 m data: coarser than the 30 m squares, shown as an extra layer; land cover was not checked here.</p>' : '') + '<div class="conf"><b>Confidence: ' + cf.level + '.</b> ' + cf.items.map(esc).join('; ') + '.</div>' +
       '<div class="limits"><b>What this test cannot copy.</b> Gravity, thin air and radiation. Real ' + (st.target.body === 'Moon' ? 'lunar' : 'Martian') + ' temperatures: Earth air temperature here only tells you when conditions suit your test. Terrain numbers only see slope and roughness, not rock type or dust. No rock-abundance or dust measure is used. A terrain match is not a geology match. 500 m cells hide rocks and steps. Earth heights include trees and buildings. Climate is a typical-year average.</div>' +
-      '<div class="btns"><button data-act="brief">Test site brief (print / PDF)</button><button data-act="addcal">Add to calendar</button><button data-act="cmp">Compare with another square</button><button data-act="t3d">3D terrain impression (illustrative)</button></div>';
+      '<div class="btns"><button data-act="brief">Test site brief (print / PDF)</button><button data-act="addcal">Add to calendar</button><button data-act="cmp">Compare with another square</button></div>';
     if (selB) {
       var A = metricRows(sel), B = metricRows(selB);
       h += '<h3>Compare</h3><table><tr><th></th><th>A ' + sel.lat.toFixed(2) + ', ' + sel.lon.toFixed(2) + '</th><th>B ' + selB.lat.toFixed(2) + ', ' + selB.lon.toFixed(2) + '</th></tr>' + A.map(function (r, i) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td><td>' + esc(B[i][1]) + '</td></tr>'; }).join('') + '</table><button data-act="clearb">Clear B</button>';
@@ -527,7 +484,6 @@
     return { unknown: false, clat: clat, clon: clon, km: Math.sqrt(dx * dx + dy * dy), w: { id: 'MC', name: 'Mars window ' + clat.toFixed(1) + '°, ' + clon.toFixed(1) + '°', body: 'Mars', slope_p50: f[0], slope_p90: f[1], steep_share: f[2], rough_med: f[3], rough1k_med: f[4], relief_m: f[5], hist: histFrom(sh) } };
   }
   function skyResult(w, label, conf, extra) {
-    t3d.e = w; t3d.label = label;
     var rows = [['Median / 90th pct slope', w.slope_p50.toFixed(1) + '° / ' + w.slope_p90.toFixed(1) + '°'], ['Roughness 500 m / 1 km', w.rough_med.toFixed(1) + ' m / ' + w.rough1k_med.toFixed(1) + ' m'], ['Relief in 10 km', Math.round(w.relief_m) + ' m'], ['Cells above 10° slope', Math.round(w.steep_share * 100) + '%']];
     var ds = D.earth.map(function (e) { return { e: e, d: SC.distance(e, w) }; }).sort(function (a, b) { return a.d - b.d; });
     var om = ds.filter(function (x) { return x.e.group.indexOf('oman') === 0 && !masked(x.e); }), tier = SC.gapTier(om[0].d);
@@ -538,8 +494,7 @@
     $('skyres').innerHTML = '<h3>' + esc(label) + '</h3>' + steepWarn + (extra || '') + '<table>' + rows.map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>' +
       '<p><span class="chip ' + tier + '">' + GLABEL[tier] + '</span> best square in the searched area: distance ' + om[0].d.toFixed(3) + ' (match below ' + D.meta.thr_match_dist.toFixed(2) + ', partial below ' + D.meta.thr_partial_dist.toFixed(2) + '). Best fit among the squares searched, not a global best. Not checked for stability.</p>' +
       '<h4>Closest squares in the searched area</h4>' + tb(om.slice(0, 5)) + '<h4>Closest squares anywhere in our set</h4>' + tb(ds.slice(0, 3)) + vh +
-      '<div class="conf"><b>Confidence: Low.</b> ' + esc(conf) + '</div><div class="limits"><b>What this cannot see.</b> Terrain numbers only see slope and roughness, not rock type or dust. Gravity, air and radiation are not copied. 500 m cells hide rocks and steps; Earth heights are a surface model. A terrain match is not a geology match.</div>' +
-      '<div class="btns"><button data-act="t3d">3D terrain impression (illustrative)</button></div>';
+      '<div class="conf"><b>Confidence: Low.</b> ' + esc(conf) + '</div><div class="limits"><b>What this cannot see.</b> Terrain numbers only see slope and roughness, not rock type or dust. Gravity, air and radiation are not copied. 500 m cells hide rocks and steps; Earth heights are a surface model. A terrain match is not a geology match.</div>';
   }
   function renderSky() {
     var pole = POLE[skyBody];
