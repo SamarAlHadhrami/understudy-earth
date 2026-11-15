@@ -375,3 +375,15 @@ body.in-landing{overflow:hidden}
 }
 
 #worldmap{display:none}
+
+@media (min-width:861px){
+  body:not(.show-map) #mapwrap{display:none}
+  body:not(.show-map) main{grid-template-columns:minmax(0,1fr)}
+  body:not(.show-map) aside{max-width:1000px;width:100%;margin:0 auto;border-left:0;max-height:none;overflow:visible;padding-top:var(--s5)}
+}
+@media (max-width:860px){body:not(.show-map) #mapwrap{display:none}}
+
+details.more{display:inline}
+details.more>summary{display:inline;color:var(--link);cursor:pointer;font-size:.75rem;list-style:none;margin-left:2px}
+details.more>summary::-webkit-details-marker{display:none}
+details.more[open]>summary{display:block;margin:4px 0}

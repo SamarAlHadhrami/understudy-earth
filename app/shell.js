@@ -87,7 +87,35 @@
   function showResult() { if (innerWidth > 860) { var b = $('#b-result'); if (b && b.scrollIntoView) b.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' }); } }
   window.ueShowResult = showResult;
   if (res && window.MutationObserver) new MutationObserver(function () { var v = !!res.querySelector('.verdict'); if (v) window.ueSetStep(3); if (v && !hadV) setTimeout(showResult, 60); hadV = v; }).observe(res, { childList: true });
-  $$('.tab').forEach(function (t) { t.addEventListener('click', function () { if (t.dataset.view === 'map') window.dispatchEvent(new Event('resize')); if (t.dataset.view === 'world') { var wb = $('.viewbtns [data-v=world]'); if (wb) wb.click(); } }); });
+  $$('.tab').forEach(function (t) {
+    t.addEventListener('click', function () {
+      var v = t.dataset.view, showMap = v === 'map' || v === 'world';
+      document.body.classList.toggle('show-map', showMap);
+      if (showMap) {
+        window.dispatchEvent(new Event('resize'));
+        if (v === 'world') setTimeout(function () { window.dispatchEvent(new Event('resize')); var wb = $('.viewbtns [data-v=world]'); if (wb) wb.click(); }, 80);
+      }
+    });
+  });
+  document.body.classList.add('show-map');
+
+
+  /* ---------- long intro text: first sentence stays, the rest sits behind "More" (nothing is removed) ---------- */
+  var SHORTEN = '#v-world .sub,#v-sky .sub,#v-gap .sub,#v-jez .sub,#v-cal .sub,#base .sub,#base .note,#blind .sub,#blind .note,#replay .sub,#replay .note,#jez .sub,#jez .note,#worldlist .sub,#gaptable .sub,#v-about .sub,#cal .sub,#skyres .note';
+  function shorten() {
+    $$(SHORTEN).forEach(function (el) {
+      if (el.getAttribute('data-sh') || el.querySelector('details')) return; el.setAttribute('data-sh', '1');
+      var h = el.innerHTML; if (h.length < 230) return;
+      var i = h.indexOf('. ', 70); if (i < 0) return;
+      var lead = h.slice(0, i + 1), rest = h.slice(i + 2);
+      if ((lead.match(/</g) || []).length !== (lead.match(/>/g) || []).length || (lead.match(/<b>/g) || []).length !== (lead.match(/<\/b>/g) || []).length) return;
+      el.innerHTML = lead + ' <details class="more"><summary>More</summary>' + rest + '</details>';
+    });
+  }
+  var shT = 0;
+  function queueShorten() { clearTimeout(shT); shT = setTimeout(shorten, 60); }
+  if (window.MutationObserver) { var mo = new MutationObserver(queueShorten); mo.observe($('#panel'), { childList: true, subtree: true }); }
+  shorten();
 
   /* ---------- stars ---------- */
   function rng(seed) { return function () { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; }; }
