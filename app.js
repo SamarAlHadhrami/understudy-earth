@@ -57,10 +57,14 @@
   function addGibsLayer(map) {
     var day = new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10); // most recent imagery lags by about a day
     var gibs = L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/' + day + '/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg',
-      { maxZoom: 9, attribution: 'NASA EOSDIS GIBS (MODIS Terra true colour)' });
+      { maxZoom: 9, attribution: 'NASA EOSDIS GIBS (MODIS Terra true colour over Blue Marble)' });
+    // Blue Marble (a gap-free NASA composite) sits underneath so the black swath gaps in the daily Terra pass show Earth, not black.
+    var bm = L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg',
+      { maxNativeZoom: 8, maxZoom: 9 });
+    var grp = L.layerGroup([bm, gibs]);
     var failed = false;
-    gibs.on('tileerror', function () { if (!failed) { failed = true; map.removeLayer(gibs); } });
-    return gibs;
+    gibs.on('tileerror', function () { if (!failed) { failed = true; grp.removeLayer(gibs); } });
+    return grp;
   }
   // English-label base map: Esri World Dark Gray base plus its English reference labels. If either fails to load, plain OpenStreetMap tiles replace them.
   function baseTiles(m, maxZ) {
@@ -365,6 +369,20 @@
     return 'yearly mean ' + mean.toFixed(1) + ' °C (range ' + Math.min.apply(null, sw).toFixed(1) + '-' + Math.max.apply(null, sw).toFixed(1) + '). Earth air temperature on 50 km cells: it is NOT a thermal-inertia or rock/dust measure and is not comparable with Moon or Mars surface values.';
   }
 
+  // Surface material (rough proxy): context only, never scored. Mars THEMIS thermal inertia beside Earth GLiM rock type and POWER skin-temperature swing.
+  function surfaceHtml(e) {
+    var tg = st.target, mars = tg.body === 'Mars', left;
+    if (mars) {
+      var th = D.thermal && D.thermal.sites && D.thermal.sites[tg.name];
+      left = th ? '<b>' + th.ti_si + '</b> <small>J m<sup>-2</sup> K<sup>-1</sup> s<sup>-1/2</sup> (THEMIS thermal inertia)</small><br><small>Higher means more rock or bedrock; lower means more dust or fine sand.</small>' : 'No THEMIS value for this target (data gap).';
+    } else left = 'No rock-abundance data at the poles (Diviner covers 60 S to 60 N only).';
+    var lith = D.lith && D.lith.by_id && D.lith.by_id[e.id], right = lith ? '<b>' + esc(lith.name) + '</b> <small>(GLiM, 0.5&deg; cell)</small>' : 'No rock-type value for this square.';
+    var c = climate(e), sw = '';
+    if (c && c.tsmax) { var t = c.tsmax.map(function (x, i) { return x - c.tsmin[i]; }); sw = '<br><small>Day-night skin-temperature swing (NASA POWER): about ' + (t.reduce(function (a, b) { return a + b; }, 0) / 12).toFixed(0) + ' &deg;C, yearly mean.</small>'; }
+    return '<h3>Surface material (rough proxy) <details class="q"><summary aria-label="More about this">?</summary><span>A Mars thermal inertia value and an Earth rock type are different measurements, so this is context, not a match.</span></details></h3>' +
+      '<p class="note"><b>Rough proxy. Not like-for-like. Not scored.</b></p>' +
+      '<div class="evgrid"><div class="card"><b>' + esc(tg.name) + '</b><br>' + left + '</div><div class="card"><b>This Earth square</b><br>' + right + sw + '</div></div>';
+  }
   function thermalLine(e) {
     var c = climate(e);
     var tsw = c.tsmax.map(function (x, i) { return x - c.tsmin[i]; }), mean = tsw.reduce(function (a, b) { return a + b; }, 0) / 12;
@@ -516,6 +534,7 @@
       '<h3>Fit Verdict</h3>' + verdictHtml(e, k) + monthNotes(e) +
       '<h3>Numbers and context</h3><table>' + rows + '</table><div class="chartbox"><canvas id="slopechart" width="340" height="90"></canvas><small><i class="dot b"></i>target slope spread <i class="dot g"></i>this square</small></div>' +
       (e.group !== 'oman90' ? '<h3>Twin pictures and 3D</h3>' + twinHtml(e) : '') +
+      surfaceHtml(e) +
       '<h3>Access and geology</h3><p class="sub"><b>Access:</b> ' + esc(accessLine(e)) + '</p>' + notesHtml(e) + (e.group === 'oman90' ? '<p class="note">90 m data: coarser than the 30 m squares, shown as an extra layer; land cover was not checked here.</p>' : '') +
       '<h3>Confidence: ' + cf.level + '</h3><div class="conf">' + cf.items.map(esc).join('; ') + '.</div>' +
       '<h3>What this cannot see</h3><div class="limits"><b>What this test cannot copy.</b> Gravity, thin air and radiation. Real ' + (st.target.body === 'Moon' ? 'lunar' : 'Martian') + ' temperatures: Earth air temperature here only tells you when conditions suit your test. Terrain numbers only see slope and roughness, not rock type or dust. No rock-abundance or dust measure is used. A terrain match is not a geology match. 500 m cells hide rocks and steps. Earth heights include trees and buildings. Climate is a typical-year average. Source: ' + esc(c.src) + '.</div>' +
