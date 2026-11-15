@@ -48,7 +48,7 @@ try:
             try: pg.wait_for_selector("#skyres h3", timeout=15000)
             except Exception: print("SKY DEBUG", pg.evaluate("(function(){var e=document.elementFromPoint(%f,%f);return e.tagName+'#'+e.id+'.'+e.className})()" % (bb["x"] + bb["width"] * 0.714, bb["y"] + bb["height"] * 0.35)), errs[-3:], pg.inner_text("#skyres")[:200], pg.evaluate("document.getElementById('v-sky').className"), bb); raise
             pg.wait_for_timeout(500)
-            assert "Mars near" in pg.inner_text("#skyres") and "coarse 463 m" in pg.inner_text("#skyres").lower() and "Closest Oman squares" in pg.inner_text("#skyres") and "Best fit for your test" in pg.inner_text("#skyres")
+            assert "Mars near" in pg.inner_text("#skyres") and "coarse 463 m" in pg.inner_text("#skyres").lower() and "Closest squares in the searched area" in pg.inner_text("#skyres") and "Best fit for your test" in pg.inner_text("#skyres")
             pg.click("#skytabs button[data-body=moon]"); pg.wait_for_timeout(1500); pg.locator("#moonc").scroll_into_view_if_needed(); cb = pg.locator("#moonc").bounding_box(); pg.mouse.click(cb["x"] + cb["width"] * 0.5, cb["y"] + cb["height"] * 0.5); pg.wait_for_timeout(2000); assert "Moon near" in pg.inner_text("#skyres") and "south pole" in pg.inner_text("#skyres")
             pg.mouse.click(cb["x"] + 2, cb["y"] + 2); pg.wait_for_timeout(300); assert "Unknown" in pg.inner_text("#skyres")
             pg.click(".tab[data-view=world]"); pg.wait_for_timeout(2500); assert "not every place on Earth" in pg.inner_text("#v-world") and pg.locator("#worldlist tr").count() > 25

@@ -2,7 +2,7 @@ const N = require('../app/needs.js'); const assert = require('assert');
 // synthetic climate: Jan mild, Jul too hot
 const c = { tmax: Array(12).fill(30), tmin: Array(12).fill(15), wind: Array(12).fill(3), rh: Array(12).fill(40), srad: Array(12).fill(6) };
 c.tmax[6] = 45;
-const n = { tlo: 5, thi: 35, wmin: 0, wmax: 12, rhmax: 100, smin: 0 };
+const n = { tlo: 5, thi: 35, wmin: 0, wmax: 12, rhmax: 100, smin: 0, swmax: 60 };
 assert.strictEqual(N.monthFit(c, 0, n), 100);                        // inside the window
 assert.strictEqual(N.monthFit(c, 6, n), 0);                          // 10 C over, margin 5 -> 0
 assert.strictEqual(Math.round(N.monthFit(c, 0, { ...n, thi: 28 })), 60); // 2 C over of 5 margin
@@ -17,6 +17,8 @@ const r1 = N.parseSentence('build me a spaceship', N.DEFAULT); assert.strictEqua
 const r2 = N.parseSentence('wind below 5 m/s, humidity below 30%, sun at least 5, between 10 and 25 degrees, banana', N.DEFAULT); assert.strictEqual(r2.needs.wmax, 5); assert.strictEqual(r2.needs.rhmax, 30); assert.strictEqual(r2.needs.smin, 5); assert.strictEqual(r2.needs.tlo, 10); assert.strictEqual(r2.needs.thi, 25); assert.ok(r2.unknown.indexOf('banana') >= 0);
 assert.strictEqual(N.worse('match', 'gap'), 'gap');
 const mf = N.monthFactors(c, 6, n); assert.strictEqual(mf.temp, 0); assert.strictEqual(mf.sun, 100);
+assert.strictEqual(mf.swing, 100); // tmax-tmin = 15 C, well under swmax 60
+assert.strictEqual(N.monthFactors(c, 0, { ...n, swmax: 10 }).swing, 0); // tmax-tmin = 15 C, 5 C over a 10 C limit, margin 5 -> 0
 assert.strictEqual(N.terrainFit(0.05, 0.081, 0.245), 100); assert.strictEqual(N.terrainFit(0.49, 0.081, 0.245), 0);
 const v = N.fitVerdict({ terrain: 100, temp: 100, wind: 100, sun: 40 }, null); assert.strictEqual(v.overall, 85); assert.strictEqual(v.label, 'Strong fit'); assert.strictEqual(v.worst, 'sun');
 assert.strictEqual(N.fitVerdict({ terrain: 100, sun: 0 }, { terrain: 3, sun: 1 }).overall, 75);
