@@ -494,3 +494,5 @@ table button:hover{border-color:var(--accent)}
 .strip{grid-template-columns:repeat(12,minmax(0,1fr))}
 .mc{min-width:0;overflow:hidden}
 @media (max-width:600px){.strip{grid-template-columns:repeat(6,minmax(0,1fr));gap:4px}.mc{padding:4px 0}.mc span,.mc b,.mc i{font-size:.75rem}}
+
+.gibs-top{mix-blend-mode:lighten}
