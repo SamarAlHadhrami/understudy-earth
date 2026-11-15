@@ -291,6 +291,7 @@
   function robustText(t) { var x = stabOf(t); return x ? (x.threshold_sensitive ? 'threshold-sensitive' : 'robust') : 'not checked'; }
   function stabOf(t) { if (!D.stab) return null; var r = D.stab.summary.filter(function (x) { return x.target === t.name; })[0]; return r || null; }
 
+  var gb = document.getElementById('gobest'); if (gb) gb.addEventListener('click', function () { goBestOman(); });
   function renderGapCard() {
     var bo = bestOf(function (e) { return e.group.indexOf('oman') === 0; }), shown = bo.d, extra = [];
     [['meteor_crater', 's_meteor'], ['atacama', 's_atacama']].forEach(function (x) {
@@ -299,6 +300,7 @@
     var k0 = SC.gapTier(bo.d), kk = SC.gapTier(shown), improved = shown < bo.d;
     $('gapcard').classList.toggle('calm', st.noCand);
     $('badge').textContent = GLABEL[kk]; $('badge').className = 'badge ' + (kk === 'gap' ? 'none' : kk);
+    $('gobest').textContent = k0 === 'gap' ? 'Show nearest square' : 'Show best square';
     $('gcscore').textContent = 'Top ' + Math.max(1, Math.round(bo.rank * 100)) + '% of Oman squares';
     var txt = k0 === 'gap' ? 'No qualifying candidate in the searched area for this target (not all of Earth). Nearest square is outlined on the map.' : (k0 === 'partial' ? 'The searched area is a partial match only.' : 'The searched area has a strong terrain match (best fit among the squares we searched).');
     var sn = stabOf(st.target); if (sn) txt += (sn.threshold_sensitive ? ' THRESHOLD-SENSITIVE: the tier changes with window size, cell size or threshold (' + sn.tiers_seen.map(function (k) { return GLABEL[k]; }).join(' / ') + '); ' : ' ROBUST: same tier in all 8 settings; ') + 'the best square in the searched area is closer than ' + sn.band_pct[0] + '-' + sn.band_pct[1] + '% of Earth-square pairs.';
