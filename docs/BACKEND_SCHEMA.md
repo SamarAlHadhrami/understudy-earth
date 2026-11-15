@@ -12,6 +12,8 @@
 - `notes.json`: geology notes per group with the source text for each statement.
 - `access.json`: {id: [km to paved/main road, km to town, town name]} derived from OpenStreetMap (ODbL).
 - `jezero.json`: Jezero window statistics at 500 m and 30 m and the closest squares (both checks).
+- `gale.json`: Gale crater (30 m HRSC mosaic) window statistics and the closest squares (second fine-scale check, no 30 m sub-step since the source is already 30 m).
+- `meteomatics.json`: Meteomatics monthly derived values for 12 Oman points (day max/min, wind, humidity, sunshine, precipitation), with attribution and pull date.
 - `earth90.json`: 4756 squares from GLO-90 (same fields as earth.json, group oman90), loaded only when the 90 m layer is switched on. `pool_v2.json`: summary of the what-if with the combined pool.
 - `climate_power.json` now covers 189 cells (the 90 m squares included).
 - `mars_grid.bin` + `mars_grid.json` (windows over 87 S to 87 N), `mars_preview.png` (slope preview, 720 x 412), `moon_grid.json` (705 polar windows), `world.json` (45 chosen sites with their 90 m squares).

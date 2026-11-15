@@ -14,8 +14,8 @@
   var FIELDS = ['tlo', 'thi', 'wmin', 'wmax', 'rhmax', 'smin', 'swmax', 'limit'];
 
   function load(f, opt) { return fetch('data/' + f).then(function (r) { if (!r.ok) { if (opt) return null; throw new Error(f + ' ' + r.status); } return r.json(); }).catch(function (e) { if (opt) return null; throw e; }); }
-  Promise.all([load('meta.json'), load('earth.json'), load('targets.json'), load('results.json'), load('second_check.json'), load('climate_power.json'), load('landcover.json', true), load('baseline.json', true), load('stability.json', true), load('notes.json', true), load('access.json', true), load('jezero.json', true), load('meteomatics.json', true)]).then(function (a) {
-    D.meta = a[0]; D.earth = a[1]; D.targets = a[2]; D.results = a[3]; D.second = a[4]; D.power = a[5]; D.lc = a[6]; D.base = a[7]; D.stab = a[8]; D.notes = a[9]; D.acc = a[10]; D.jez = a[11]; D.mm = a[12];
+  Promise.all([load('meta.json'), load('earth.json'), load('targets.json'), load('results.json'), load('second_check.json'), load('climate_power.json'), load('landcover.json', true), load('baseline.json', true), load('stability.json', true), load('notes.json', true), load('access.json', true), load('jezero.json', true), load('meteomatics.json', true), load('gale.json', true)]).then(function (a) {
+    D.meta = a[0]; D.earth = a[1]; D.targets = a[2]; D.results = a[3]; D.second = a[4]; D.power = a[5]; D.lc = a[6]; D.base = a[7]; D.stab = a[8]; D.notes = a[9]; D.acc = a[10]; D.jez = a[11]; D.mm = a[12]; D.gale = a[13];
     SC = UEScore(D.meta); init();
   }).catch(function (e) {
     var el = $('loaderr'); el.hidden = false; el.textContent = 'Could not load the data files (' + e.message + '). Reload the page; if it persists the site files are missing.';
@@ -554,8 +554,28 @@
       '<tr><th>Jezero window, 30 m cells (finer check)</th><td>' + w.feat30.slope_p50.toFixed(2) + '° / ' + w.feat30.slope_p90.toFixed(2) + '°</td><td>' + w.feat30.rough_med.toFixed(2) + ' m; ' + Math.round(w.feat30.steep_share * 100) + '% of cells above 10°</td></tr></table>' +
       '<h3>Closest squares in the searched area, main method (500 m cells)</h3>' + sq(w.top500_oman) + '<p class="sub">Best distance ' + w.top500_oman[0].dist + ' (match below ' + D.meta.thr_match_dist.toFixed(2) + ', partial below ' + D.meta.thr_partial_dist.toFixed(2) + '): tier ' + GLABEL[SC.gapTier(w.top500_oman[0].dist)] + ' for the searched area (the closest square anywhere is in the Meteor Crater area).</p>' +
       '<h3>Closest squares in the searched area, 30 m check (slope, steepness, roughness at 30 m)</h3>' + sq(w.top30_oman) + '<p class="sub">The 30 m check has no calibrated threshold, so it gives a ranking only.</p>' +
-      '<div class="limits"><b>Limits.</b> ' + esc(J.note) + ' Only one 10 km window had at most 2% empty cells (the data footprint is slanted). Earth heights are a surface model (trees, buildings); Mars heights are bare ground. 30 m cells still hide rocks and steps that matter to a rover. A terrain match is not a geology match. Source: USGS Astrogeology Mars 2020 TRN HiRISE DTM mosaic of Jezero (see REFERENCES).</div>';
-    $('jez').onclick = function (ev) { var id = ev.target.getAttribute('data-jz'); if (!id) return; var e = D.earth.filter(function (x) { return x.id === id; })[0]; if (!e) return; document.querySelector('.tab[data-view=map]').click(); map.setView([e.lat, e.lon], 9); sel = e; renderAll(); };
+      '<div class="limits"><b>Limits.</b> ' + esc(J.note) + ' Only one 10 km window had at most 2% empty cells (the data footprint is slanted). Earth heights are a surface model (trees, buildings); Mars heights are bare ground. 30 m cells still hide rocks and steps that matter to a rover. A terrain match is not a geology match. Source: USGS Astrogeology Mars 2020 TRN HiRISE DTM mosaic of Jezero (see REFERENCES).</div>' +
+      renderGaleHtml();
+    $('jez').onclick = function (ev) {
+      var id = ev.target.getAttribute('data-jz') || ev.target.getAttribute('data-ga'); if (!id) return;
+      var e = D.earth.filter(function (x) { return x.id === id; })[0]; if (!e) return; document.querySelector('.tab[data-view=map]').click(); map.setView([e.lat, e.lon], 9); sel = e; renderAll();
+    };
+  }
+  function renderGaleHtml() {
+    var G = D.gale; if (!G || !G.windows.length) return '';
+    var sq = function (list) { return '<table><tr><th>Square</th><th>Where</th><th>Distance</th><th></th></tr>' + list.map(function (x) { return '<tr><td class="mono">' + x.id + '</td><td>' + esc(GROUPS[x.group]) + ' ' + x.lat.toFixed(2) + ', ' + x.lon.toFixed(2) + '</td><td class="mono">' + x.dist + '</td><td><button data-ga="' + x.id + '">Show</button></td></tr>'; }).join('') + '</table>'; };
+    var best = G.windows.slice().sort(function (a, b) { return a.top500_oman[0].dist - b.top500_oman[0].dist; })[0];
+    var bo = best.top500_oman[0];
+    var gverdict = GLABEL[SC.gapTier(bo.dist)] + ': ' + bo.id + ' scores ' + bo.dist + ' against this Gale window (lower is closer; threshold ' + D.meta.thr_match_dist.toFixed(3) + '); closest anywhere in our set ' + best.top500[0].dist + ' at ' + esc(GROUPS[best.top500[0].group]) + '.';
+    return '<h3 style="margin-top:2em">Gale crater (30 m HRSC mosaic, a second fine-scale check)</h3>' +
+      '<p class="sub">A second, independently sourced fine terrain model, for the Curiosity rover\'s Gale crater region. Native resolution is already 30 m, so there is no further finer check here (unlike Jezero\'s 1 m starting point). ' + G.windows.length + ' windows across the mosaic, closest to the crater centre shown here.</p>' +
+      '<p class="best">' + esc(gverdict) + '</p>' +
+      '<div class="twins"><figure><img src="data/relief/' + best.id + '.png" alt="Shaded relief of a Gale crater window" width="64" height="64"><div class="bar5"><i></i><span>5 km</span></div><figcaption>Gale crater, 10 km window (' + best.lat.toFixed(2) + ', ' + best.lon.toFixed(2) + ')<br>native 30 m (HRSC-based DTM), area-averaged to the picture grid</figcaption></figure>' +
+      '<figure><img src="data/relief/' + bo.id + '.png" alt="Shaded relief of the closest square in the searched area" width="64" height="64"><div class="bar5"><i></i><span>5 km</span></div><figcaption>Closest square in the searched area<br>native 30 m (Copernicus surface model)</figcaption></figure></div>' +
+      '<h4>All ' + G.windows.length + ' Gale windows, best square in the searched area for each</h4><table><tr><th>Window</th><th>Where</th><th>Slope p50/p90</th><th>Best in searched area</th><th>Tier</th></tr>' +
+      G.windows.map(function (w) { var b = w.top500_oman[0]; return '<tr><td class="mono">' + w.id + '</td><td>' + w.lat.toFixed(2) + ', ' + w.lon.toFixed(2) + '</td><td>' + w.feat500.slope_p50.toFixed(2) + '° / ' + w.feat500.slope_p90.toFixed(2) + '°</td><td class="mono">' + b.dist + '</td><td><span class="chip ' + SC.gapTier(b.dist) + '">' + GLABEL[SC.gapTier(b.dist)] + '</span></td></tr>'; }).join('') + '</table>' +
+      '<h4>Closest squares in the searched area for the best window</h4>' + sq(best.top500_oman) +
+      '<div class="limits"><b>Limits.</b> ' + esc(G.note) + ' Earth heights are a surface model (trees, buildings); Mars heights are bare ground. A terrain match is not a geology match. Source: 30-m HRSC DTM Mosaic of Gale Crater, Mars (Persaud, Putri, Muller, 2021, Zenodo, CC BY 4.0; see REFERENCES).</div>';
   }
 
   // ---- baseline and stability view
