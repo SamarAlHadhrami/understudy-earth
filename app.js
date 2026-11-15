@@ -57,11 +57,13 @@
   function addGibsLayer(map) {
     var day = new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10); // most recent imagery lags by about a day
     var gibs = L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/' + day + '/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg',
-      { maxZoom: 9, attribution: 'NASA EOSDIS GIBS (MODIS Terra true colour over Blue Marble)' });
-    // Blue Marble (a gap-free NASA composite) sits underneath so the black swath gaps in the daily Terra pass show Earth, not black.
-    var bm = L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_ShadedRelief_Bathymetry/default/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg',
+      { maxZoom: 9, className: 'gibs-top', attribution: 'NASA EOSDIS GIBS (MODIS Terra and Aqua true colour over Blue Marble)' });
+    // Blue Marble (a gap-free NASA composite) sits underneath; the daily Terra layer is blended with 'lighten' (see .gibs-top) so its black swath gaps (real black pixels) show Blue Marble.
+    var bm = L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/BlueMarble_NextGeneration/default/2004-08-01/GoogleMapsCompatible_Level8/{z}/{y}/{x}.jpeg',
       { maxNativeZoom: 8, maxZoom: 9 });
-    var grp = L.layerGroup([bm, gibs]);
+    var aqua = L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Aqua_CorrectedReflectance_TrueColor/default/' + day + '/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg',
+      { maxZoom: 9, className: 'gibs-top' }); // Aqua passes about 3 h later, so its gaps sit elsewhere; 'lighten' lets each fill the other's black gaps
+    var grp = L.layerGroup([bm, aqua, gibs]);
     var failed = false;
     gibs.on('tileerror', function () { if (!failed) { failed = true; grp.removeLayer(gibs); } });
     return grp;
