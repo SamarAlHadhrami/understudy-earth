@@ -1,24 +1,10 @@
-# What we do not claim
-- Not a perfect or global best analog; best among our finite windows only.
-- No geology or chemistry match. No match for gravity, atmosphere or radiation.
-- Moon claims cover only 80S-90S.
-- Copernicus is a surface model (includes buildings and plants); LOLA and MOLA are bare-ground style.
-- A 500 m baseline cannot see rocks, steps or small slopes. Rover limits apply at metre scale, so a pass here is necessary, not sufficient.
-- Oman coverage = the 30 m tiles we hold (Muscat area, Dhofar) plus an optional 90 m whole-Oman-box layer that includes some neighbouring land; not every square of Oman.
-- Unmatched results are not proof of anything untested.
-- "No qualifying candidate" means none of the squares we searched qualifies. It says nothing about places we did not search, and tiers are threshold-sensitive (see the stability check).
-- NASA POWER temperature, wind and humidity cells are about 50 km and solar about 110 km: regional and approximate.
-- The fit percentage is a user-weighted soft score, not similarity and not a success chance.
-- The slope limit is user-set. Cited rover numbers are observed peaks, not safe limits.
-- Squares with trees, crops or buildings are flagged using ESA WorldCover (10 m, 2021); the surface model can still overstate roughness elsewhere.
-- Baseline and name-free checks are retrospective sanity checks, not independent validation.
-- Access distances come from OpenStreetMap (volunteer data), are not space data, and say nothing about permission to enter.
-- Geology notes are the sources' own statements; our 10 km squares cannot see which features lie inside them.
-- The Jezero finer check uses one 10 km window of a 21 km DTM; 30 m cells still hide rocks and steps.
-- 90 m squares are coarser, have no land-cover check, and the box includes neighbouring countries and sea edges.
-- Meteomatics values are shown under the Space Apps partner offer (not a separately obtained public-display consent, see REFERENCES.md); if the saved file is missing, the app quietly shows NASA POWER only.
-- Click-on-Mars numbers describe the nearest 10 km window on a 25 km grid (463 m source), not the exact spot; beyond about 87 degrees latitude and wherever data is missing the answer is "unknown". On steep or uneven ground the nearest window can read very differently from the exact spot (the app shows a caution when this is likely). Lunar clicks work only at 80 S to 90 S and 80 N to 90 N.
-- The world set (45 places) is a chosen and scanned set of places, not every place on Earth, with approximate reference points and 90 m data; no claim of a global best and no claim that any of them is a good analog.
-- No rock or dust measure is used (checked again in docs/EXTRA_FACTORS_RESEARCH.md; the physics does not line up honestly across Earth, Moon and Mars with data we can access in time). The day-night air temperature swing is a user-set test need, not a terrain match, and Moon/Mars surface swings are far larger than Earth air swings.
-- The optional NASA GIBS satellite picture layer is a live external image service, off by default; the core app never depends on it, and a load problem just removes the layer and keeps the OpenStreetMap base map.
-- Surface material (rough proxy): the result card Details show, side by side, the Mars THEMIS thermal inertia of the target, the GLiM rock type of the Earth square and its NASA POWER day-night skin-temperature swing. These are different measurements (an SI thermal-inertia value versus a rock class and a temperature swing), so this is context only: not like-for-like, not scored, and no thermal-inertia class bands are claimed. The Moon shows "no rock-abundance data at the poles" because Diviner rock abundance covers only 60 S to 60 N, and Earth MODIS land surface temperature was not built because day-minus-night values do not honestly compare with Moon or Mars surface values.
+# Limits
+
+- Understudy Earth screens terrain shape (slope, roughness, relief). It does not match geology, chemistry, gravity, air or radiation.
+- "No qualifying candidate" means nothing we searched is close enough. It says nothing about places we did not search (Oman 30 m tiles, an optional 90 m Oman layer, Meteor Crater, Atacama and 45 world reference points).
+- Moon results cover only the poles (80 to 90 degrees, south and north). Click-on-Mars answers come from the nearest 10 km window on a 25 km grid, so they are approximate.
+- Cells of 500 m hide rocks, steps and small slopes. A pass is necessary, not sufficient, for a rover. The slope limit is set by the user and is not a safe-driving limit.
+- Earth heights are a surface model (they include trees and buildings); Moon and Mars heights are bare ground. Tree, crop and built-up squares are flagged using ESA WorldCover.
+- Climate is a typical-year average on coarse NASA POWER cells (about 50 km, solar about 110 km). The ready-made test needs are our assumptions. The fit score is a user-weighted soft score, not a success chance.
+- Surface material (THEMIS thermal inertia, GLiM rock type, temperature swing) is a rough proxy, shown side by side only as context. It is not like-for-like and not scored. Moon rock abundance and Earth MODIS temperature were not built (Diviner covers 60 S to 60 N only).
+- Many tiers are threshold-sensitive (13 of 17 targets change under other settings). Our checks are retrospective sanity checks, not independent validation. Access distances and the Meteomatics cross-check are not space data.

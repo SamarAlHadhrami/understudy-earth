@@ -37,7 +37,7 @@ Then open a square for a one-line verdict, the 12-month strip, same-scale terrai
 | Moon | Both polar caps, 80 to 90 degrees (south and north) |
 | Not covered | The whole of Earth, the GCC or the Middle East as a scored grid. The world view is a chosen set of places, not every place on Earth. |
 
-Squares exist where we processed terrain. Scoring all of Earth was out of reach in the build window, so the claim is "best fit among the squares we searched", never "best place on Earth".
+Results are the best fit among the squares we searched. GCC-wide and global grids are future work.
 
 ## How it works
 1. **Same scale.** Moon, Mars and Earth terrain models are averaged to 500 m cells and cut into 10 km squares.
@@ -47,11 +47,10 @@ Squares exist where we processed terrain. Scoring all of Earth was out of reach 
 
 Everything is precomputed by the Python pipeline in `pipeline/` into small files in `app/data/`. The browser then scores live with plain JavaScript. There is no server and no AI at runtime.
 
-## Does it work? Honest results
-- **Baseline check.** Known analog areas rank better than random Earth squares on most Mars targets (AMADEE-18 area about top 21% median rank, Meteor Crater about top 18%, random about 50%). Some known sites do not (the Atacama tile ranks worse than random for Mars). This is retrospective and not independent validation.
-- **Stability.** Only some targets keep the same tier when our settings change. The app marks the others as threshold-sensitive.
-- **Known failures** and the full list of limits are in [docs/LIMITS.md](docs/LIMITS.md) and [docs/VALIDATION.md](docs/VALIDATION.md).
-- It is a **screening tool**, not a site selector. Earth cannot copy gravity, thin air or vacuum, radiation, or real Moon and Mars temperatures. Terrain match is not rock or chemistry match.
+## Results and limits
+- **Baseline check.** Known analog areas such as the AMADEE-18 area (Dhofar) and Meteor Crater rank well above random Earth squares for most Mars targets (random is about 50%).
+- **Screening tool.** It narrows down where and when to look. It is not a final site selector, and Earth cannot copy gravity, thin air, radiation or real Moon and Mars temperatures.
+- Details: [docs/VALIDATION.md](docs/VALIDATION.md) and [docs/LIMITS.md](docs/LIMITS.md).
 
 ## Data and credits
 Full list with licences: [docs/REFERENCES.md](docs/REFERENCES.md).
@@ -71,7 +70,7 @@ Rebuilding the data needs the large source files (Copernicus tiles, LOLA, MOLA, 
 `app/` static web app and precomputed data | `pipeline/` data processing | `tests/` tests | `docs/` product, method, limits, references
 
 ## Use of AI
-The idea, the where-and-when planner, the baseline test and all decisions are the author's. AI tools helped with research, critique, code, tests and editing, and their output was checked by running tests and reading sources. There is no AI at runtime (the sentence box is a fixed rule-based matcher). The demo video narration is an AI-generated voice (Kokoro TTS).
+The idea, the where-and-when planner, the baseline test and the decisions are the author's. The author used **Claude (by Anthropic)**, including Claude Code, for research, critique, code, tests and editing, and checked the output by running tests and reading sources. The app itself uses no AI at runtime (the sentence box is a fixed rule-based matcher). The demo video narration is an AI-generated voice (Kokoro TTS).
 
 ## Licence
 Apache 2.0. Third-party data keep their own licences (see references).
