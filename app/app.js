@@ -230,7 +230,7 @@
   function notesHtml(e) {
     var n = D.notes && D.notes[e.group];
     var lith = D.lith && D.lith.by_id && D.lith.by_id[e.id];
-    var lithLine = lith ? '<p class="note">Rock type on real data (GLiM, not a score): <b>' + esc(lith.name) + '</b>. 0.5&deg; cell (about 55 km), coarse; source: ' + esc(D.lith.source) + '.</p>' : '';
+    var lithLine = lith ? '<p class="note">Rock type on real data (GLiM, not a score): <b>' + esc(lith.name) + '</b>. 0.5&deg; cell (about 55 km), coarse; a class for the whole cell, not proof of this square\'s composition; source: ' + esc(D.lith.source) + '.</p>' : '';
     if (!n && !lithLine) return '';
     if (!n) return '<div class="geo">' + lithLine + '</div>';
     return '<div class="geo"><h3>' + esc(n.title) + '</h3><ul>' + n.notes.map(function (x) { return '<li>' + esc(x.text) + ' <small>(' + esc(x.source) + ')</small></li>'; }).join('') + '</ul>' + lithLine + '<small>' + esc(n.caveat) + '</small></div>';
