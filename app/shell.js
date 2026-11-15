@@ -86,6 +86,11 @@
   var hadV = false;
   function showResult() { /* the result opens in a card over the map (app.js) */ }
   window.ueShowResult = showResult;
+  /* after Apply or a preset: phone goes to step 3, desktop scrolls the panel to the Result block */
+  window.ueGoResult = function () {
+    if (innerWidth <= 860) { window.ueSetStep(3); window.scrollTo(0, 0); return; }
+    var b = $('#b-result'); if (b && b.scrollIntoView) b.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
+  };
   if (res && window.MutationObserver) new MutationObserver(function () { var v = !!res.querySelector('.verdict'); if (v) window.ueSetStep(3); if (v && !hadV) setTimeout(showResult, 60); hadV = v; }).observe(res, { childList: true });
   $$('.tab').forEach(function (t) {
     t.addEventListener('click', function () {
