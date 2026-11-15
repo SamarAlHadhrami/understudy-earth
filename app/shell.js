@@ -76,15 +76,15 @@
   function setStep(n) {
     STEP = Math.max(1, Math.min(3, n)); document.body.setAttribute('data-step', STEP);
     $('#steplabel').textContent = 'Step ' + STEP + ' of 3: ' + NAMES[STEP];
-    $('#stepback').disabled = STEP === 1; $('#stepnext').disabled = STEP === 3;
+    $('#stepback').textContent = STEP === 1 ? 'Start page' : 'Back'; $('#stepnext').disabled = STEP === 3;
   }
   window.ueSetStep = setStep;
-  $('#stepback').addEventListener('click', function () { setStep(STEP - 1); });
+  $('#stepback').addEventListener('click', function () { if (STEP === 1) showLanding(); else setStep(STEP - 1); });
   $('#stepnext').addEventListener('click', function () { setStep(STEP + 1); });
   setStep(1);
   var res = $('#result');
   var hadV = false;
-  function showResult() { if (innerWidth > 860) { var b = $('#b-result'); if (b && b.scrollIntoView) b.scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' }); } }
+  function showResult() { /* the result opens in a card over the map (app.js) */ }
   window.ueShowResult = showResult;
   if (res && window.MutationObserver) new MutationObserver(function () { var v = !!res.querySelector('.verdict'); if (v) window.ueSetStep(3); if (v && !hadV) setTimeout(showResult, 60); hadV = v; }).observe(res, { childList: true });
   $$('.tab').forEach(function (t) {
@@ -165,7 +165,8 @@
         var nx = (x - S / 2) / R, ny = (y - S / 2) / R, o = (y * S + x) * 4, q = nx * nx + ny * ny;
         if (q >= 1) { d[o + 3] = 0; continue; }
         var nz = Math.sqrt(1 - q), lon = Math.atan2(nx, nz) + rot, lat = Math.asin(-ny);
-        var u = (((lon / 6.28318) % 1) + 1) % 1, tx = Math.floor(u * W), ty = Math.min(H - 1, Math.floor((lat / 3.14159 + 0.5) * H)), t = tex[ty * W + tx];
+        var u = (((lon / 6.28318) % 1) + 1) % 1, fx = u * W, fy = Math.max(0, Math.min(H - 1.001, (lat / 3.14159 + 0.5) * H)), x0 = Math.floor(fx), y0 = Math.floor(fy), ax = fx - x0, ay = fy - y0, x1 = (x0 + 1) % W;
+        var t = (tex[y0 * W + x0] * (1 - ax) + tex[y0 * W + x1] * ax) * (1 - ay) + (tex[(y0 + 1) * W + x0] * (1 - ax) + tex[(y0 + 1) * W + x1] * ax) * ay;
         var lit = Math.max(0, nx * L[0] + ny * L[1] + nz * L[2]), k = (dark + 1.0 * t) * (0.06 + 1.05 * Math.pow(lit, 0.85)), limb = 1 - 0.35 * q * q;
         d[o] = Math.min(255, base[0] * k * limb); d[o + 1] = Math.min(255, base[1] * k * limb); d[o + 2] = Math.min(255, base[2] * k * limb); d[o + 3] = 255;
       }

@@ -88,7 +88,7 @@
     D.earth.filter(function (e) { return e.group.indexOf('oman') === 0; }).forEach(function (e) {
       var dlat = 5 / 111.32, dlon = 5 / (111.32 * Math.cos(e.lat * Math.PI / 180));
       var b = [[e.lat - dlat, e.lon - dlon], [e.lat + dlat, e.lon + dlon]];
-      var rc = L.rectangle(b, { renderer: r, weight: 1, color: '#0b1020', fillOpacity: 0.85 }).addTo(map);
+      var rc = L.rectangle(b, { renderer: r, weight: 1, color: '#14161a', fillOpacity: 0.85 }).addTo(map);
       rc.on('click', function () { pick(e); });
       rc.bindTooltip(function () { return 'Terrain top ' + Math.max(1, Math.round(e.rank * 100)) + '% | ' + (e._best.length ? 'best ' + N.monthsText(e._best) : 'no month fits'); }, { sticky: true });
       rects[e.id] = rc; bounds.push(b[0], b[1]);
@@ -107,7 +107,7 @@
   }
   var state_views;
 
-  function pick(e) { if (cmpNext) { selB = e; cmpNext = false; } else { sel = e; } renderAll(); }
+  function pick(e) { curPlace = null; if (cmpNext) { selB = e; cmpNext = false; } else { sel = e; } renderAll(); showCard(); }
 
   function bind() {
     $('target').addEventListener('change', function () { st.target = D.targets.filter(function (t) { return t.id === $('target').value; })[0]; renderAll(); });
@@ -130,31 +130,55 @@
     bindSky();
     $('show90').addEventListener('change', function () { set90($('show90').checked); });
     $('demobar').addEventListener('click', function (ev) { var k = ev.target.getAttribute('data-demo'); if (k) runDemo(k); });
+    var ALIAS = { gap: 'base', blind: 'base', replay: 'base' };
     document.querySelectorAll('.tab').forEach(function (b) {
       b.addEventListener('click', function () {
+        var view = b.dataset.view, vid = ALIAS[view] || view;
+        closeCards(); $('modal').hidden = true; hideToast();
         document.querySelectorAll('.tab').forEach(function (x) { x.classList.toggle('on', x === b); });
         document.querySelectorAll('.view').forEach(function (v) { v.classList.remove('on'); });
-        $('v-' + b.dataset.view).classList.add('on');
-        if (b.dataset.view === 'gap') renderGapTable();
-        if (b.dataset.view === 'replay') renderReplay();
-        if (b.dataset.view === 'cal') renderCal();
-        if (b.dataset.view === 'base') renderBase();
-        if (b.dataset.view === 'jez') renderJezero();
-        if (b.dataset.view === 'sky') renderSky();
-        if (b.dataset.view === 'world') renderWorld();
+        $('v-' + vid).classList.add('on');
+        if (vid === 'base') { renderBase(); renderBlind(); renderGapTable(); renderReplay(); }
+        if (vid === 'cal') renderCal();
+        if (vid === 'jez') renderJezero();
+        if (vid === 'sky') renderSky();
+        if (vid === 'world') renderWorld();
+        $('panel').scrollTop = 0;
+        if (ALIAS[view]) {
+          var card = $('c-' + view), d = card && card.querySelector('details.more-blk');
+          if (d) d.open = true;
+          setTimeout(function () { if (card) card.scrollIntoView({ block: 'start' }); }, 60);
+        } else window.scrollTo(0, 0);
       });
     });
+    document.addEventListener('keydown', function (ev) {
+      if (ev.key !== 'Escape') return;
+      var any = false;
+      ['modal', 'brief', 't3d'].forEach(function (id) { if (!$(id).hidden) { $(id).hidden = true; any = true; } });
+      if ($('rcard').classList.contains('open') || $('scard').classList.contains('open')) { closeCards(); any = true; }
+      if (any) ev.stopPropagation();
+    });
     document.addEventListener('click', function (ev) {
-      var a = ev.target.getAttribute && ev.target.getAttribute('data-act');
-      if (a === 'brief') openBrief(); else if (a === 'cmp') { cmpNext = true; $('result').insertAdjacentHTML('afterbegin', '<p class="hint">Now click a second square to compare.</p>'); }
-      else if (a === 'addcal') { addCal(); } else if (a === 'clearcal') { st.cal = []; renderCal(); } else if (a === 'closebrief') $('brief').hidden = true; else if (a === 'print') window.print(); else if (a === 'clearb') { selB = null; renderResult(); }
-      else if (a === 't3d') openT3D(); else if (a === 'rot3d') { t3d.angle += (+ev.target.getAttribute('data-dir')) * 0.35; renderT3D(); } else if (a === 'closet3d') $('t3d').hidden = true;
+      var tg = ev.target;
+      if (tg.id === 'scback') closeCards();
+      if (tg.classList && tg.classList.contains('brief') && tg.id) tg.hidden = true;
+      if (tg.closest && tg.closest('#toast') && tg.closest('button')) hideToast();
+      var t = tg.closest ? tg.closest('[data-act]') : null, a = t && t.getAttribute('data-act');
+      if (!a) return;
+      if (a === 'brief') openBrief(); else if (a === 'cmp') { cmpNext = true; $('result').insertAdjacentHTML('afterbegin', '<p class="hint">Now click a second square on the map to compare.</p>'); }
+      else if (a === 'addcal') { addCal(); } else if (a === 'clearcal') { st.cal = []; updCalBadge(); renderCal(); } else if (a === 'closebrief') $('brief').hidden = true; else if (a === 'print') window.print(); else if (a === 'clearb') { selB = null; renderResult(); }
+      else if (a === 'rmcal') { st.cal = st.cal.filter(function (id) { return id !== t.getAttribute('data-id'); }); updCalBadge(); renderCal(); }
+      else if (a === 'add3') add3();
+      else if (a === 'closecard') closeCards();
+      else if (a === 'closemodal') $('modal').hidden = true;
+      else if (a === 'pics' && sel) openModal('Compare terrain pictures', twinPics(sel) + (R3D_META && R3D_META.by_id[st.target.id] && R3D_META.by_id[sel.id] ? '<div class="btns"><button type="button" data-act="t3d">3D view</button></div>' : ''));
+      else if (a === 't3d') openT3D(); else if (a === 'rot3d') { t3d.angle += (+t.getAttribute('data-dir')) * 0.35; renderT3D(); } else if (a === 'closet3d') $('t3d').hidden = true;
     });
   }
 
   var EXAMPLES = ['rover test, slopes up to 20 degrees, dry', 'wind below 5 m/s, sun at least 5, between 10 and 30 degrees', 'cold, calm'];
   function renderChips() {
-    $('chips').innerHTML = '<span class="sub">Examples:</span> ' + EXAMPLES.map(function (x, i) { return '<button data-ex="' + i + '">' + esc(x) + '</button>'; }).join('');
+    $('chips').innerHTML = EXAMPLES.map(function (x, i) { return '<button data-ex="' + i + '">' + esc(x) + '</button>'; }).join('');
     $('chips').onclick = function (ev) { var k = ev.target.getAttribute('data-ex'); if (k !== null) { $('sentence').value = EXAMPLES[+k]; applySentence(); } };
   }
   function applySentence() {
@@ -187,7 +211,7 @@
     var r = map._rend90 || L.svg({ padding: 0.5 }); if (!map._rend90) { map._rend90 = r; r.addTo(map); }
     D.e90.forEach(function (e) {
       var dlat = 5 / 111.32, dlon = 5 / (111.32 * Math.cos(e.lat * Math.PI / 180));
-      var rc = L.rectangle([[e.lat - dlat, e.lon - dlon], [e.lat + dlat, e.lon + dlon]], { renderer: r, weight: 0.5, color: '#0b1020', fillOpacity: 0.6 }).addTo(map);
+      var rc = L.rectangle([[e.lat - dlat, e.lon - dlon], [e.lat + dlat, e.lon + dlon]], { renderer: r, weight: 0.5, color: '#14161a', fillOpacity: 0.6 }).addTo(map);
       rc.on('click', function () { pick(e); }); rects[e.id] = rc;
     });
   }
@@ -221,11 +245,12 @@
     wdots.clearLayers(); var t = st.target;
     D.world.forEach(function (x) {
       var d = Math.min.apply(null, x.windows.map(function (w) { return SC.distance(w, t); })), k = SC.gapTier(d);
-      L.circleMarker([x.lat, x.lon], { radius: 6, color: '#ffffff', weight: 1, fillColor: COL[k], fillOpacity: 0.95, dashArray: '2 2' }).addTo(wdots).bindTooltip(x.name + ': ' + GLABEL[k] + ' (coarse 90 m check)');
+      var pm = L.circleMarker([x.lat, x.lon], { radius: 6, color: '#ffffff', weight: 1, fillColor: COL[k], fillOpacity: 0.95, dashArray: '2 2' }).addTo(wdots).bindTooltip(x.name + ': ' + GLABEL[k] + ' (coarse 90 m check)');
+      pm.on('click', function () { curPlace = x; renderResult(); openCard(x.name); });
     });
     var om = bestOf(function (e) { return e.group.indexOf('oman') === 0; }), ko = SC.gapTier(om.d);
     var mo = L.circleMarker([20.5, 56.5], { radius: 11, color: '#ffffff', weight: 3, fillColor: COL[ko], fillOpacity: 0.95 }).addTo(wdots);
-    mo.bindTooltip('Oman: fine-detail area (' + GLABEL[ko] + '). Click to zoom in.'); mo.on('click', function () { map.fitBounds(state_views.oman); });
+    mo.bindTooltip('Oman: fine-detail area (' + GLABEL[ko] + '). Click to zoom in.'); mo.on('click', function () { map.fitBounds(state_views.all, { padding: [24, 24] }); });
   }
   function renderAll() {
     recompute(); var t = st.target; plannerWorld();
@@ -236,12 +261,11 @@
       var k = e._tier, isSel = (sel && sel.id === e.id) || (selB && selB.id === e.id);
       var near = st.noCand && st.nearest === e.id, mk = masked(e);
       var fillc = k === 'gap' ? 'url(#hatch)' : (k === 'none' ? '#848a92' : COL[k]);
-      rc.setStyle({ fillColor: fillc, fillOpacity: mk ? 0.2 : (k === 'gap' ? 0.9 : (k === 'none' ? 0.55 : 0.8)), weight: isSel || near ? 3 : 1, color: isSel || near ? '#ffffff' : '#0b1020', dashArray: mk ? '3 4' : null });
+      rc.setStyle({ fillColor: fillc, fillOpacity: mk ? 0.2 : (k === 'gap' ? 0.9 : (k === 'none' ? 0.55 : 0.8)), weight: isSel || near ? 3 : 1, color: isSel || near ? '#ffffff' : '#14161a', dashArray: mk ? '3 4' : null });
       if (rc._path) rc._path.setAttribute('fill', fillc);
     });
     renderGapCard(); renderResult(); writeHash();
-    if ($('v-gap').classList.contains('on')) renderGapTable();
-    if ($('v-replay').classList.contains('on')) renderReplay();
+    if ($('v-base').classList.contains('on')) { renderGapTable(); renderReplay(); }
   }
 
   function bestOf(f) { var b = null; D.earth.forEach(function (e) { if (f(e) && !masked(e) && (!b || e.d < b.d)) b = e; }); return b; }
@@ -268,8 +292,9 @@
       if ($(x[1]).checked) { var b = bestOf(function (e) { return e.group === x[0]; }); extra.push({ g: x[0], b: b }); if (b.d < shown) shown = b.d; }
     });
     var k0 = SC.gapTier(bo.d), kk = SC.gapTier(shown), improved = shown < bo.d;
+    $('gapcard').classList.toggle('calm', st.noCand);
     $('badge').textContent = GLABEL[kk]; $('badge').className = 'badge ' + (kk === 'gap' ? 'none' : kk);
-    $('gcscore').textContent = 'top ' + Math.max(1, Math.round(bo.rank * 100)) + '%';
+    $('gcscore').textContent = 'Top ' + Math.max(1, Math.round(bo.rank * 100)) + '% of Oman squares';
     var txt = k0 === 'gap' ? 'No qualifying candidate in the searched area for this target (not all of Earth). Nearest square is outlined on the map.' : (k0 === 'partial' ? 'The searched area is a partial match only.' : 'The searched area has a strong terrain match (best fit among the squares we searched).');
     var sn = stabOf(st.target); if (sn) txt += (sn.threshold_sensitive ? ' THRESHOLD-SENSITIVE: the tier changes with window size, cell size or threshold (' + sn.tiers_seen.map(function (k) { return GLABEL[k]; }).join(' / ') + '); ' : ' ROBUST: same tier in all 8 settings; ') + 'the best square in the searched area is closer than ' + sn.band_pct[0] + '-' + sn.band_pct[1] + '% of Earth-square pairs.';
     if (extra.length && improved && kk !== k0) txt = 'Searched area alone: ' + GLABEL[k0] + '. With the second site: ' + GLABEL[kk] + '.';
@@ -280,14 +305,18 @@
     $('secondres').innerHTML = lines.map(esc).join('<br>') + '<br><small>Distance: lower is closer. MATCH below ' + D.meta.thr_match_dist.toFixed(2) + ', PARTIAL below ' + D.meta.thr_partial_dist.toFixed(2) + '.</small>';
   }
 
-  function stripHtml(e) {
-    var c = climate(e), h = '<div class="strip" role="list" aria-label="Fit by month">';
+  var TW = { match: 'Good', partial: 'Part', gap: 'Poor' };
+  function monthStrip(fits, best, c) {
+    var h = '<div class="strip" role="list" aria-label="Fit by month">';
     for (var m = 0; m < 12; m++) {
-      var f = e._fits[m], k = N.needTier(f), star = e._best.indexOf(m) >= 0;
-      h += '<div class="mc ' + k + (star ? ' best' : '') + '" role="listitem" title="' + N.MON[m] + ': ' + Math.round(f) + ' (day max ' + c.tmax[m].toFixed(0) + '°, night min ' + c.tmin[m].toFixed(0) + '°, wind ' + c.wind[m].toFixed(1) + ' m/s, humidity ' + Math.round(c.rh[m]) + '%, sun ' + c.srad[m].toFixed(1) + ')"><span>' + N.MON[m].charAt(0) + '</span><b>' + Math.round(f) + '</b><i>' + (star ? '★' : (k === 'gap' ? '×' : (k === 'partial' ? '~' : '✓'))) + '</i></div>';
+      var f = fits[m], k = N.needTier(f), star = best.indexOf(m) >= 0;
+      var tip = N.MON[m] + ': ' + Math.round(f) + (c ? ' (day max ' + c.tmax[m].toFixed(0) + '°, night min ' + c.tmin[m].toFixed(0) + '°, wind ' + c.wind[m].toFixed(1) + ' m/s, humidity ' + Math.round(c.rh[m]) + '%, sun ' + c.srad[m].toFixed(1) + ')' : '');
+      h += '<div class="mc ' + k + (star ? ' best' : '') + '" role="listitem" title="' + tip + '"><span>' + N.MON[m].slice(0, 3) + '</span><b>' + Math.round(f) + '</b><i>' + (star ? 'Best' : TW[k]) + '</i></div>';
     }
     return h + '</div>';
   }
+  function legendLine() { return '<p class="sub lg">Colour and pattern: teal solid = good, amber dotted = partial, red hatched = poor. White outline and "Best" = best month. Number = fit, 0 to 100.</p>'; }
+  function stripHtml(e) { return monthStrip(e._fits, e._best, climate(e)); }
 
   function hav2(a, b, c, d) { var p = Math.PI / 180, x = Math.sin((c - a) * p / 2) * Math.sin((c - a) * p / 2) + Math.cos(a * p) * Math.cos(c * p) * Math.sin((d - b) * p / 2) * Math.sin((d - b) * p / 2); return 12742 * Math.asin(Math.sqrt(x)); }
   function meteomaticsNear(e) {
@@ -366,36 +395,39 @@
     var a = dist(e), b = dist(t), mx = Math.max.apply(null, a.concat(b)) || 1;
     ctx.clearRect(0, 0, W, H); var bw = (W - 20) / nb;
     for (var i = 0; i < nb; i++) {
-      ctx.fillStyle = '#8e9ab8'; ctx.fillRect(10 + i * bw, H - 18 - (H - 30) * b[i] / mx, bw * 0.42, (H - 30) * b[i] / mx);
+      ctx.fillStyle = '#a39e95'; ctx.fillRect(10 + i * bw, H - 18 - (H - 30) * b[i] / mx, bw * 0.42, (H - 30) * b[i] / mx);
       ctx.fillStyle = '#1fa392'; ctx.fillRect(10 + i * bw + bw * 0.46, H - 18 - (H - 30) * a[i] / mx, bw * 0.42, (H - 30) * a[i] / mx);
     }
-    ctx.fillStyle = '#a9b4d0'; ctx.font = '11px "IBM Plex Sans", system-ui'; ctx.fillText('slope 0°', 10, H - 4); ctx.fillText('15°+', W - 36, H - 4);
+    ctx.fillStyle = '#a39e95'; ctx.font = '11px "IBM Plex Sans", system-ui'; ctx.fillText('slope 0°', 10, H - 4); ctx.fillText('15°+', W - 36, H - 4);
   }
 
 
-  function verdictHtml(e) {
+  function verdictHtml(e, tier) {
     var c = climate(e), m = e._best.length ? e._best[0] : e._fits.indexOf(Math.max.apply(null, e._fits));
     if (st.month !== 'best') m = +st.month;
     var mf = N.monthFactors(c, m, st.n), f = { terrain: N.terrainFit(SC.distance(e, st.target), D.meta.thr_match_dist, D.meta.thr_partial_dist), temp: mf.temp, wind: mf.wind, dry: mf.dry, sun: mf.sun, swing: mf.swing };
     var ac = accessOf(e); if (ac) f.access = Math.round(100 * (1 - Math.max(0, Math.min(1, (ac[0] - 5) / 45))));
     var v = N.fitVerdict(f, st.weights), cf = N.confidenceLevel(e.group.indexOf('oman') === 0, !!e.approx);
-    var cls = v.overall >= 75 ? 'match' : (v.overall >= 50 ? 'partial' : 'gap');
-    var fix = v.worst === 'terrain' ? 'A second site with closer terrain would help most (tick one above).' : 'A different month or relaxed ' + v.worstName.toLowerCase() + ' needs would help most.';
-    var bars = Object.keys(f).map(function (k) {
-      return '<div class="vrow"><label>' + N.FACTOR_NAMES[k] + '</label><div class="vbar"><i class="' + (f[k] >= 75 ? 'match' : (f[k] >= 50 ? 'partial' : 'gap')) + '" style="width:' + Math.round(f[k]) + '%"></i></div><b>' + Math.round(f[k]) + '</b><input type="range" min="0" max="3" step="1" value="' + st.weights[k] + '" data-w="' + k + '" aria-label="Weight for ' + N.FACTOR_NAMES[k] + '"></div>';
+    var k = tier || (v.overall >= 75 ? 'match' : (v.overall >= 50 ? 'partial' : 'gap'));
+    var word = { match: 'good match', partial: 'partial match', gap: 'weak match', none: 'no qualifying candidate' }[k];
+    var fix = v.worst === 'terrain' ? 'A second site with closer terrain would help most (tick one on the Planner).' : 'A different month or relaxed ' + v.worstName.toLowerCase() + ' needs would help most.';
+    var bars = Object.keys(f).map(function (q) {
+      return '<div class="vrow"><label>' + N.FACTOR_NAMES[q] + '</label><div class="vbar"><i class="' + (f[q] >= 75 ? 'match' : (f[q] >= 50 ? 'partial' : 'gap')) + '" style="width:' + Math.round(f[q]) + '%"></i></div><b>' + Math.round(f[q]) + '</b><input type="range" min="0" max="3" step="1" value="' + st.weights[q] + '" data-w="' + q + '" aria-label="Weight for ' + N.FACTOR_NAMES[q] + '"></div>';
     }).join('');
-    return '<div class="verdict ' + cls + '"><div class="vhead">Best fit for your test: <b>' + v.overall + '%</b> &middot; ' + v.label + '</div><p class="sub"><b>User-weighted soft score, not similarity and not a success chance.</b></p><p class="sub">Here is what is missing: weakest factor is ' + esc(v.worstName) + ' (' + Math.round(f[v.worst]) + '). ' + fix + ' Month used: ' + N.MON[m] + '. Confidence: ' + cf + ' (terrain ' + (e.group.indexOf('oman') === 0 ? '30 m source' : 'outside site') + ', climate about 50 km).</p>' + bars + '<small>Access (OpenStreetMap, not space data) is 100 within 5 km of a paved or main road and 0 at 50 km or more (our assumption); its weight starts at 0. Sliders set each factor weight 0-3 (0 = ignore). Rule-based fit from our assumptions, not a mission verdict.</small></div>';
+    return '<div class="verdict ' + k + '"><div class="vhead">Score <b>' + v.overall + '</b> of 100 on your weights. Verdict: ' + word + '.</div><p class="sub"><b>User-weighted soft score, not similarity and not a success chance.</b></p><p class="sub">Weakest factor: ' + esc(v.worstName) + ' (' + Math.round(f[v.worst]) + '). ' + fix + ' Month used: ' + N.MON[m] + '. Confidence: ' + cf + ' (terrain ' + (e.group.indexOf('oman') === 0 ? '30 m source' : 'outside site') + ', climate about 50 km).</p>' + bars + '<small>Access (OpenStreetMap, not space data) is 100 within 5 km of a paved or main road and 0 at 50 km or more; its weight starts at 0. Sliders set each factor weight 0-3 (0 = ignore).</small></div>';
   }
 
 
+  function twinPics(e) {
+    var nat = { Mars: '463 m (MOLA), upsampled to the picture grid, no extra detail', Moon: '80 m (LOLA), area-averaged to the picture grid' }[st.target.body];
+    return '<div class="twins"><figure><img src="data/relief/' + st.target.id + '.png" alt="Shaded relief of ' + esc(st.target.name) + '" width="64" height="64"><div class="bar5"><i></i><span>5 km</span></div><figcaption>' + esc(st.target.name) + '<br>native ' + nat + '</figcaption></figure>' +
+      '<figure><img src="data/relief/' + e.id + '.png" alt="Shaded relief of this Earth square" width="64" height="64"><div class="bar5"><i></i><span>5 km</span></div><figcaption>This Earth square<br>native 30 m (Copernicus surface model), area-averaged to the picture grid</figcaption></figure></div>' +
+      '<small>Each picture is 10 km wide on a 64 x 64 grid (156 m per pixel), same sun (from top left, 45° high) and 3x height exaggeration. Resampled for the picture only; the scores use 500 m cells.</small>';
+  }
   function twinHtml(e) {
     if (e.group === 'oman90') return '';
-    var nat = { Mars: '463 m (MOLA), upsampled to the picture grid, no extra detail', Moon: '80 m (LOLA), area-averaged to the picture grid' }[st.target.body];
     var can3d = R3D_META && R3D_META.by_id[st.target.id] && R3D_META.by_id[e.id];
-    return '<h3>Twin pictures</h3><div class="twins"><figure><img src="data/relief/' + st.target.id + '.png" alt="Shaded relief of ' + esc(st.target.name) + '" width="64" height="64"><div class="bar5"><i></i><span>5 km</span></div><figcaption>' + esc(st.target.name) + '<br>native ' + nat + '</figcaption></figure>' +
-      '<figure><img src="data/relief/' + e.id + '.png" alt="Shaded relief of this Earth square" width="64" height="64"><div class="bar5"><i></i><span>5 km</span></div><figcaption>This Earth square<br>native 30 m (Copernicus surface model), area-averaged to the picture grid</figcaption></figure></div>' +
-      '<small>Each picture is 10 km wide on a 64 x 64 grid (156 m per pixel), same sun (from top left, 45° high) and 3x height exaggeration. Resampled for the picture only; the scores use 500 m cells.</small>' +
-      (can3d ? '<div class="btns"><button data-act="t3d">View in 3D (same data as the twin pictures)</button></div>' : '');
+    return twinPics(e) + (can3d ? '<div class="btns"><button data-act="t3d">View in 3D (same data as the twin pictures)</button></div>' : '');
   }
 
   // ---- 3D view: the SAME 64x64 relief grid as the twin pictures (pipeline/relief3d.py), real elevation,
@@ -414,7 +446,7 @@
   function draw3D(cv, id, label, nativeTxt) {
     var hf = heightsFor(id); if (!hf) return;
     var PX = hf.px, h = hf.h, EXAG = R3D_META.exag || 3, c = cv.getContext('2d'), W = cv.width, H = cv.height;
-    c.clearRect(0, 0, W, H); c.fillStyle = '#05080f'; c.fillRect(0, 0, W, H);
+    c.clearRect(0, 0, W, H); c.fillStyle = '#101216'; c.fillRect(0, 0, W, H);
     var scale = Math.min(W, H) / (PX * 1.15), cx = W / 2, cy = H * 0.22, maxh = Math.max.apply(null, h) * EXAG || 1, a = t3d.angle;
     var ca = Math.cos(a), sa = Math.sin(a);
     function proj(x, y, z) {
@@ -440,26 +472,57 @@
     draw3D($('t3dcvB'), t3d.eid, 'This Earth square', '30 m Copernicus, area-averaged');
   }
 
-  function sec(t, sum, body) { return '<details class="sec"><summary><span>' + t + '</span><small>' + sum + '</small></summary><div class="secb">' + body + '</div></details>'; }
+  var curPlace = null;
+  function openCard(title) { $('rc-title').textContent = title || 'Result'; $('rcard').classList.add('open'); document.body.classList.add('rc-open'); $('rcard').querySelector('.rc-body').scrollTop = 0; }
+  function showCard() { curPlace = null; renderResult(); openCard(sel ? 'Square ' + sel.lat.toFixed(2) + ', ' + sel.lon.toFixed(2) : 'Result'); }
+  function openSky() { $('scard').classList.add('open'); document.body.classList.add('sc-open'); $('scard').querySelector('.rc-body').scrollTop = 0; }
+  function closeCards() { $('rcard').classList.remove('open'); $('scard').classList.remove('open'); document.body.classList.remove('rc-open', 'sc-open'); }
+  var toastT = 0;
+  function hideToast() { $('toast').classList.remove('on'); clearTimeout(toastT); }
+  function toast(msg, btns) {
+    $('toast').innerHTML = '<span>' + esc(msg) + '</span>' + btns.map(function (b) { return '<button type="button"' + (b.go ? ' data-go="' + b.go + '"' : '') + '>' + esc(b.label) + '</button>'; }).join('');
+    $('toast').classList.add('on'); clearTimeout(toastT); toastT = setTimeout(hideToast, 9000);
+  }
+  function openModal(title, html) {
+    $('modal').innerHTML = '<div class="brief-card"><div class="bar-top"><button type="button" class="plain" data-act="closemodal">Close</button></div><h2>' + esc(title) + '</h2>' + html + '</div>';
+    $('modal').hidden = false;
+  }
+  function placeHtml(x) {
+    var t = st.target, d = Math.min.apply(null, x.windows.map(function (w) { return SC.distance(w, t); })), k = SC.gapTier(d);
+    return '<p class="vline ' + k + '"><b>' + esc(x.name) + '</b></p><p><span class="chip ' + k + '">' + GLABEL[k] + '</span> closest distance ' + d.toFixed(3) + ' (match below ' + D.meta.thr_match_dist.toFixed(2) + ', partial below ' + D.meta.thr_partial_dist.toFixed(2) + ').</p>' +
+      '<p class="sub">Kind: ' + esc(x.kind) + '. Target: ' + esc(t.name) + '. Based on ' + x.windows.length + ' coarse 90 m windows around an approximate reference point. Terrain only; gravity, air, radiation and rock type are not copied. A chosen set of places, not a global ranking.</p>';
+  }
+  function headlineFor(e) {
+    var k = e._tier, t = { match: 'Good match.', partial: 'Partial match.', gap: 'Weak match.', none: 'No qualifying candidate in the searched area.' }[k];
+    if (k === 'none') return t + ' This is the nearest square.';
+    return t + ' ' + (e._best.length ? 'Best months: ' + N.monthsText(e._best) + '.' : 'No month fits your test.');
+  }
   function renderResult() {
     var el = $('result');
-    if (!sel) { el.innerHTML = '<p class="hint">Click a square on the map to see where it fits, when it fits, and what Earth cannot copy.</p>'; return; }
+    if (curPlace) { el.innerHTML = placeHtml(curPlace); return; }
+    if (!sel) { el.innerHTML = '<p class="hint">Click a coloured square on the map to see where it fits and when.</p>'; return; }
     var e = sel, k = e._tier, c = climate(e), cf = confidence(e);
     var rows = metricRows(e).map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('');
     var sn90 = st.show90 && stabOf(st.target) && stabOf(st.target).threshold_sensitive;
-    var h = '<div><span class="chip ' + k + '">' + LABEL[k] + '</span> <span class="chip ' + (stabOf(st.target) && stabOf(st.target).threshold_sensitive ? 'partial' : 'match') + '">' + robustText(st.target) + '</span> <span class="sub">' + esc(GROUPS[e.group]) + ' &middot; ' + e.lat.toFixed(3) + ', ' + e.lon.toFixed(3) + '</span></div>' +
+    var can3d = e.group !== 'oman90' && R3D_META && R3D_META.by_id[st.target.id] && R3D_META.by_id[e.id];
+    var h = '<p class="vline ' + k + '"><b>' + esc(headlineFor(e)) + '</b></p>' +
+      '<p class="sub">' + esc(GROUPS[e.group]) + ' &middot; ' + e.lat.toFixed(3) + ', ' + e.lon.toFixed(3) + ' &middot; <span class="chip ' + (stabOf(st.target) && stabOf(st.target).threshold_sensitive ? 'partial' : 'match') + '">' + robustText(st.target) + '</span></p>' +
       (sn90 ? '<p class="note">Threshold-sensitive: result changes with the comparison set (this 90 m whole-Oman layer is on). Not a firm match; see docs/VALIDATION.md section 9.</p>' : '') +
-      verdictHtml(e) + '<div class="best">Best months: <b>' + (e._best.length ? esc(N.monthsText(e._best)) : 'none fits your test') + '</b></div>' + stripHtml(e) + monthNotes(e) +
-      '<small>★ best, ✓ good, ~ partial, × poor (number = fit 0-100, weakest factor). Source: ' + esc(c.src) + '.</small>' +
-      sec('Numbers and context', 'Slope, roughness, climate and thermal rows. Context is not scored.', '<table>' + rows + '</table><div class="chartbox"><canvas id="slopechart" width="340" height="90"></canvas><small><i class="dot b"></i>target slope spread <i class="dot g"></i>this square</small></div>') +
-      sec('Twin pictures and 3D', 'Target and Earth square from the same relief data.', twinHtml(e)) +
-      sec('Access and geology', 'Road distance and rock-type notes. Context, not scored.', '<p class="sub"><b>Access:</b> ' + esc(accessLine(e)) + '</p>' + notesHtml(e) + (e.group === 'oman90' ? '<p class="note">90 m data: coarser than the 30 m squares, shown as an extra layer; land cover was not checked here.</p>' : '')) +
-      sec('Confidence: ' + cf.level, 'What the data can and cannot support.', '<div class="conf">' + cf.items.map(esc).join('; ') + '.</div>') +
-      sec('What this cannot see', 'Read before using a number.', '<div class="limits"><b>What this test cannot copy.</b> Gravity, thin air and radiation. Real ' + (st.target.body === 'Moon' ? 'lunar' : 'Martian') + ' temperatures: Earth air temperature here only tells you when conditions suit your test. Terrain numbers only see slope and roughness, not rock type or dust. No rock-abundance or dust measure is used. A terrain match is not a geology match. 500 m cells hide rocks and steps. Earth heights include trees and buildings. Climate is a typical-year average.</div>') +
-      '<div class="btns"><button data-act="brief">Test site brief (print / PDF)</button><button data-act="addcal">Add to calendar</button><button data-act="cmp">Compare with another square</button></div>';
+      stripHtml(e) + legendLine() +
+      '<div class="btns"><button type="button" class="primary" data-act="brief">Test site brief</button><button type="button" data-act="addcal">Add to calendar</button><button type="button" data-act="cmp">Compare</button>' +
+      (e.group !== 'oman90' ? '<button type="button" data-act="pics">Compare terrain pictures</button>' : '') + (can3d ? '<button type="button" data-act="t3d">3D view</button>' : '') + '</div><p class="sub" id="calnote"></p>' +
+      '<p class="sub">Terrain only: gravity, air, radiation and rock type are not copied. The Details list the limits.</p>' +
+      '<details class="sec det"><summary><span>Details</span><small>Fit weights, numbers, pictures, access, geology, confidence, limits</small></summary><div class="secb">' +
+      '<h3>Fit Verdict</h3>' + verdictHtml(e, k) + monthNotes(e) +
+      '<h3>Numbers and context</h3><table>' + rows + '</table><div class="chartbox"><canvas id="slopechart" width="340" height="90"></canvas><small><i class="dot b"></i>target slope spread <i class="dot g"></i>this square</small></div>' +
+      (e.group !== 'oman90' ? '<h3>Twin pictures and 3D</h3>' + twinHtml(e) : '') +
+      '<h3>Access and geology</h3><p class="sub"><b>Access:</b> ' + esc(accessLine(e)) + '</p>' + notesHtml(e) + (e.group === 'oman90' ? '<p class="note">90 m data: coarser than the 30 m squares, shown as an extra layer; land cover was not checked here.</p>' : '') +
+      '<h3>Confidence: ' + cf.level + '</h3><div class="conf">' + cf.items.map(esc).join('; ') + '.</div>' +
+      '<h3>What this cannot see</h3><div class="limits"><b>What this test cannot copy.</b> Gravity, thin air and radiation. Real ' + (st.target.body === 'Moon' ? 'lunar' : 'Martian') + ' temperatures: Earth air temperature here only tells you when conditions suit your test. Terrain numbers only see slope and roughness, not rock type or dust. No rock-abundance or dust measure is used. A terrain match is not a geology match. 500 m cells hide rocks and steps. Earth heights include trees and buildings. Climate is a typical-year average. Source: ' + esc(c.src) + '.</div>' +
+      '</div></details>';
     if (selB) {
       var A = metricRows(sel), B = metricRows(selB);
-      h += '<h3>Compare</h3><table><tr><th></th><th>A ' + sel.lat.toFixed(2) + ', ' + sel.lon.toFixed(2) + '</th><th>B ' + selB.lat.toFixed(2) + ', ' + selB.lon.toFixed(2) + '</th></tr>' + A.map(function (r, i) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td><td>' + esc(B[i][1]) + '</td></tr>'; }).join('') + '</table><button data-act="clearb">Clear B</button>';
+      h += '<h3>Compare squares</h3><table><tr><th></th><th>A ' + sel.lat.toFixed(2) + ', ' + sel.lon.toFixed(2) + '</th><th>B ' + selB.lat.toFixed(2) + ', ' + selB.lon.toFixed(2) + '</th></tr>' + A.map(function (r, i) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td><td>' + esc(B[i][1]) + '</td></tr>'; }).join('') + '</table><button type="button" data-act="clearb">Clear B</button>';
     }
     el.innerHTML = h; chart(e);
   }
@@ -470,32 +533,37 @@
     var gt = SC.gapTier(bestOf(function (x) { return x.group.indexOf('oman') === 0; }).d);
     if (gt !== 'match') { var alt = bestOf(function (x) { return x.group.indexOf('oman') !== 0; }); if (alt) second = '<p><b>Second-site suggestion:</b> best outside square is ' + esc(GROUPS[alt.group]) + ' at ' + alt.lat.toFixed(2) + ', ' + alt.lon.toFixed(2) + ' (terrain: ' + GLABEL[SC.gapTier(alt.d)] + ').</p>'; }
     var need = 'Air temperature ' + n.tlo + ' to ' + n.thi + ' °C; wind ' + n.wmin + ' to ' + (n.wmax >= 12 ? '12+' : n.wmax) + ' m/s; humidity ' + (n.rhmax >= 100 ? 'not limited' : '≤ ' + n.rhmax + '%') + '; sunlight ' + (n.smin > 0 ? '≥ ' + n.smin + ' kWh/m2/day' : 'not limited') + '; day-night swing ' + (n.swmax < 60 ? '≤ ' + n.swmax + ' °C' : 'not limited') + '.';
-    $('brief').innerHTML = '<div class="bar-top"><button data-act="print">Print / save as PDF</button><button data-act="closebrief">Close</button></div>' +
+    var notes = '<details class="fold"><summary>Notes: context rows, access, geology, why months fail, data</summary><h2>Context rows (not scored)</h2><table>' + metricRows(e).filter(function (r, i) { return i === 5 || i === 6; }).map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table><h2>Access (not space data)</h2><p>' + esc(accessLine(e)) + '</p>' +
+      (D.notes && D.notes[e.group] ? '<h2>Geology notes (not a score)</h2><ul>' + D.notes[e.group].notes.map(function (x) { return '<li>' + esc(x.text) + ' <small>(' + esc(x.source) + ')</small></li>'; }).join('') + '</ul>' : '') +
+      '<h2>Why some months fail</h2>' + monthNotes(e) + '<h2>Data</h2><p>' + esc(cf.level) + ' confidence. ' + cf.items.map(esc).join('; ') + '.</p><p class="sub">Copernicus DEM GLO-30 (ESA), LOLA and MOLA (NASA), NASA POWER climatology. See docs/REFERENCES.md.</p></details>';
+    $('brief').innerHTML = '<div class="brief-card"><div class="bar-top"><button type="button" class="primary" data-act="print">Print / save as PDF</button><button type="button" class="plain" data-act="closebrief">Close</button></div>' +
       '<h1>Test Site Brief</h1><p class="sub">Understudy Earth &middot; generated ' + new Date().toISOString().slice(0, 10) + ' &middot; Blue Ember</p>' +
       '<h2>Location</h2><p>' + esc(GROUPS[e.group]) + ', 10 km square centred at ' + e.lat.toFixed(3) + ', ' + e.lon.toFixed(3) + '.</p>' +
       '<h2>Test and target</h2><p>Stand-in for: <b>' + esc(t.name) + '</b> (' + t.body + ').</p><p>Test needs (user choice or our assumption, not a mission requirement): ' + esc(need) + '</p>' +
-      '<h2>Access (not space data)</h2><p>' + esc(accessLine(e)) + '</p>' + (D.notes && D.notes[e.group] ? '<h2>Geology notes (not a score)</h2><ul>' + D.notes[e.group].notes.map(function (x) { return '<li>' + esc(x.text) + ' <small>(' + esc(x.source) + ')</small></li>'; }).join('') + '</ul>' : '') + '<h2>Terrain match</h2><p><b>Stability of this target\'s result:</b> ' + robustText(t) + (stabOf(t) ? ' (tiers seen across settings: ' + stabOf(t).tiers_seen.map(function (k) { return GLABEL[k]; }).join(' / ') + '; best Oman square closer than ' + stabOf(t).band_pct[0] + '-' + stabOf(t).band_pct[1] + '% of Earth-square pairs).' : '.') + '</p><table>' + metricRows(e).map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>' +
-      '<h2>When: 12-month fit</h2>' + stripHtml(e) + monthNotes(e) + '<p>Best months: <b>' + (e._best.length ? esc(N.monthsText(e._best)) : 'none fits') + '</b>. Data: ' + esc(c.src) + '. Typical-year average, not a forecast.</p>' + second +
-      '<h2>What this test cannot copy</h2><ul><li>Gravity, thin air and radiation.</li><li>Real Moon/Mars temperatures: Earth temperature only shows when conditions suit the test.</li><li>Geology and chemistry; rocks, steps and slopes below 500 m; dust storms.</li></ul>' +
-      '<h2>Confidence and data</h2><p>' + esc(cf.level) + '. ' + cf.items.map(esc).join('; ') + '.</p><p class="sub">Data: Copernicus DEM GLO-30 (ESA), LOLA and MOLA (NASA), NASA POWER climatology' + '' + '. See docs/REFERENCES.md.</p>';
-    $('brief').hidden = false; window.scrollTo(0, 0);
+      '<h2>Terrain match</h2><p><b>Stability of this target\'s result:</b> ' + robustText(t) + (stabOf(t) ? ' (tiers seen across settings: ' + stabOf(t).tiers_seen.map(function (k) { return GLABEL[k]; }).join(' / ') + '; best Oman square closer than ' + stabOf(t).band_pct[0] + '-' + stabOf(t).band_pct[1] + '% of Earth-square pairs).' : '.') + '</p><table>' + metricRows(e).filter(function (r, i) { return i < 5 || i === 7; }).map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>' +
+      '<h2>When: 12-month fit</h2>' + stripHtml(e) + legendLine() + '<p>Best months: <b>' + (e._best.length ? esc(N.monthsText(e._best)) : 'none fits') + '</b>. Typical-year average, not a forecast. ' + esc(c.src) + '.</p>' + second +
+      '<h2>What this test cannot copy</h2><ul><li>Gravity, thin air and radiation.</li><li>Real Moon/Mars temperatures: Earth temperature only shows when conditions suit the test.</li><li>Geology and chemistry; rocks, steps and slopes below 500 m; dust storms.</li></ul>' + notes + '</div>';
+    hideToast(); $('brief').hidden = false; $('brief').scrollTop = 0;
   }
 
   function renderGapTable() {
-    var rows = '';
+    var rows = '', ca = { match: 0, partial: 0, gap: 0 }, cb = { match: 0, partial: 0, gap: 0 };
     D.targets.forEach(function (t) {
       var bo = 1e9, ba = 1e9;
       D.earth.forEach(function (e) { var d = SC.distance(e, t); ba = Math.min(ba, d); if (e.group.indexOf('oman') === 0) bo = Math.min(bo, d); });
-      var a = SC.gapTier(bo), b = SC.gapTier(ba);
-      var sn = stabOf(t); rows += '<tr><td>' + esc(t.name) + (sn && sn.threshold_sensitive ? ' <span title="threshold-sensitive">&#9888;</span>' : '') + '<br><small>' + t.body + '</small></td><td><span class="chip ' + a + '">' + GLABEL[a] + '</span></td><td><span class="chip ' + b + '">' + GLABEL[b] + '</span>' + (b !== a ? ' &larr; second site helps' : '') + '</td></tr>';
+      var a = SC.gapTier(bo), b = SC.gapTier(ba); ca[a]++; cb[b]++;
+      var sn = stabOf(t); rows += '<tr><td>' + esc(t.name) + (sn && sn.threshold_sensitive ? ' <small>(threshold-sensitive)</small>' : '') + '<br><small>' + t.body + '</small></td><td><span class="chip ' + a + '">' + GLABEL[a] + '</span></td><td><span class="chip ' + b + '">' + GLABEL[b] + '</span>' + (b !== a ? ' <small>second site helps</small>' : '') + '</td></tr>';
     });
-    $('gaptable').innerHTML = '<table><tr><th>Target</th><th>Searched area only</th><th>+ Meteor Crater, Atacama</th></tr>' + rows + '</table><p class="sub">NO QUALIFYING CANDIDATE = no square we searched is as close to the target as the closest 5% of Earth-square pairs are to each other. It says nothing about places we did not search. &#9888; = threshold-sensitive (tier changes with window size, cell size or threshold).</p>';
+    $('gaptable').innerHTML = '<table><tr><th>Of ' + D.targets.length + ' targets</th><th>Good</th><th>Partial</th><th>No candidate</th></tr><tr><th>Searched area only</th><td class="mono">' + ca.match + '</td><td class="mono">' + ca.partial + '</td><td class="mono">' + ca.gap + '</td></tr><tr><th>+ Meteor Crater, Atacama</th><td class="mono">' + cb.match + '</td><td class="mono">' + cb.partial + '</td><td class="mono">' + cb.gap + '</td></tr></table>' +
+      '<p class="sub">No candidate: no searched square is as close as the closest 5% of Earth-square pairs.</p>' +
+      '<details class="more-blk"><summary>More: every target</summary><table><tr><th>Target</th><th>Searched area only</th><th>+ Meteor Crater, Atacama</th></tr>' + rows + '</table></details>';
   }
 
   function renderBlind() {
-    var b = D.results.blind_test, h = '<p class="sub"><b>A sanity check, not validation.</b> The scorer never sees site names, groups or coordinates, only terrain numbers. Afterwards we look up where known practice sites landed among all ' + D.results.n_earth_windows + ' Earth squares (lower % = better).</p><table><tr><th>Known site</th><th>Rank on best Mars target</th><th>Rank on average over Mars targets</th></tr>';
+    var b = D.results.blind_test, h = '<table><tr><th>Known site</th><th>Best Mars target</th><th>Average, Mars targets</th></tr>';
     b.forEach(function (x) { h += '<tr><td>' + esc(x.site) + '</td><td class="mono">top ' + x.top_pct_best_mars_target + '%</td><td class="mono">top ' + x.top_pct_mean_over_mars_targets + '%</td></tr>'; });
-    h += '</table><div class="limits"><b>Honest reading.</b> The AMADEE-18 area (Marmul, about 15 km radius, approximate) ranks top ' + b[0].top_pct_mean_over_mars_targets + '% on average over Mars targets but only top ' + b[0].top_pct_best_mars_target + '% on its single best target. Meteor Crater ranks well on average (top ' + b[1].top_pct_mean_over_mars_targets + '%); the Atacama tile is mid-table on average (top ' + b[2].top_pct_mean_over_mars_targets + '%) because it is mostly steep Andes terrain. A site ranking high is a sanity check, not proof. See the Baseline check tab for the comparison with random squares.</div>';
+    h += '</table><p class="sub">The scorer saw only terrain numbers. Lower % is better. A sanity check, not proof.</p>';
+    h += '<details class="more-blk"><summary>More</summary><p class="sub">Afterwards we looked up where known practice sites landed among all ' + D.results.n_earth_windows + ' Earth squares.</p><div class="limits"><b>Honest reading.</b> The AMADEE-18 area (Marmul, about 15 km radius, approximate) ranks top ' + b[0].top_pct_mean_over_mars_targets + '% on average over Mars targets but only top ' + b[0].top_pct_best_mars_target + '% on its single best target. Meteor Crater ranks well on average (top ' + b[1].top_pct_mean_over_mars_targets + '%); the Atacama tile is mid-table on average (top ' + b[2].top_pct_mean_over_mars_targets + '%) because it is mostly steep Andes terrain. The Baseline check compares with random squares.</div></details>';
     $('blind').innerHTML = h;
   }
 
@@ -515,26 +583,27 @@
     var avg = { tmax: [], tmin: [], wind: [], rh: [], srad: [] };
     for (var m = 0; m < M; m++) Object.keys(avg).forEach(function (k) { avg[k].push(mar.reduce(function (s, e) { return s + climate(e)[k][m]; }, 0) / mar.length); });
     var fits = N.allFits(avg, needs), best = N.bestMonths(fits), feb = fits[1], mx = Math.max.apply(null, fits);
-    var strip = '<div class="strip">' + fits.map(function (f, i) { var k = N.needTier(f), star = best.indexOf(i) >= 0; return '<div class="mc ' + k + (star ? ' best' : '') + '"><span>' + N.MON[i].charAt(0) + '</span><b>' + Math.round(f) + '</b><i>' + (star ? '★' : (k === 'gap' ? '×' : (k === 'partial' ? '~' : '✓'))) + '</i></div>'; }).join('') + '</div>';
     var ff = N.monthFactors(avg, 1, needs), fk = Object.keys(ff).sort(function (a, b) { return ff[a] - ff[b]; })[0];
     var febWhy = ff[fk] >= 99.5 ? 'every factor is inside the assumed window.' : (fk === 'temp' ? 'day max ' + avg.tmax[1].toFixed(1) + ' °C against our assumed limit of ' + needs.thi + ' °C (night min ' + avg.tmin[1].toFixed(1) + ' °C). January has day max ' + avg.tmax[0].toFixed(1) + ' °C. The OeWF page quotes 16-27 °C for February, which looks like a mean temperature; NASA POWER daily max and min are more extreme than that, and we did not change our needs to force February.' : fk + ' is the weakest factor.');
-    var verdict = best.indexOf(1) >= 0 ? 'The planner picks February among its best months.' : 'The planner does NOT pick February as a best month (best: ' + N.monthsText(best) + ', fit ' + Math.round(mx) + '). February scores ' + Math.round(feb) + ' (' + (N.needTier(feb) === 'match' ? 'a good month' : N.needTier(feb) === 'partial' ? 'a partial month' : 'a poor month') + ') under these assumed needs.';
+    var verdict = best.indexOf(1) >= 0 ? 'The planner picks February among its best months.' : 'The planner does not pick February (fit ' + Math.round(feb) + ', ' + (N.needTier(feb) === 'match' ? 'good' : N.needTier(feb) === 'partial' ? 'partial' : 'poor') + ').';
     var mmCheck = '';
     if (D.mm && D.mm.points.amadee_marmul) {
       var mp = D.mm.points.amadee_marmul;
       if (mp['t_max_2m_24h:C'] && mp['t_min_2m_24h:C']) {
         var mavg = { tmax: mp['t_max_2m_24h:C'], tmin: mp['t_min_2m_24h:C'], wind: mp['wind_speed_10m:ms'] || avg.wind, rh: mp['relative_humidity_2m:p'] || avg.rh, srad: avg.srad };
         var mfits = N.allFits(mavg, needs), mbest = N.bestMonths(mfits), mfeb = mfits[1];
-        mmCheck = '<p class="sub"><b>Re-checked with Meteomatics (saved ' + D.mm.saved + ', nearest point, not a square average):</b> February day max ' + mavg.tmax[1].toFixed(1) + ' °C / night min ' + mavg.tmin[1].toFixed(1) + ' °C (NASA POWER square average above: ' + avg.tmax[1].toFixed(1) + ' / ' + avg.tmin[1].toFixed(1) + ' °C). Under Meteomatics, February scores ' + Math.round(mfeb) + (mbest.indexOf(1) >= 0 ? ' and IS among the planner\'s best months' : ', best months instead: ' + N.monthsText(mbest)) + '. We did not change the needs to force this; the two data sources simply disagree on how mild February is here, same as the February result was not forced before.</p>';
+        mmCheck = '<p class="sub"><b>Re-checked with Meteomatics (saved ' + D.mm.saved + ', nearest point, not a square average):</b> February day max ' + mavg.tmax[1].toFixed(1) + ' °C / night min ' + mavg.tmin[1].toFixed(1) + ' °C (NASA POWER square average: ' + avg.tmax[1].toFixed(1) + ' / ' + avg.tmin[1].toFixed(1) + ' °C). Under Meteomatics, February scores ' + Math.round(mfeb) + (mbest.indexOf(1) >= 0 ? ' and is among the planner\'s best months' : ', best months instead: ' + N.monthsText(mbest)) + '. We did not change the needs to force this; the two sources disagree on how mild February is here.</p>';
       }
     }
-    $('replay').innerHTML = '<p class="sub"><b>Historical illustration with assumed needs.</b> The region is a 15 km circle around 18.19&deg;N 55.23&deg;E (Marmul area, Dhofar). The exact AMADEE-18 site is approximate and not confirmed. ' + mar.length + ' squares fall inside the circle.</p>' +
-      '<p><b>Terrain:</b> median rank top ' + Math.max(1, Math.round(med * 100)) + '% of ' + D.earth.length + ' squares for target <b>' + esc(t.name) + '</b> (change the target on the Planner tab).</p>' +
-      '<p><b>Assumed needs (ours, written down before the replay; see docs/VALIDATION.md):</b> day highs up to 35 °C, night lows at least 5 °C, sunlight at least 4 kWh/m²/day. The OeWF page gives no numeric limits; it only says February temperatures at the site typically range 16-27 °C with under 10 mm of rain (shown for reference, not used).</p>' + strip +
-      '<p class="best">Planner\'s best months: <b>' + esc(N.monthsText(best)) + '</b></p><p><b>Real mission:</b> the AMADEE-18 field phase ran in <b>February 2018</b> in the Dhofar region of Oman (Austrian Space Forum, oewf.org/en/amadee-18, read 2026-11-14).</p><p><b>Result:</b> ' + esc(verdict) + '</p>' + mmCheck +
-      '<p><b>Why February is not the top month:</b> ' + febWhy + '</p><div class="limits"><b>Honest reading.</b> The mission\'s real constraints (logistics, crew schedule, local hosts) are unknown to us, so a different best month does not mean the planner or the mission was wrong. Climate is a typical-year average, not February 2018 weather. Source: ' + esc(climate(mar[0]).src) + '.</div>' +
-      '<div class="btns"><button id="rp-go">Show the circle on the map</button></div>';
-    var go = $('rp-go'); if (go) go.onclick = function () { FIELDS.forEach(function (f) { if (needs[f] !== undefined) st.n[f] = needs[f]; }); syncInputs(); document.querySelector('.tab[data-view=map]').click(); map.setView([18.19, 55.23], 9); if (replayCircle) map.removeLayer(replayCircle); replayCircle = L.circle([18.19, 55.23], { radius: 15000, color: '#fff', weight: 2, dashArray: '6 6', fillOpacity: 0 }).bindTooltip('AMADEE-18 area (approximate)').addTo(map); sel = mar[0]; renderAll(); };
+    $('replay').innerHTML = monthStrip(fits, best, null) +
+      '<p class="sub">Planner best months: <b>' + esc(N.monthsText(best)) + '</b>. Real mission: <b>February 2018</b>. ' + esc(verdict) + '</p>' +
+      '<div class="btns"><button type="button" id="rp-go">Show the circle on the map</button></div>' +
+      '<details class="more-blk"><summary>More</summary><p class="sub">Historical illustration with assumed needs. The region is a 15 km circle around 18.19&deg;N 55.23&deg;E (Marmul area, Dhofar); the exact site is approximate. ' + mar.length + ' squares fall inside it.</p>' +
+      '<p><b>Terrain:</b> median rank top ' + Math.max(1, Math.round(med * 100)) + '% of ' + D.earth.length + ' squares for target <b>' + esc(t.name) + '</b> (change the target on the Planner).</p>' +
+      '<p><b>Assumed needs (ours, written down before the replay; see docs/VALIDATION.md):</b> day highs up to 35 °C, night lows at least 5 °C, sunlight at least 4 kWh/m²/day. The OeWF page gives no numeric limits; it says February temperatures typically range 16-27 °C with under 10 mm of rain.</p>' +
+      '<p><b>Real mission:</b> the AMADEE-18 field phase ran in February 2018 in the Dhofar region of Oman (Austrian Space Forum, oewf.org/en/amadee-18, read 2026-11-14).</p>' + mmCheck +
+      '<p><b>Why February is not the top month:</b> ' + febWhy + '</p><div class="limits"><b>Honest reading.</b> The mission\'s real constraints (logistics, crew schedule, local hosts) are unknown to us, so a different best month does not mean the planner or the mission was wrong. Climate is a typical-year average, not February 2018 weather. Source: ' + esc(climate(mar[0]).src) + '.</div></details>';
+    var go = $('rp-go'); if (go) go.onclick = function () { FIELDS.forEach(function (f) { if (needs[f] !== undefined) st.n[f] = needs[f]; }); syncInputs(); document.querySelector('.tab[data-view=map]').click(); map.setView([18.19, 55.23], 9); if (replayCircle) map.removeLayer(replayCircle); replayCircle = L.circle([18.19, 55.23], { radius: 15000, color: '#fff', weight: 2, dashArray: '6 6', fillOpacity: 0 }).bindTooltip('AMADEE-18 area (approximate)').addTo(map); sel = mar[0]; renderAll(); showCard(); };
   }
 
   // ---- click a planet (Mars 463 m, Moon south and north poles)
@@ -560,54 +629,96 @@
     var rows = [['Median / 90th pct slope', w.slope_p50.toFixed(1) + '° / ' + w.slope_p90.toFixed(1) + '°'], ['Roughness 500 m / 1 km', w.rough_med.toFixed(1) + ' m / ' + w.rough1k_med.toFixed(1) + ' m'], ['Relief in 10 km', Math.round(w.relief_m) + ' m'], ['Cells above 10° slope', Math.round(w.steep_share * 100) + '%']];
     var ds = D.earth.map(function (e) { return { e: e, d: SC.distance(e, w) }; }).sort(function (a, b) { return a.d - b.d; });
     var om = ds.filter(function (x) { return x.e.group.indexOf('oman') === 0 && !masked(x.e); }), tier = SC.gapTier(om[0].d);
-    var tb = function (list) { return '<table><tr><th>Square</th><th>Where</th><th>Distance</th><th></th></tr>' + list.map(function (x) { return '<tr><td class="mono">' + x.e.id + '</td><td>' + esc(GROUPS[x.e.group]) + ' ' + x.e.lat.toFixed(2) + ', ' + x.e.lon.toFixed(2) + '</td><td class="mono">' + x.d.toFixed(3) + '</td><td><button data-sq="' + x.e.id + '">Show</button></td></tr>'; }).join('') + '</table>'; };
-    var keep = st.target; st.target = w; recompute(); var vh = verdictHtml(om[0].e); st.target = keep; recompute();
+    var tb = function (list) { return '<table><tr><th>Square</th><th>Where</th><th>Distance</th><th></th></tr>' + list.map(function (x) { return '<tr><td class="mono">' + x.e.id + '</td><td>' + esc(GROUPS[x.e.group]) + ' ' + x.e.lat.toFixed(2) + ', ' + x.e.lon.toFixed(2) + '</td><td class="mono">' + x.d.toFixed(3) + '</td><td><button type="button" data-sq="' + x.e.id + '">Show</button></td></tr>'; }).join('') + '</table>'; };
+    var keep = st.target; st.target = w; recompute(); var vh = verdictHtml(om[0].e, tier); st.target = keep; recompute();
     var steepWarn = (w.slope_p90 > 8 || w.relief_m > 300) ?
-      '<p class="note">Caution: this window has steep or uneven ground (90th-pct slope ' + w.slope_p90.toFixed(1) + '°, relief ' + Math.round(w.relief_m) + ' m in 10 km). On steep ground the nearest precomputed window can read very differently from the exact spot clicked, sometimes by several degrees of slope (for example, Jezero\'s window-average slope is 4.4° while a finer 1 m check nearby reads 0.57°). Treat this result as a rough area reading, not the exact point.</p>' : '';
-    $('skyres').innerHTML = '<h3>' + esc(label) + '</h3>' + steepWarn + (extra || '') + '<table>' + rows.map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>' +
-      '<p><span class="chip ' + tier + '">' + GLABEL[tier] + '</span> best square in the searched area: distance ' + om[0].d.toFixed(3) + ' (match below ' + D.meta.thr_match_dist.toFixed(2) + ', partial below ' + D.meta.thr_partial_dist.toFixed(2) + '). Best fit among the squares searched, not a global best. Not checked for stability.</p>' +
-      '<h4>Closest squares in the searched area</h4>' + tb(om.slice(0, 5)) + '<h4>Closest squares anywhere in our set</h4>' + tb(ds.slice(0, 3)) + vh +
-      '<div class="conf"><b>Confidence: Low.</b> ' + esc(conf) + '</div><div class="limits"><b>What this cannot see.</b> Terrain numbers only see slope and roughness, not rock type or dust. Gravity, air and radiation are not copied. 500 m cells hide rocks and steps; Earth heights are a surface model. A terrain match is not a geology match.</div>';
+      '<p class="note">Caution: steep or uneven ground (90th-pct slope ' + w.slope_p90.toFixed(1) + '°, relief ' + Math.round(w.relief_m) + ' m in 10 km). The nearest precomputed window can read very differently from the exact spot, sometimes by several degrees of slope. Treat this as a rough area reading.</p>' : '';
+    $('skyres').innerHTML = '<h3>' + esc(label) + '</h3><p class="vline ' + tier + '"><b>' + (tier === 'match' ? 'Good terrain match' : tier === 'partial' ? 'Partial terrain match' : 'No qualifying candidate') + ' in the searched area.</b></p>' + steepWarn + (extra || '') + '<table>' + rows.map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('') + '</table>' +
+      '<p class="sub">Best square in the searched area: distance ' + om[0].d.toFixed(3) + ' (match below ' + D.meta.thr_match_dist.toFixed(2) + ', partial below ' + D.meta.thr_partial_dist.toFixed(2) + '). Best among the squares searched, not a global best.</p>' +
+      '<h4>Closest squares in the searched area</h4>' + tb(om.slice(0, 5)) +
+      '<details class="sec det"><summary><span>Details</span><small>Anywhere in our set, fit weights, confidence, limits</small></summary><div class="secb"><h4>Closest squares anywhere in our set</h4>' + tb(ds.slice(0, 3)) + '<h3>Fit Verdict</h3>' + vh +
+      '<div class="conf"><b>Confidence: Low.</b> ' + esc(conf) + '</div><div class="limits"><b>What this cannot see.</b> Terrain numbers only see slope and roughness, not rock type or dust. Gravity, air and radiation are not copied. 500 m cells hide rocks and steps; Earth heights are a surface model. A terrain match is not a geology match.</div></div></details>';
+    openSky();
+  }
+  var COORD = { mars: { lat: [-87, 87], msg: 'Mars data covers latitude 87 S to 87 N. Enter a latitude between -87 and 87.', hint: 'Mars: latitude -87 to 87 (S to N), longitude -180 to 180 (W to E). Use plus or minus, or add N, S, E, W.' },
+    moon: { lat: [-90, -80], msg: 'Moon south pole data covers latitude 80 S to 90 S. Enter a latitude between -90 and -80.', hint: 'Moon south pole: latitude -90 to -80, longitude -180 to 180.' },
+    moon_n: { lat: [80, 90], msg: 'Moon north pole data covers latitude 80 N to 90 N. Enter a latitude between 80 and 90.', hint: 'Moon north pole: latitude 80 to 90, longitude -180 to 180.' } };
+  var moonMark = null, KMDEG = 30.32;
+  function parseCoord(txt, axis) {
+    var t = String(txt).trim().replace(/°/g, '').replace(',', '.').replace(/−/g, '-'), m = t.match(/^([+-]?\d+(?:\.\d+)?)\s*([nsewNSEW])?$/);
+    if (!m) return NaN;
+    var v = parseFloat(m[1]), L = (m[2] || '').toUpperCase();
+    if (L) { if ((axis === 'lat' && (L === 'E' || L === 'W')) || (axis === 'lon' && (L === 'N' || L === 'S'))) return NaN; v = (L === 'S' || L === 'W') ? -Math.abs(v) : Math.abs(v); }
+    return v;
+  }
+  function setCoords(lat, lon) { $('lat').value = lat.toFixed(2); $('lon').value = lon.toFixed(2); $('coorderr').textContent = ''; }
+  function loadMoon(cb) {
+    if (MOON[skyBody]) return cb();
+    fetch('data/' + POLE[skyBody].file).then(function (r) { return r.json(); }).then(function (a) { MOON[skyBody] = a; cb(); });
+  }
+  function marsPoint(lat, lon) {
+    var fx = (lon + 180) / 360, fy = (87 - lat) / 174;
+    $('marsmark').style.left = (fx * 100) + '%'; $('marsmark').style.top = (fy * 100) + '%'; setCoords(lat, lon);
+    if (!MARS) { $('skyres').innerHTML = '<p class="note">Loading Mars terrain data (about 13 MB, once per visit)...</p>'; openSky(); }
+    loadMars(function () {
+      var m = marsAt(lat, lon);
+      if (m.unknown) { $('skyres').innerHTML = '<h3>Unknown</h3><p>No valid terrain numbers for the window near ' + lat.toFixed(1) + '°, ' + lon.toFixed(1) + '°. No match is shown.</p>'; openSky(); return; }
+      skyResult(m.w, 'Mars near ' + lat.toFixed(1) + '°N, ' + lon.toFixed(1) + '°E', 'Coarse 463 m data (MOLA); the window centre is ' + m.km.toFixed(0) + ' km from this point (25 km window spacing).', '');
+    });
+  }
+  function moonPointXY(x, y) {
+    var pole = POLE[skyBody], r = Math.hypot(x, y), north = skyBody === 'moon_n';
+    var lat = (north ? 1 : -1) * (90 - r / KMDEG), th = Math.atan2(x, y) * 180 / Math.PI, lon = north ? -180 - th : th;
+    lon = ((lon + 540) % 360) - 180; setCoords(lat, lon); moonMark = { x: x, y: y }; drawMoon(pole);
+    if (r > 300) { $('skyres').innerHTML = '<h3>Unknown</h3><p>Outside ' + pole.label + ' (300 km around the pole): no lunar terrain data here. No match is shown.</p>'; openSky(); return; }
+    var set = MOON[skyBody], w = set.slice().sort(function (a, b) { return Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y); })[0], km = Math.hypot(w.x - x, w.y - y);
+    var o = Object.assign({}, w, { id: 'ML', name: 'Moon window ' + w.lat + '°, ' + w.lon + '°', body: 'Moon' });
+    skyResult(o, 'Moon near ' + w.lat.toFixed(1) + '°, ' + w.lon.toFixed(1) + '° (' + pole.tag + ' data only)', 'LOLA 80 m data, ' + pole.tag + ' only; the window centre is ' + km.toFixed(0) + ' km from this point (20 km spacing).', '');
+  }
+  function goCoords() {
+    var R = COORD[skyBody], lat = parseCoord($('lat').value, 'lat'), lon = parseCoord($('lon').value, 'lon'), err = $('coorderr');
+    if (!isFinite(lat) || !isFinite(lon)) { err.textContent = 'Enter latitude and longitude as numbers, for example 18.4 and 77.5, or 18.4 N and 77.5 E.'; return; }
+    if (lon > 180 && lon <= 360) lon -= 360;
+    if (lat < R.lat[0] || lat > R.lat[1]) { err.textContent = R.msg; return; }
+    if (lon < -180 || lon > 180) { err.textContent = 'Longitude must be between -180 and 180 degrees (east is positive).'; return; }
+    err.textContent = '';
+    if (skyBody === 'mars') marsPoint(lat, lon);
+    else loadMoon(function () { var rr = (90 - Math.abs(lat)) * KMDEG, th = (skyBody === 'moon_n' ? -180 - lon : lon) * Math.PI / 180; moonPointXY(rr * Math.sin(th), rr * Math.cos(th)); });
   }
   function renderSky() {
     var pole = POLE[skyBody];
-    $('skyhelp').innerHTML = skyBody === 'mars' ? 'Click anywhere on the map (87°S to 87°N, 463 m MOLA data; brighter = steeper). Windows are 10 km squares every 25 km, so the numbers describe the nearest window, not the exact spot. Poles are not covered: unknown.' :
-      'Moon: only the LOLA terrain for ' + pole.label + ' is used. Click inside the circle (300 km around the pole). Anywhere else on the Moon is unknown.';
+    $('skyhelp').innerHTML = skyBody === 'mars' ? 'Click the map, or type a latitude and longitude. 87°S to 87°N, 463 m MOLA data; brighter = steeper. The numbers describe the nearest 10 km window, not the exact spot.' :
+      'Click inside the circle (300 km around the pole), or type a latitude and longitude. Only the LOLA terrain for ' + pole.label + ' is used; elsewhere on the Moon is unknown.';
+    $('coordhint').textContent = COORD[skyBody].hint; $('coorderr').textContent = '';
     $('marsbox').hidden = skyBody !== 'mars'; $('moonbox').hidden = skyBody === 'mars';
     document.querySelectorAll('#skytabs button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-body') === skyBody); });
     if (skyBody === 'mars') loadMars(function () {}); else drawMoon(pole);
   }
   function drawMoon(pole) {
     var go = function () {
-      var cv = $('moonc'), c = cv.getContext('2d'); c.clearRect(0, 0, 320, 320); c.fillStyle = '#05080f'; c.beginPath(); c.arc(160, 160, 155, 0, 7); c.fill();
+      var cv = $('moonc'), c = cv.getContext('2d'); c.clearRect(0, 0, 320, 320); c.fillStyle = '#101216'; c.beginPath(); c.arc(160, 160, 155, 0, 7); c.fill();
       MOON[skyBody].forEach(function (w) { var v = Math.min(1, Math.log1p(w.slope_p90) / Math.log1p(25)), g = Math.round(40 + 215 * v); c.fillStyle = 'rgb(' + g + ',' + g + ',' + g + ')'; c.fillRect(160 + w.x / 300 * 155 - 3, 160 - w.y / 300 * 155 - 3, 6.2, 6.2); });
-      c.strokeStyle = '#7aa2ff'; c.strokeRect(0, 0, 0, 0); c.fillStyle = '#9fb0d3'; c.font = '10px system-ui'; c.fillText('pole', 150, 158); c.fillText('300 km radius (' + pole.label.slice(0, 4) + ')', 90, 314);
+      c.fillStyle = '#a39e95'; c.font = '10px system-ui'; c.fillText('pole', 150, 158); c.fillText('300 km radius (' + pole.label.slice(0, 4) + ')', 90, 314);
+      if (moonMark) { var px = 160 + moonMark.x / 300 * 155, py = 160 - moonMark.y / 300 * 155; c.lineWidth = 3; c.strokeStyle = '#000'; c.beginPath(); c.arc(px, py, 7, 0, 7); c.stroke(); c.lineWidth = 2; c.strokeStyle = '#e0ae3f'; c.beginPath(); c.arc(px, py, 7, 0, 7); c.stroke(); }
     };
-    if (MOON[skyBody]) return go(); fetch('data/' + pole.file).then(function (r) { return r.json(); }).then(function (a) { MOON[skyBody] = a; go(); });
+    if (MOON[skyBody]) return go(); loadMoon(go);
   }
   function bindSky() {
-    $('skytabs').addEventListener('click', function (ev) { var b = ev.target.getAttribute('data-body'); if (b) { skyBody = b; $('skyres').innerHTML = ''; renderSky(); } });
+    $('skytabs').addEventListener('click', function (ev) { var b = ev.target.getAttribute('data-body'); if (b) { skyBody = b; moonMark = null; $('skyres').innerHTML = ''; $('lat').value = ''; $('lon').value = ''; closeCards(); renderSky(); } });
+    $('coords').addEventListener('submit', function (ev) { ev.preventDefault(); goCoords(); });
     $('marsimg').addEventListener('click', function (ev) {
-      var r = ev.target.getBoundingClientRect(), fx = (ev.clientX - r.left) / r.width, fy = (ev.clientY - r.top) / r.height, lon = -180 + fx * 360, lat = 87 - fy * 174;
-      $('marsmark').style.left = (fx * 100) + '%'; $('marsmark').style.top = (fy * 100) + '%';
-      if (!MARS) $('skyres').innerHTML = '<p class="note">Loading Mars terrain data (about 13 MB, once per visit)...</p>';
-      loadMars(function () {
-        var m = marsAt(lat, lon);
-        if (m.unknown) { $('skyres').innerHTML = '<h3>Unknown</h3><p>No valid terrain numbers for the window near ' + lat.toFixed(1) + '°, ' + lon.toFixed(1) + '°. No match is shown.</p>'; return; }
-        skyResult(m.w, 'Mars near ' + lat.toFixed(1) + '°N, ' + lon.toFixed(1) + '°E', 'Coarse 463 m data (MOLA); the window centre is ' + m.km.toFixed(0) + ' km from your click (25 km window spacing).', '');
-      });
+      var r = ev.target.getBoundingClientRect(), fx = (ev.clientX - r.left) / r.width, fy = (ev.clientY - r.top) / r.height;
+      marsPoint(87 - fy * 174, -180 + fx * 360);
     });
     $('moonc').addEventListener('click', function (ev) {
       var pole = POLE[skyBody], set = MOON[skyBody]; if (!set) return;
       var r = ev.target.getBoundingClientRect(), px = (ev.clientX - r.left) / r.width * 320, py = (ev.clientY - r.top) / r.height * 320, x = (px - 160) / 155 * 300, y = -(py - 160) / 155 * 300;
-      if (Math.hypot(x, y) > 300) { $('skyres').innerHTML = '<h3>Unknown</h3><p>Outside ' + pole.label + ': no lunar terrain data here. No match is shown.</p>'; return; }
-      var w = set.slice().sort(function (a, b) { return Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y); })[0], km = Math.hypot(w.x - x, w.y - y);
-      var o = Object.assign({}, w, { id: 'ML', name: 'Moon window ' + w.lat + '°, ' + w.lon + '°', body: 'Moon' });
-      skyResult(o, 'Moon near ' + w.lat.toFixed(1) + '°, ' + w.lon.toFixed(1) + '° (' + pole.tag + ' data only)', 'LOLA 80 m data, ' + pole.tag + ' only; the window centre is ' + km.toFixed(0) + ' km from your click (20 km spacing).', '');
+      if (Math.hypot(x, y) > 300) { $('skyres').innerHTML = '<h3>Unknown</h3><p>Outside ' + pole.label + ': no lunar terrain data here. No match is shown.</p>'; openSky(); return; }
+      moonPointXY(x, y);
     });
     document.addEventListener('click', function (ev) {
       var id = ev.target.getAttribute && ev.target.getAttribute('data-sq'); if (!id) return;
-      var e = D.earth.filter(function (x) { return x.id === id; })[0]; if (!e) return; document.querySelector('.tab[data-view=map]').click(); map.setView([e.lat, e.lon], 9); sel = e; renderAll();
+      var e = D.earth.filter(function (x) { return x.id === id; })[0]; if (!e) return; document.querySelector('.tab[data-view=map]').click(); map.setView([e.lat, e.lon], 9); sel = e; renderAll(); showCard();
     });
   }
 
@@ -625,65 +736,72 @@
     items.forEach(function (x) {
       var k = SC.gapTier(x.d), m = L.circleMarker([x.lat, x.lon], { radius: x.oman ? 11 : 7, color: '#ffffff', weight: x.fine ? 3 : 1, fillColor: k === 'gap' ? '#a23d4a' : COL[k], fillOpacity: 0.9, dashArray: x.fine ? null : '3 3' }).addTo(wmap._layer);
       m.bindTooltip(x.name + ': ' + GLABEL[k] + ' (distance ' + x.d.toFixed(2) + ')');
-      if (x.oman) m.on('click', function () { document.querySelector('.tab[data-view=map]').click(); map.fitBounds(state_views.oman); });
+      if (x.oman) m.on('click', function () { document.querySelector('.tab[data-view=map]').click(); map.fitBounds(state_views.all, { padding: [24, 24] }); });
     });
     items.sort(function (a, b) { return a.d - b.d; });
-    $('worldlist').innerHTML = '<p class="sub">For the target <b>' + esc(t.name) + '</b> (change it on the Planner tab). Dashed dots use coarse 90 m data around an approximate reference point (squares within 15 km); solid-ringed dots are the 30 m squares already in the main set. Tier = same absolute thresholds as the main method, not recalibrated for 90 m.</p><table><tr><th>Place</th><th>Kind</th><th>Squares</th><th>Closest distance</th><th>Tier</th></tr>' + items.map(function (x) { var k = SC.gapTier(x.d); return '<tr><td>' + esc(x.name) + '</td><td>' + x.kind + '</td><td>' + (x.n || 'main set') + '</td><td class="mono">' + x.d.toFixed(3) + '</td><td><span class="chip ' + k + '">' + GLABEL[k] + '</span></td></tr>'; }).join('') + '</table>';
+    $('worldlist').innerHTML = '<p class="sub">Target: <b>' + esc(t.name) + '</b> (change it on the Planner).</p><details class="more-blk"><summary>All places (table)</summary><p class="sub">Dashed dots use coarse 90 m data around an approximate reference point (squares within 15 km); solid-ringed dots are the 30 m squares in the main set. Tier = the same absolute thresholds as the main method, not recalibrated for 90 m.</p><table><tr><th>Place</th><th>Kind</th><th>Squares</th><th>Closest distance</th><th>Tier</th></tr>' + items.map(function (x) { var k = SC.gapTier(x.d); return '<tr><td>' + esc(x.name) + '</td><td>' + x.kind + '</td><td>' + (x.n || 'main set') + '</td><td class="mono">' + x.d.toFixed(3) + '</td><td><span class="chip ' + k + '">' + GLABEL[k] + '</span></td></tr>'; }).join('') + '</table></details>';
   }
 
   // ---- Jezero story (finer-scale check, separate from the frozen 500 m method)
   function renderJezero() {
     var J = D.jez; if (!J || !J.windows.length) { $('jez').innerHTML = '<p>Jezero data not available.</p>'; return; }
     var w = J.windows[0], t = D.targets.filter(function (x) { return x.id === J.source_mola_target; })[0];
-    var sq = function (list) { return '<table><tr><th>Square</th><th>Where</th><th>Distance</th><th></th></tr>' + list.map(function (x) { return '<tr><td class="mono">' + x.id + '</td><td>' + esc(GROUPS[x.group]) + ' ' + x.lat.toFixed(2) + ', ' + x.lon.toFixed(2) + '</td><td class="mono">' + x.dist + '</td><td><button data-jz="' + x.id + '">Show</button></td></tr>'; }).join('') + '</table>'; };
+    var sq = function (list) { return '<table><tr><th>Square</th><th>Where</th><th>Distance</th><th></th></tr>' + list.map(function (x) { return '<tr><td class="mono">' + x.id + '</td><td>' + esc(GROUPS[x.group]) + ' ' + x.lat.toFixed(2) + ', ' + x.lon.toFixed(2) + '</td><td class="mono">' + x.dist + '</td><td><button type="button" data-jz="' + x.id + '">Show</button></td></tr>'; }).join('') + '</table>'; };
     var best = w.top500_oman[0];
-    var jverdict = GLABEL[SC.gapTier(best.dist)] + ': ' + best.id + ' scores ' + best.dist + ' against Jezero (lower is closer; threshold ' + D.meta.thr_match_dist.toFixed(3) + '; best in the searched area ' + best.dist + '; closest anywhere in our set ' + w.top500[0].dist + ' at ' + GROUPS[w.top500[0].group] + '); the 30 m check below has no calibrated threshold, so it is a ranking only, not a pass or fail.';
-    $('jez').innerHTML = '<p class="sub"><b>Practise the Perseverance Jezero drive in the searched area?</b> A finer-scale check than the 463 m global map. It is separate from the main method and one window only.</p>' +
+    var jverdict = GLABEL[SC.gapTier(best.dist)] + ': ' + best.id + ' scores ' + best.dist + ' against Jezero (lower is closer; match below ' + D.meta.thr_match_dist.toFixed(2) + ').';
+    $('jez').innerHTML = '<p class="sub">Practise the Perseverance Jezero drive in the searched area? A finer check than the 463 m global map, one window.</p>' +
       '<p class="best">' + esc(jverdict) + '</p>' +
-      '<div class="twins"><figure><img src="data/relief/JEZ0.png" alt="Shaded relief of the Jezero 10 km window" width="64" height="64"><div class="bar5"><i></i><span>5 km</span></div><figcaption>Jezero delta region, 10 km window<br>native 1 m (HiRISE-based DTM), area-averaged to the picture grid</figcaption></figure>' +
-      '<figure><img src="data/relief/' + best.id + '.png" alt="Shaded relief of the closest square in the searched area" width="64" height="64"><div class="bar5"><i></i><span>5 km</span></div><figcaption>Closest square in the searched area (500 m method)<br>native 30 m (Copernicus surface model)</figcaption></figure></div>' +
+      '<div class="twins"><figure><img src="data/relief/JEZ0.png" alt="Shaded relief of the Jezero 10 km window" width="64" height="64"><div class="bar5"><i></i><span>5 km</span></div><figcaption>Jezero delta, 10 km<br>1 m HiRISE-based DTM</figcaption></figure>' +
+      '<figure><img src="data/relief/' + best.id + '.png" alt="Shaded relief of the closest square in the searched area" width="64" height="64"><div class="bar5"><i></i><span>5 km</span></div><figcaption>Closest searched square<br>30 m Copernicus</figcaption></figure></div>' +
       '<table><tr><th></th><th>Slope median / 90th pct</th><th>Roughness (median)</th></tr>' +
-      '<tr><th>Jezero window, 500 m cells (same method as the searched area)</th><td>' + w.feat500.slope_p50.toFixed(2) + '° / ' + w.feat500.slope_p90.toFixed(2) + '°</td><td>' + w.feat500.rough_med.toFixed(2) + ' m</td></tr>' +
-      '<tr><th>Jezero 463 m global map (target "' + esc(t.name) + '")</th><td>' + t.slope_p50.toFixed(2) + '° / ' + t.slope_p90.toFixed(2) + '°</td><td>' + t.rough_med.toFixed(2) + ' m</td></tr>' +
-      '<tr><th>Jezero window, 30 m cells (finer check)</th><td>' + w.feat30.slope_p50.toFixed(2) + '° / ' + w.feat30.slope_p90.toFixed(2) + '°</td><td>' + w.feat30.rough_med.toFixed(2) + ' m; ' + Math.round(w.feat30.steep_share * 100) + '% of cells above 10°</td></tr></table>' +
-      '<h3>Closest squares in the searched area, main method (500 m cells)</h3>' + sq(w.top500_oman) + '<p class="sub">Best distance ' + w.top500_oman[0].dist + ' (match below ' + D.meta.thr_match_dist.toFixed(2) + ', partial below ' + D.meta.thr_partial_dist.toFixed(2) + '): tier ' + GLABEL[SC.gapTier(w.top500_oman[0].dist)] + ' for the searched area (the closest square anywhere is in the Meteor Crater area).</p>' +
-      '<h3>Closest squares in the searched area, 30 m check (slope, steepness, roughness at 30 m)</h3>' + sq(w.top30_oman) + '<p class="sub">The 30 m check has no calibrated threshold, so it gives a ranking only.</p>' +
-      '<div class="limits"><b>Limits.</b> ' + esc(J.note) + ' Only one 10 km window had at most 2% empty cells (the data footprint is slanted). Earth heights are a surface model (trees, buildings); Mars heights are bare ground. 30 m cells still hide rocks and steps that matter to a rover. A terrain match is not a geology match. Source: USGS Astrogeology Mars 2020 TRN HiRISE DTM mosaic of Jezero (see REFERENCES).</div>' +
+      '<tr><th>Jezero, 500 m cells</th><td>' + w.feat500.slope_p50.toFixed(2) + '° / ' + w.feat500.slope_p90.toFixed(2) + '°</td><td>' + w.feat500.rough_med.toFixed(2) + ' m</td></tr>' +
+      '<tr><th>Jezero, 463 m global map ("' + esc(t.name) + '")</th><td>' + t.slope_p50.toFixed(2) + '° / ' + t.slope_p90.toFixed(2) + '°</td><td>' + t.rough_med.toFixed(2) + ' m</td></tr>' +
+      '<tr><th>Jezero, 30 m cells</th><td>' + w.feat30.slope_p50.toFixed(2) + '° / ' + w.feat30.slope_p90.toFixed(2) + '°</td><td>' + w.feat30.rough_med.toFixed(2) + ' m; ' + Math.round(w.feat30.steep_share * 100) + '% of cells above 10°</td></tr></table>' +
+      '<details class="more-blk"><summary>More about Jezero</summary><p class="sub">Closest anywhere in our set: ' + w.top500[0].dist + ' at ' + esc(GROUPS[w.top500[0].group]) + '. The 30 m check has no calibrated threshold, so it is a ranking only, not a pass or fail.</p>' +
+      '<h3>Closest squares in the searched area, main method (500 m cells)</h3>' + sq(w.top500_oman) + '<p class="sub">Best distance ' + w.top500_oman[0].dist + ' (match below ' + D.meta.thr_match_dist.toFixed(2) + ', partial below ' + D.meta.thr_partial_dist.toFixed(2) + '): tier ' + GLABEL[SC.gapTier(w.top500_oman[0].dist)] + ' for the searched area.</p>' +
+      '<h3>Closest squares in the searched area, 30 m check</h3>' + sq(w.top30_oman) +
+      '<div class="limits"><b>Limits.</b> ' + esc(J.note) + ' Only one 10 km window had at most 2% empty cells (the data footprint is slanted). Earth heights are a surface model (trees, buildings); Mars heights are bare ground. 30 m cells still hide rocks and steps that matter to a rover. A terrain match is not a geology match. Source: USGS Astrogeology Mars 2020 TRN HiRISE DTM mosaic of Jezero (see REFERENCES).</div></details>' +
       renderGaleHtml();
     $('jez').onclick = function (ev) {
       var id = ev.target.getAttribute('data-jz') || ev.target.getAttribute('data-ga'); if (!id) return;
-      var e = D.earth.filter(function (x) { return x.id === id; })[0]; if (!e) return; document.querySelector('.tab[data-view=map]').click(); map.setView([e.lat, e.lon], 9); sel = e; renderAll();
+      var e = D.earth.filter(function (x) { return x.id === id; })[0]; if (!e) return; document.querySelector('.tab[data-view=map]').click(); map.setView([e.lat, e.lon], 9); sel = e; renderAll(); showCard();
     };
   }
   function renderGaleHtml() {
     var G = D.gale; if (!G || !G.windows.length) return '';
-    var sq = function (list) { return '<table><tr><th>Square</th><th>Where</th><th>Distance</th><th></th></tr>' + list.map(function (x) { return '<tr><td class="mono">' + x.id + '</td><td>' + esc(GROUPS[x.group]) + ' ' + x.lat.toFixed(2) + ', ' + x.lon.toFixed(2) + '</td><td class="mono">' + x.dist + '</td><td><button data-ga="' + x.id + '">Show</button></td></tr>'; }).join('') + '</table>'; };
+    var sq = function (list) { return '<table><tr><th>Square</th><th>Where</th><th>Distance</th><th></th></tr>' + list.map(function (x) { return '<tr><td class="mono">' + x.id + '</td><td>' + esc(GROUPS[x.group]) + ' ' + x.lat.toFixed(2) + ', ' + x.lon.toFixed(2) + '</td><td class="mono">' + x.dist + '</td><td><button type="button" data-ga="' + x.id + '">Show</button></td></tr>'; }).join('') + '</table>'; };
     var best = G.windows.slice().sort(function (a, b) { return a.top500_oman[0].dist - b.top500_oman[0].dist; })[0];
     var bo = best.top500_oman[0];
-    var gverdict = GLABEL[SC.gapTier(bo.dist)] + ': ' + bo.id + ' scores ' + bo.dist + ' against this Gale window (lower is closer; threshold ' + D.meta.thr_match_dist.toFixed(3) + '); closest anywhere in our set ' + best.top500[0].dist + ' at ' + esc(GROUPS[best.top500[0].group]) + '.';
-    return '<h3 style="margin-top:2em">Gale crater (30 m HRSC mosaic, a second fine-scale check)</h3>' +
-      '<p class="sub">A second, independently sourced fine terrain model, for the Curiosity rover\'s Gale crater region. Native resolution is already 30 m, so there is no further finer check here (unlike Jezero\'s 1 m starting point). ' + G.windows.length + ' windows across the mosaic, closest to the crater centre shown here.</p>' +
+    var gverdict = GLABEL[SC.gapTier(bo.dist)] + ': ' + bo.id + ' scores ' + bo.dist + ' against this Gale window (lower is closer).';
+    return '<h3 style="margin-top:2em">Gale crater (30 m HRSC mosaic)</h3>' +
       '<p class="best">' + esc(gverdict) + '</p>' +
-      '<div class="twins"><figure><img src="data/relief/' + best.id + '.png" alt="Shaded relief of a Gale crater window" width="64" height="64"><div class="bar5"><i></i><span>5 km</span></div><figcaption>Gale crater, 10 km window (' + best.lat.toFixed(2) + ', ' + best.lon.toFixed(2) + ')<br>native 30 m (HRSC-based DTM), area-averaged to the picture grid</figcaption></figure>' +
-      '<figure><img src="data/relief/' + bo.id + '.png" alt="Shaded relief of the closest square in the searched area" width="64" height="64"><div class="bar5"><i></i><span>5 km</span></div><figcaption>Closest square in the searched area<br>native 30 m (Copernicus surface model)</figcaption></figure></div>' +
+      '<div class="twins"><figure><img src="data/relief/' + best.id + '.png" alt="Shaded relief of a Gale crater window" width="64" height="64"><div class="bar5"><i></i><span>5 km</span></div><figcaption>Gale, 10 km (' + best.lat.toFixed(2) + ', ' + best.lon.toFixed(2) + ')<br>30 m HRSC DTM</figcaption></figure>' +
+      '<figure><img src="data/relief/' + bo.id + '.png" alt="Shaded relief of the closest square in the searched area" width="64" height="64"><div class="bar5"><i></i><span>5 km</span></div><figcaption>Closest searched square<br>30 m Copernicus</figcaption></figure></div>' +
+      '<details class="more-blk"><summary>More about Gale</summary><p class="sub">A second, independently sourced fine terrain model for the Curiosity rover\'s Gale crater region. Native resolution is already 30 m, so there is no finer check here. ' + G.windows.length + ' windows across the mosaic; the one closest to the crater centre is shown. Closest anywhere in our set: ' + best.top500[0].dist + ' at ' + esc(GROUPS[best.top500[0].group]) + '.</p>' +
       '<h4>All ' + G.windows.length + ' Gale windows, best square in the searched area for each</h4><table><tr><th>Window</th><th>Where</th><th>Slope p50/p90</th><th>Best in searched area</th><th>Tier</th></tr>' +
       G.windows.map(function (w) { var b = w.top500_oman[0]; return '<tr><td class="mono">' + w.id + '</td><td>' + w.lat.toFixed(2) + ', ' + w.lon.toFixed(2) + '</td><td>' + w.feat500.slope_p50.toFixed(2) + '° / ' + w.feat500.slope_p90.toFixed(2) + '°</td><td class="mono">' + b.dist + '</td><td><span class="chip ' + SC.gapTier(b.dist) + '">' + GLABEL[SC.gapTier(b.dist)] + '</span></td></tr>'; }).join('') + '</table>' +
       '<h4>Closest squares in the searched area for the best window</h4>' + sq(best.top500_oman) +
-      '<div class="limits"><b>Limits.</b> ' + esc(G.note) + ' Earth heights are a surface model (trees, buildings); Mars heights are bare ground. A terrain match is not a geology match. Source: 30-m HRSC DTM Mosaic of Gale Crater, Mars (Persaud, Putri, Muller, 2021, Zenodo, CC BY 4.0; see REFERENCES).</div>';
+      '<div class="limits"><b>Limits.</b> ' + esc(G.note) + ' Earth heights are a surface model (trees, buildings); Mars heights are bare ground. A terrain match is not a geology match. Source: 30-m HRSC DTM Mosaic of Gale Crater, Mars (Persaud, Putri, Muller, 2021, Zenodo, CC BY 4.0; see REFERENCES).</div></details>';
   }
 
   // ---- baseline and stability view
   function renderBase() {
     if (!D.base) { $('base').innerHTML = '<p>Baseline file missing.</p>'; return; }
-    var h = '<div class="limits"><b>What this check shows and does not show.</b> It shows whether known analog areas sit closer to our Moon and Mars targets, on slope and roughness numbers, than random Earth squares do. It does NOT show that a site is a good analog: it is retrospective, uses very few known sites (3 plus two local areas), looks at terrain only (not rocks, dust, gravity or climate), and is not independent validation. We looked at results while building.</div>';
-    h += '<p class="sub">Each known site\'s median rank among all ' + D.earth.length + ' Earth squares, over the targets of one body, is compared with 100 random draws of the same number of squares (random is about 50%). Rule fixed in advance: 10 points or more below the random median = better than random, 10 or more above = worse, otherwise about random.</p><table><tr><th>Known site</th><th>Body</th><th>Median rank</th><th>Random</th><th>Reading</th></tr>';
-    D.base.summary.forEach(function (x) { h += '<tr><td>' + esc(x.site) + '</td><td>' + x.body + '</td><td class="mono">' + x.median_rank_full_pct + '%</td><td class="mono">' + x.median_random_pct + '%</td><td><b>' + esc(x.verdict) + '</b><br><small>' + x.median_rank_full_pct + '% vs about ' + x.median_random_pct + '% random; ahead of 95% of random draws on ' + x.targets_beating_random + ' of ' + x.n_targets + ' targets</small></td></tr>'; });
-    h += '</table><h3>Known failures</h3><ul class="cant"><li><b>Atacama tile, Mars:</b> worse than random as a whole 1&deg; tile (rank 66%), because the tile mixes flat desert in the west (slope about 1.3&deg;) with Andes foothills in the east (about 3.6&deg;). Using 15 km around the tile centre instead gives about random (41%). The tile was not chosen from a verified analog location.</li><li><b>Muscat mountains, Moon:</b> rank near the top (7%) only because their slopes and roughness are high. Terrain numbers only see slope and roughness, not rock type or dust, so this is not evidence of a good Moon analog.</li><li><b>AMADEE-18 month:</b> the planner picks December and January, not February (see the AMADEE-18 replay tab).</li></ul>';
-    h += '<h3>Per target (rank %, bar = rank, white tick = random median)</h3><table><tr><th>Target</th><th>AMADEE-18 area</th><th>Meteor Crater</th><th>Atacama tile</th><th>Atacama 15 km</th></tr>';
+    var by = {}, order = [];
+    D.base.summary.forEach(function (x) { if (!by[x.site]) { by[x.site] = {}; order.push(x.site); } by[x.site][x.body] = x; });
+    var cell = function (x) { return x ? '<td><span class="mono">' + x.median_rank_full_pct + '% (' + x.median_random_pct + '%)</span><br><b>' + esc(x.verdict) + '</b></td>' : '<td>-</td>'; };
+    var h = '<table><tr><th>Known site</th><th>Mars: rank (random)</th><th>Moon: rank (random)</th></tr>';
+    order.forEach(function (n) { h += '<tr><td>' + esc(n) + '</td>' + cell(by[n].Mars) + cell(by[n].Moon) + '</tr>'; });
+    h += '</table><p class="sub">Known sites against 100 random sets of squares. Terrain only; not validation.</p>';
+    h += '<details class="more-blk"><summary>More</summary><div class="limits"><b>What this check shows and does not show.</b> It shows whether known analog areas sit closer to our Moon and Mars targets, on slope and roughness numbers, than random Earth squares do. It does not show that a site is a good analog: it is retrospective, it uses very few known sites (3 plus two local areas), looks at terrain only (not rocks, dust, gravity or climate), and we looked at results while building.</div>';
+    h += '<p class="sub">Each known site\'s median rank among all ' + D.earth.length + ' Earth squares, over the targets of one body, is compared with 100 random draws of the same number of squares (random is about 50%). Rule fixed in advance: 10 points or more below the random median = better than random, 10 or more above = worse, otherwise about random. Detail per row: ';
+    h += D.base.summary.map(function (x) { return esc(x.site) + ' ' + x.median_rank_full_pct + '% vs about ' + x.median_random_pct + '%, ahead of 95% of random draws on ' + x.targets_beating_random + ' of ' + x.n_targets + ' targets'; }).join('; ') + '.</p>';
+    h += '<h3>Known failures</h3><ul class="cant"><li><b>Atacama tile, Mars:</b> worse than random as a whole 1&deg; tile (rank 66%), because the tile mixes flat desert in the west (slope about 1.3&deg;) with Andes foothills in the east (about 3.6&deg;). Using 15 km around the tile centre instead gives about random (41%). The tile was not chosen from a verified analog location.</li><li><b>Muscat mountains, Moon:</b> rank near the top (7%) only because their slopes and roughness are high, not because they are a good Moon analog.</li><li><b>AMADEE-18 month:</b> the planner picks December and January, not February (see the AMADEE-18 replay).</li></ul>';
+    h += '<h3>Per target (rank %, bar = rank, red tick = random median)</h3><table><tr><th>Target</th><th>AMADEE-18 area</th><th>Meteor Crater</th><th>Atacama tile</th><th>Atacama 15 km</th></tr>';
     D.base.rows.forEach(function (r) {
-      h += '<tr><td>' + esc(r.name) + '<br><small>' + r.body + '</small></td>' + [0, 1, 2, 6].map(function (i) { var x = r.sites[i]; return '<td><div class="rb"><i style="width:' + x.rank_full_pct + '%"></i><u style="left:' + x.random_median_pct + '%"></u></div><small class="mono">' + x.rank_full_pct + '%' + (x.beats_random ? ' ✓' : '') + '</small></td>'; }).join('') + '</tr>';
+      h += '<tr><td>' + esc(r.name) + '<br><small>' + r.body + '</small></td>' + [0, 1, 2, 6].map(function (i) { var x = r.sites[i]; return '<td><div class="rb"><i style="width:' + x.rank_full_pct + '%"></i><u style="left:' + x.random_median_pct + '%"></u></div><small class="mono">' + x.rank_full_pct + '%' + (x.beats_random ? ' (better than random)' : '') + '</small></td>'; }).join('') + '</tr>';
     });
-    h += '</table><p class="sub">✓ = better than 95% of random draws (this count moves by one or so with the random draws; the medians do not).</p>';
+    h += '</table>';
     if (D.stab) {
       var rows = D.stab.summary.slice().sort(function (a, b) { return (a.threshold_sensitive ? 1 : 0) - (b.threshold_sensitive ? 1 : 0); });
       h += '<h3>Stability: window 5/10/20 km, cell 500 m/1 km, thresholds 5-20% vs 10-30%</h3><table><tr><th>Target</th><th>Main tier</th><th>Tier range over 8 settings</th><th>Best square in the searched area closer than</th><th></th></tr>';
@@ -691,24 +809,38 @@
         var res = D.results.gap.filter(function (g) { return g.name === x.target; })[0], bt = res ? res.tier_oman : x.base_tier;
         h += '<tr><td>' + esc(x.target) + '</td><td><span class="chip ' + bt + '">' + GLABEL[bt] + '</span></td><td>' + x.tiers_seen.map(function (k) { return GLABEL[k]; }).join(', ') + '</td><td class="mono">' + x.band_pct[0] + '-' + x.band_pct[1] + '% of pairs</td><td><b>' + (x.threshold_sensitive ? 'threshold-sensitive' : 'robust') + '</b></td></tr>';
       });
-      h += '</table><p class="sub">Robust = same tier in all 8 settings (' + rows.filter(function (x) { return !x.threshold_sensitive; }).length + ' of ' + rows.length + ' targets). Treat every tier as approximate.</p>';
+      h += '</table><p class="sub">Robust = same tier in all 8 settings (' + rows.filter(function (x) { return !x.threshold_sensitive; }).length + ' of ' + rows.length + ' targets).</p>';
     }
-    $('base').innerHTML = h;
+    $('base').innerHTML = h + '</details>';
   }
 
   // ---- calendar and two-site plan
-  function addCal() { if (!sel) return; if (st.cal.indexOf(sel.id) < 0) st.cal.push(sel.id); if (st.cal.length > 6) st.cal.shift(); renderCal(); }
+  function updCalBadge() { var b = $('calbadge'); if (!b) return; b.textContent = st.cal.length; b.hidden = !st.cal.length; }
+  function addCal() {
+    if (!sel) return; if (st.cal.indexOf(sel.id) < 0) st.cal.push(sel.id); if (st.cal.length > 6) st.cal.shift();
+    updCalBadge(); renderCal();
+    var nt = $('calnote'); if (nt) nt.innerHTML = 'Added. <a href="#" data-go="cal">Open calendar</a>';
+    toast('Added to calendar', [{ label: 'Open calendar', go: 'cal' }, { label: 'Keep planning' }]);
+  }
+  function add3() {
+    var cand = D.earth.filter(function (e) { return e.group.indexOf('oman') === 0 && !masked(e); });
+    cand.forEach(function (e) { e._tf = N.terrainFit(e.d, D.meta.thr_match_dist, D.meta.thr_partial_dist); e._cf = Math.max.apply(null, N.allFits(climate(e), st.n)); });
+    cand.sort(function (a, b) { return Math.min(b._tf, b._cf) - Math.min(a._tf, a._cf); });
+    cand.slice(0, 3).forEach(function (e) { if (st.cal.indexOf(e.id) < 0) st.cal.push(e.id); });
+    if (st.cal.length > 6) st.cal = st.cal.slice(-6);
+    updCalBadge(); renderCal();
+  }
   function renderCal() {
     var rows = st.cal.map(function (id) { return D.earth.filter(function (e) { return e.id === id; })[0]; }).filter(Boolean);
-    var h = '<p class="sub">Months across, chosen squares down. Fit uses your test needs on the Planner tab (our assumptions unless you changed them). Symbol and pattern repeat the colour: ✓ solid = good, ~ dots = partial, × hatch = poor.</p>';
-    if (!rows.length) h += '<p class="hint">No squares yet. Click a square on the map, then "Add to calendar".</p>';
+    var h = '';
+    if (!rows.length) h += '<div class="empty"><p>No squares in the calendar yet.</p><button type="button" class="primary" data-act="add3">Add the 3 best squares for my test</button><p class="sub">Or click a square on the Planner map and choose Add to calendar.</p></div>';
     else {
-      h += '<table class="cal"><tr><th></th>' + N.MON.map(function (m) { return '<th>' + m + '</th>'; }).join('') + '</tr>';
+      h += '<p class="sub">Months across, chosen squares down, using your test needs from the Planner.</p>' + legendLine() + '<div class="tscroll"><table class="cal"><tr><th></th>' + N.MON.map(function (m) { return '<th>' + m + '</th>'; }).join('') + '</tr>';
       rows.forEach(function (e) {
         var f = N.allFits(climate(e), st.n);
-        h += '<tr><th>' + esc(GROUPS[e.group]) + '<br><small>' + e.lat.toFixed(2) + ', ' + e.lon.toFixed(2) + '</small></th>' + f.map(function (x) { var k = N.needTier(x); return '<td class="cc ' + k + '">' + Math.round(x) + '<br>' + (k === 'gap' ? '×' : (k === 'partial' ? '~' : '✓')) + '</td>'; }).join('') + '</tr>';
+        h += '<tr><th><b>' + esc(GROUPS[e.group]) + '</b><br><small>' + e.lat.toFixed(2) + ', ' + e.lon.toFixed(2) + '</small><button type="button" class="plain sm" data-act="rmcal" data-id="' + e.id + '">Remove</button></th>' + f.map(function (x) { var k = N.needTier(x); return '<td class="cc ' + k + '">' + Math.round(x) + '<br>' + TW[k] + '</td>'; }).join('') + '</tr>';
       });
-      h += '</table><div class="btns"><button data-act="clearcal">Clear calendar</button></div>';
+      h += '</table></div><div class="btns"><button type="button" data-act="clearcal">Clear calendar</button></div>';
     }
     h += '<h3>Two-site plan (only if your test can really be split)</h3><label class="chk"><input type="checkbox" id="split"' + (st.split ? ' checked' : '') + '> The terrain part and the climate-dependent part of my test can be done at different sites and times</label><div id="splitres"></div>';
     $('cal').innerHTML = h;
@@ -739,10 +871,10 @@
       st.target = D.targets.filter(function (t) { return t.name.indexOf('Shackleton') === 0; })[0]; $('target').value = st.target.id; st.mode = 'both'; $('mode').value = 'both'; recompute();
       sel = bestOf(function (e) { return e.group.indexOf('oman') === 0; }); map.setView([sel.lat, sel.lon], 8);
     } else if (kind === 'fail') { document.querySelector('.tab[data-view=replay]').click(); return; }
-    else if (kind === 'brief') { if (sel) { renderAll(); openBrief(); } return; }
-    renderAll();
+    else if (kind === 'brief') { if (sel) { renderAll(); showCard(); openBrief(); } return; }
+    renderAll(); showCard();
   }
-  function addCalQuiet(e) { if (st.cal.indexOf(e.id) < 0) st.cal.push(e.id); }
+  function addCalQuiet(e) { if (st.cal.indexOf(e.id) < 0) st.cal.push(e.id); updCalBadge(); }
 
   // share link
   function writeHash() {

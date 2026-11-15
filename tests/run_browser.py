@@ -33,17 +33,17 @@ try:
             pg.select_option("#mode", "both")
             pg.evaluate("document.querySelectorAll('#map svg path.leaflet-interactive')[200].dispatchEvent(new MouseEvent('click',{bubbles:true}))"); pg.wait_for_timeout(300)
             assert pg.locator("#result .strip .mc").count() == 12 and "Best months" in T(pg,"#result")
-            assert "Best fit for your test" in T(pg,"#result .verdict"); a = T(pg,"#result .vhead"); pg.evaluate("var r=document.querySelector('[data-w=terrain]'); r.value=0; r.dispatchEvent(new Event('input',{bubbles:true}))"); pg.wait_for_timeout(150); print(name, "verdict:", a, "->", T(pg,"#result .vhead"))
+            assert "Verdict:" in T(pg,"#result .verdict"); a = T(pg,"#result .vhead"); pg.evaluate("var r=document.querySelector('[data-w=terrain]'); r.value=0; r.dispatchEvent(new Event('input',{bubbles:true}))"); pg.wait_for_timeout(150); print(name, "verdict:", a, "->", T(pg,"#result .vhead"))
             assert pg.locator(".twins img").count() == 2 and pg.evaluate("[...document.querySelectorAll('.twins img')].every(i=>i.complete&&i.naturalWidth==64)"), "twin pictures missing"
             assert "Why months fail" in T(pg,"#result")
-            print(name, "best months line:", T(pg,"#result .best"))
+            print(name, "best months line:", T(pg,"#result .vline"))
             pg.fill("#sentence", "build me a spaceship"); pg.click("#go"); pg.wait_for_timeout(100); assert "could not understand" in T(pg,"#understood") and pg.input_value("#thi") == "30"
             pg.click("[data-act=addcal]"); pg.evaluate("document.querySelector('.tab[data-view=cal]').click()"); pg.wait_for_timeout(200); assert pg.locator("table.cal td.cc").count() == 12; pg.check("#split"); assert "Phase" in T(pg,"#splitres") or "One site" in T(pg,"#splitres") or "enough" in T(pg,"#splitres")
             pg.evaluate("document.querySelector('.tab[data-view=base]').click()"); pg.wait_for_timeout(200); assert "retrospective" in T(pg,"#base") and "Known failures" in T(pg,"#base") and "threshold-sensitive" in T(pg,"#base")
             pg.evaluate("document.querySelector('.tab[data-view=map]').click()")
             pg.evaluate("document.querySelector('[data-demo=none]').click()"); pg.wait_for_timeout(300); assert "No qualifying candidate" in T(pg,"#hook"); pg.screenshot(path=os.path.join(ROOT, "docs", "screens", name + "_nocand.png"))
-            pg.evaluate("document.querySelector('[data-demo=good]').click()"); pg.wait_for_timeout(300); assert "No qualifying candidate" not in T(pg,"#hook"); assert "Best fit for your test" in T(pg,"#result") and "Meridiani" in T(pg,"#hook") and "robust" in T(pg,"#result")
-            pg.evaluate("document.querySelector('.tab[data-view=jez]').click()"); pg.wait_for_timeout(300); assert "finer-scale check" in T(pg,"#jez") and pg.evaluate("document.querySelector('#jez img').naturalWidth") == 64
+            pg.evaluate("document.querySelector('[data-demo=good]').click()"); pg.wait_for_timeout(300); assert "No qualifying candidate" not in T(pg,"#hook"); assert "Verdict:" in T(pg,"#result") and "Meridiani" in T(pg,"#hook") and "robust" in T(pg,"#result")
+            pg.evaluate("document.querySelector('.tab[data-view=jez]').click()"); pg.wait_for_timeout(300); assert "finer check" in T(pg,"#jez") and pg.evaluate("document.querySelector('#jez img').naturalWidth") == 64
             pg.evaluate("document.querySelector('.tab[data-view=map]').click()"); pg.evaluate("document.querySelector('[data-demo=good]').click()"); pg.wait_for_timeout(300); assert "paved or main road" in T(pg,"#result") and "geology note" in T(pg,"#result")
             n0 = pg.locator("#map svg path.leaflet-interactive").count(); pg.check("#show90"); pg.wait_for_timeout(4000); n1 = pg.locator("#map svg path.leaflet-interactive").count(); assert n1 > n0 + 4000, (n0, n1)
             pg.evaluate("document.querySelectorAll('#map svg path.leaflet-interactive')[%d].dispatchEvent(new MouseEvent('click',{bubbles:true}))" % (n1 - 5)); pg.wait_for_timeout(400); assert "90 m data" in T(pg,"#result")
@@ -53,12 +53,12 @@ try:
             try: pg.wait_for_selector("#skyres h3", timeout=15000)
             except Exception: print("SKY DEBUG", pg.evaluate("(function(){var e=document.elementFromPoint(%f,%f);return e.tagName+'#'+e.id+'.'+e.className})()" % (bb["x"] + bb["width"] * 0.714, bb["y"] + bb["height"] * 0.35)), errs[-3:], T(pg,"#skyres")[:200], pg.evaluate("document.getElementById('v-sky').className"), bb); raise
             pg.wait_for_timeout(500)
-            assert "Mars near" in T(pg,"#skyres") and "coarse 463 m" in T(pg,"#skyres").lower() and "Closest squares in the searched area" in T(pg,"#skyres") and "Best fit for your test" in T(pg,"#skyres")
-            pg.click("#skytabs button[data-body=moon]"); pg.wait_for_timeout(1500); pg.locator("#moonc").scroll_into_view_if_needed(); cb = pg.locator("#moonc").bounding_box(); pg.mouse.click(cb["x"] + cb["width"] * 0.5, cb["y"] + cb["height"] * 0.5); pg.wait_for_timeout(2000); assert "Moon near" in T(pg,"#skyres") and "south pole" in T(pg,"#skyres")
-            pg.mouse.click(cb["x"] + 2, cb["y"] + 2); pg.wait_for_timeout(300); assert "Unknown" in T(pg,"#skyres")
+            assert "Mars near" in T(pg,"#skyres") and "coarse 463 m" in T(pg,"#skyres").lower() and "Closest squares in the searched area" in T(pg,"#skyres") and "Verdict:" in T(pg,"#skyres")
+            pg.evaluate("var c=document.querySelector('#scard [data-act=closecard]'); c && c.click()"); pg.click("#skytabs button[data-body=moon]"); pg.wait_for_timeout(1500); pg.locator("#moonc").scroll_into_view_if_needed(); cb = pg.locator("#moonc").bounding_box(); pg.mouse.click(cb["x"] + cb["width"] * 0.5, cb["y"] + cb["height"] * 0.5); pg.wait_for_timeout(2000); assert "Moon near" in T(pg,"#skyres") and "south pole" in T(pg,"#skyres")
+            pg.evaluate("var c=document.querySelector('#scard [data-act=closecard]'); c && c.click()"); pg.mouse.click(cb["x"] + 2, cb["y"] + 2); pg.wait_for_timeout(300); assert "Unknown" in T(pg,"#skyres")
             pg.evaluate("document.querySelector('.tab[data-view=world]').click()"); pg.wait_for_timeout(2500); assert "not every place on Earth" in T(pg,"#v-world") and pg.locator("#worldlist tr").count() > 25
             pg.evaluate("document.querySelector('.tab[data-view=map]').click()")
-            pg.evaluate("document.querySelector('[data-demo=fail]').click()"); pg.wait_for_timeout(300); assert "does NOT pick February" in T(pg,"#replay") and "Why February" in T(pg,"#replay"); pg.screenshot(path=os.path.join(ROOT, "docs", "screens", name + "_fail.png")); pg.evaluate("document.querySelector('.tab[data-view=map]').click()"); pg.evaluate("document.querySelector('[data-demo=good]').click()"); pg.wait_for_timeout(200)
+            pg.evaluate("document.querySelector('[data-demo=fail]').click()"); pg.wait_for_timeout(300); assert "does not pick February" in T(pg,"#replay") and "Why February" in T(pg,"#replay"); pg.screenshot(path=os.path.join(ROOT, "docs", "screens", name + "_fail.png")); pg.evaluate("document.querySelector('.tab[data-view=map]').click()"); pg.evaluate("document.querySelector('[data-demo=good]').click()"); pg.wait_for_timeout(200)
             pg.click("[data-act=brief]"); pg.wait_for_timeout(200); assert "Test Site Brief" in T(pg,"#brief"); pg.screenshot(path=os.path.join(ROOT, "docs", "screens", name + "_brief.png"))
             pg.click("[data-act=closebrief]")
             pg.screenshot(path=os.path.join(ROOT, "docs", "screens", name + ".png"), full_page=(name == "phone"))

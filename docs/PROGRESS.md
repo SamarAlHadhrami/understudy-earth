@@ -47,3 +47,9 @@
 - NASA POWER: 30 cells cached; tests check units, ordering and raw-cache equality.
 - AMADEE-18 replay (assumed needs: day max <= 35 C, night min >= 5 C, sun >= 4): planner best months Jan and Dec; Feb scores 80 (good, not top). Real phase Feb 2018 (OeWF).
 - Public link verified live (418 squares render): https://samaralhadhrami.github.io/understudy-earth/
+
+## Update (2026-11-15, app feel)
+- Inside of the app reworked for flow, results in cards over the map, coordinate boxes for Mars and Moon, shorter pages, Evidence as one page, warm graphite look. Scores, data and caveats unchanged.
+- Part 0 check: all listed features were present and working before the changes. Meteomatics values show only for squares within 30 km of a saved point.
+- Not done: print preview checked as PDF in headless Chrome only (2 A4 pages).
+

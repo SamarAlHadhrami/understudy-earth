@@ -12,3 +12,16 @@
 10. Fine-scale checks tab: finer-scale checks against the Jezero DTM (1 m, with a 30 m step) and the Gale crater HRSC mosaic (30 m, second site), each with twin pictures and the closest squares in the searched area. Result card also shows access (OpenStreetMap) and geology notes for Dhofar and Muscat squares. Checkbox "Show whole-Oman 90 m squares" adds an optional coarser layer.
 11. Click Mars / Moon tab: click the Mars slope map (87 S to 87 N) or the lunar south-pole disc; shows the nearest window, its numbers, closest Oman squares, Fit Verdict and a Low-confidence note. Unknown where data is missing.
 12. World set tab: dots for 45 chosen places plus Meteor Crater, Atacama and Oman, coloured by terrain tier for the chosen target; the large Oman dot opens the fine map.
+
+## App feel pass (2026-11-15)
+- Planner: each step has a one-line instruction. Step 2 shows the 4 presets and the typed box; examples sit under a small "Examples" link.
+- A click on a square, a world dot, or a Mars/Moon spot opens its result in a card over the map (bottom sheet on phone) with a Close button. Result card: one verdict line, 12-month strip with one legend, buttons Test site brief, Add to calendar, Compare, Compare terrain pictures, 3D view, then one folded "Details" (weights, numbers, pictures, access and geology, confidence, limits).
+- One verdict per square: the headline follows the terrain tier; the fit score is shown as a number, never as "Strong fit" beside a PARTIAL tier.
+- Oman dot zooms to the scored squares (Muscat and Dhofar), not the whole country.
+- Calendar is a main tab with a count badge; empty state has "Add the 3 best squares for my test"; rows have Remove; "Added to calendar" pop-up offers Open calendar or Keep planning.
+- Test site brief is a dark pop-up; print and PDF are black on white A4, notes folded out.
+- Evidence is one page with four cards (Baseline, Name-free, Gap view, AMADEE-18 replay); the old Gap, Name-free and AMADEE-18 menu items scroll to their card.
+- Click Mars / Moon has Latitude and Longitude boxes and a Go button (Mars 87 S to 87 N, Moon south 80 S to 90 S, Moon north 80 N to 90 N), with a range message.
+- Every page except Planner has a Back to Planner button. Quick tour is 5 steps (the other steps are kept in the code).
+- Look: warm graphite, one Mars-rust accent; teal, amber and brick stay map and verdict colours. The landing page is unchanged.
+

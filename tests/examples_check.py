@@ -15,7 +15,7 @@ try:
             assert pg.is_visible("#landing") and pg.is_visible("#start"), "landing missing"
             pg.click("#start"); pg.wait_for_selector("#map svg path.leaflet-interactive", state="attached", timeout=15000)
             for key in ["good", "none", "fail", "brief", "sky", "world", "base", "replay"]:
-                pg.click("#exbtn"); sel = f"[data-demo={key}]" if key in ("good", "none", "fail", "brief") else f"[data-ex={key}]"
+                pg.evaluate("var c=document.querySelector('#scard [data-act=closecard]'); c && c.click()"); pg.click("#exbtn"); sel = f"[data-demo={key}]" if key in ("good", "none", "fail", "brief") else f"[data-ex={key}]"
                 pg.click(sel); pg.wait_for_timeout(1800 if key == "sky" else 700)
                 assert pg.locator(CHECK[key]).count() > 0, (name, key)
                 if key == "brief": pg.evaluate("document.getElementById('brief').hidden=true")

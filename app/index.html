@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Understudy Earth</title>
 <meta name="description" content="Where and when on Earth can we rehearse a Moon or Mars job, and where does nothing we searched qualify?">
-<meta name="theme-color" content="#070b18">
+<meta name="theme-color" content="#14161a">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -36,8 +36,8 @@
         <p class="fine">Open NASA and ESA data. Honest about limits.</p>
       </div>
       <div class="hero-art">
-        <canvas id="orb-moon" width="260" height="260" role="img" aria-label="Moon, illustration"></canvas>
-        <canvas id="orb-mars" width="260" height="260" role="img" aria-label="Mars, illustration"></canvas>
+        <canvas id="orb-moon" width="380" height="380" role="img" aria-label="Moon, illustration"></canvas>
+        <canvas id="orb-mars" width="380" height="380" role="img" aria-label="Mars, illustration"></canvas>
         <p class="cap">Illustration: shaded spheres, not our data.</p>
       </div>
     </div>
@@ -63,11 +63,11 @@
     <button class="tab on" data-view="map"><svg class="ic" aria-hidden="true"><use href="#i-map"/></svg><span>Planner</span></button>
     <button class="tab" data-view="world"><svg class="ic" aria-hidden="true"><use href="#i-globe"/></svg><span>World</span></button>
     <button class="tab" data-view="base"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg><span>Evidence</span></button>
+    <button class="tab" data-view="cal"><svg class="ic" aria-hidden="true"><use href="#i-cal"/></svg><span>Calendar</span><b class="cbadge" id="calbadge" hidden>0</b></button>
     <button class="tab" data-view="about"><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg><span>About</span></button>
     <div class="menuwrap"><button type="button" class="menubtn" id="morebtn" aria-haspopup="true" aria-expanded="false"><svg class="ic" aria-hidden="true"><use href="#i-more"/></svg><span>More</span></button>
       <div class="menu" id="moremenu" role="menu">
         <button class="tab" role="menuitem" data-view="gap">Gap view</button>
-        <button class="tab" role="menuitem" data-view="cal">Calendar</button>
         <button class="tab" role="menuitem" data-view="jez">Fine-scale checks</button>
         <button class="tab" role="menuitem" data-view="sky">Click Mars / Moon</button>
         <button class="tab" role="menuitem" data-view="blind">Name-free check</button>
@@ -95,23 +95,25 @@
     <div id="map" role="application" aria-label="Map: world view, Oman in detail. Squares coloured by fit for the chosen test"></div>
     <div class="mapbar"><div class="legend" aria-label="Map legend">
       <span><i class="sw match"></i>GOOD</span><span><i class="sw partial"></i>PARTIAL</span><span><i class="sw gap"></i>WEAK (hatched)</span><span><i class="sw none"></i>no qualifying candidate (grey)</span>
+      <span><i class="sw dotred"></i>Red dots: weak terrain match for this target</span>
       <label class="chk" style="margin:0"><input type="checkbox" id="gibs_toggle"> Satellite picture (NASA GIBS)</label></div></div>
     <div id="loaderr" class="err" hidden></div>
+    <div class="rcard dock" id="rcard" role="dialog" aria-label="Result"><div class="rc-head"><b id="rc-title">Result</b><button type="button" class="plain" data-act="closecard">Close</button></div><div class="rc-body"><div id="result" class="result"><p class="hint">Click a square on the map.</p></div></div></div>
   </section>
   <aside id="panel">
     <div class="view on" id="v-map">
       <div class="stepbar" id="stepbar"><button type="button" id="stepback">Back</button><span id="steplabel">Step 1 of 3: Target</span><button type="button" class="primary" id="stepnext">Next</button></div>
-      <div class="blk" id="b-target"><h2><span class="n">1</span>Target</h2>
+      <div class="blk" id="b-target"><h2><span class="n">1</span>Target</h2><p class="tip">1. Pick the Moon or Mars place you want to copy</p>
       <label>Moon or Mars place to copy <details class="q"><summary aria-label="More about this">?</summary><span>Targets marked threshold-sensitive change their result with the cut-offs we chose, so treat those as less firm. Slope is how steep the ground is; roughness is how much the height varies over short distances.</span></details> <select id="target"></select></label></div>
 
-      <div class="blk" id="b-needs"><h2><span class="n">2</span>Test</h2>
+      <div class="blk" id="b-needs"><h2><span class="n">2</span>Test</h2><p class="tip">2. Pick a test, or type it</p>
       <div class="presets" id="presets">
         <button data-p="rover">Rover test</button><button data-p="instrument">Instrument test</button>
         <button data-p="walking">Walking test</button><button data-p="cold">Cold test</button>
       </div>
       <div class="sentence"><input id="sentence" type="text" placeholder="or type: rover test, slopes up to 20 degrees, dry" aria-label="Describe your test in one sentence">
         <button id="go" title="Fill the sliders from the sentence">Apply</button></div>
-      <div class="chips" id="chips"></div>
+      <details class="exs"><summary>Examples</summary><div class="chips" id="chips"></div></details>
       <div id="understood" class="understood"></div>
       <details class="adv"><summary>Advanced needs <small>Temperature, wind, dryness, sunlight, swing, slope</small></summary>
       <div class="needs">
@@ -136,7 +138,7 @@
         <select id="month"><option value="best">Best month for each square</option></select></label></details>
       </div>
 
-      <div class="blk" id="b-result"><h2><span class="n">3</span>Result</h2>
+      <div class="blk" id="b-result"><h2><span class="n">3</span>Result</h2><p class="tip">3. Click a coloured square on the map</p>
       <div class="gapcard" id="gapcard" aria-label="Terrain match: best square">
         <div class="gc-head"><span>Best square for this target <details class="q"><summary aria-label="More about this">?</summary><span>GAP / no qualifying candidate: no square we searched is as close as the closest 5% of Earth-square pairs are to each other. It says nothing about the rest of Earth. Rank: 1% means among the closest 1% of squares.</span></details></span><span id="badge" class="badge">&ndash;</span></div>
         <div class="gc-score"><span class="mono" id="gcscore">&ndash;</span><small id="gctext"></small></div>
@@ -146,43 +148,51 @@
           <div id="secondres" class="mono"></div>
         </details>
       </div>
-      <div id="result" class="result"><p class="hint">Click a square on the map. The world view shows 45 chosen places; click Oman to zoom in.</p></div>
+      <p class="hint" id="resulthint">The result opens in a card over the map. The world view shows 45 chosen places; click Oman to zoom in.</p>
       <div class="share"><button id="copylink">Copy share link</button><span id="copied" class="mono"></span></div>
       </div>
     </div>
 
-    <div class="view" id="v-gap"><h2>Gap view</h2><p class="sub">Terrain match only. Best Earth square for each target, Oman alone, then with the two outside check sites.</p><div id="gaptable"></div></div>
-    <div class="view" id="v-sky"><h2>Click anywhere on Mars</h2><div id="skytabs" class="presets"><button data-body="mars" class="on">Mars</button><button data-body="moon">Moon (south pole)</button><button data-body="moon_n">Moon (north pole)</button></div><p class="sub" id="skyhelp"></p>
+    <div class="view" id="v-sky"><div class="pagehead"><button type="button" class="back" data-go="map">&lsaquo; Back to Planner</button></div><h2>Click anywhere on Mars</h2><div id="skytabs" class="presets"><button data-body="mars" class="on">Mars</button><button data-body="moon">Moon (south pole)</button><button data-body="moon_n">Moon (north pole)</button></div><p class="sub" id="skyhelp"></p>
+      <form class="coords" id="coords" autocomplete="off" novalidate><label>Latitude<input id="lat" type="text" inputmode="decimal" placeholder="e.g. 18.4 or 18.4 N" aria-describedby="coorderr"></label><label>Longitude<input id="lon" type="text" inputmode="decimal" placeholder="e.g. 77.5 or 77.5 E" aria-describedby="coorderr"></label><button type="submit" class="primary">Go</button></form><p class="coorderr" id="coorderr" role="alert"></p><p class="sub" id="coordhint"></p>
       <div id="marsbox" class="skymap"><img id="marsimg" src="data/mars_preview.png" alt="Mars slope map between 87 S and 87 N: click for terrain numbers"><span id="marsmark" class="mark"></span></div>
-      <div id="moonbox" hidden><canvas id="moonc" width="320" height="320" aria-label="Lunar polar map, click for terrain numbers"></canvas></div><div id="skyres"></div></div>
-    <div class="view" id="v-world"><h2>World set</h2><p class="sub">Scored squares cover Oman in detail and 45 chosen places worldwide. More regions are planned. The dots are on the main map.</p><p class="sub"><b>A chosen set of places, not every place on Earth. No claim of a global best.</b> Deserts, volcanic fields, polar and mountain areas, plus Meteor Crater and the Atacama tile, scored with the same terrain method. Oman fine view: click the large Oman dot.</p><div id="worldmap"></div><div id="worldlist"></div></div>
-    <div class="view" id="v-jez"><h2>Fine-scale checks: Jezero and Gale</h2><div id="jez"></div></div>
-    <div class="view" id="v-cal"><h2>Rehearsal calendar</h2><div id="cal"></div></div>
-    <div class="view" id="v-base"><h2>Evidence</h2><div class="seg"><button type="button" data-go="blind">Name-free check</button><button type="button" data-go="replay">AMADEE-18 replay</button><button type="button" data-go="gap">Gap view</button></div><p class="sub">Baseline and stability check: how known sites rank, and where results change with settings. <details class="q"><summary aria-label="More about baseline">?</summary><span>Baseline: random Earth squares used as the comparison. A known site only counts as a better match than chance if it ranks clearly better than the random squares do.</span></details></p><div id="base"></div></div>
-    <div class="view" id="v-blind"><h2>Name-free check</h2><div id="blind"></div></div>
-    <div class="view" id="v-replay"><h2>AMADEE-18 replay</h2><div id="replay"></div></div>
-    <div class="view" id="v-about"><h2>About</h2><p class="sub"><b>What it is:</b> a screening tool that compares terrain on Earth with terrain on the Moon and Mars. <b>What it is not:</b> a validated site selector, or a claim about the best place on Earth.</p><h3>How it works</h3>
-      <ol class="how">
+      <div id="moonbox" hidden><canvas id="moonc" width="320" height="320" aria-label="Lunar polar map, click for terrain numbers"></canvas></div></div>
+    <div class="view" id="v-world"><div class="pagehead"><button type="button" class="back" data-go="map">&lsaquo; Back to Planner</button></div><h2>World set</h2><p class="sub">45 chosen places plus Oman, scored with the same terrain method. A chosen set, not every place on Earth. The dots are on the main map; click the large Oman dot for the fine view.</p><div id="worldmap"></div><div id="worldlist"></div></div>
+    <div class="view" id="v-jez"><div class="pagehead"><button type="button" class="back" data-go="map">&lsaquo; Back to Planner</button></div><h2>Fine-scale checks: Jezero and Gale</h2><div id="jez"></div></div>
+    <div class="view" id="v-cal"><div class="pagehead"><button type="button" class="back" data-go="map">&lsaquo; Back to Planner</button></div><h2>Rehearsal calendar</h2><div id="cal"></div></div>
+    <div class="view" id="v-base"><div class="pagehead"><button type="button" class="back" data-go="map">&lsaquo; Back to Planner</button></div><h2>Evidence</h2><p class="sub">Colour plus a word: GOOD teal, PARTIAL amber dotted, WEAK or poor red hatched, NO CANDIDATE grey. White outline = best month.</p>
+      <div class="evgrid">
+        <section class="card" id="c-base"><h3>Baseline check</h3><div id="base"></div></section>
+        <section class="card" id="c-blind"><h3>Name-free check</h3><div id="blind"></div></section>
+        <section class="card" id="c-gap"><h3>Gap view</h3><div id="gaptable"></div></section>
+        <section class="card" id="c-replay"><h3>AMADEE-18 replay</h3><div id="replay"></div></section>
+      </div></div>
+    <div class="view" id="v-about"><div class="pagehead"><button type="button" class="back" data-go="map">&lsaquo; Back to Planner</button></div><h2>About</h2>
+      <div class="honest"><p><b>What it is:</b> a screening tool that compares terrain on Earth with terrain on the Moon and Mars.</p><p><b>What it is not:</b> a validated site selector, or a claim about the best place on Earth.</p><p><b>What Earth cannot copy:</b> gravity, air, radiation, real temperatures, and rock type.</p></div>
+      <details class="sec"><summary><span>How it works</span></summary><div class="secb"><ol class="how">
         <li><b>Same scale.</b> Moon, Mars and Earth terrain models are averaged to 500 m cells and cut into 10 km squares.</li>
         <li><b>Terrain match.</b> Slope, steepness, roughness at two scales and relief are compared. Each square gets a rank for the chosen target (top 5% = good, 5&ndash;20% = partial). A target has no qualifying candidate in the searched area when no square is as close as the closest 5% of Earth-square pairs are to each other (it says nothing about all of Earth).</li>
         <li><b>Test needs.</b> You enter the temperature window, wind, dryness and sunlight your test needs. Each month is scored by its weakest factor.</li>
         <li><b>Where and when.</b> The map combines both: a square is only GOOD if the terrain matches and a month fits.</li>
         <li><b>Name-free check.</b> The scorer only sees terrain numbers, never site names. It is a sanity check, not validation.</li>
-      </ol>
-      <h3>What Earth cannot copy</h3>
-      <ul class="cant"><li>Gravity (Mars 0.38 g, Moon 0.16 g)</li><li>Thin air and Martian dust, lunar vacuum</li><li>Radiation and real Moon/Mars temperatures</li><li>Geology and chemistry: a terrain match is not a rock match</li></ul>
-      <h3>What our data cannot see</h3>
-      <ul class="cant"><li>Rocks, steps and slopes smaller than 500 m</li><li>Earth heights are a surface model (trees, buildings); Moon and Mars are bare ground</li><li>Climate is a typical-year average on a coarse grid (NASA POWER temperature, wind and humidity cells about 50 km, solar about 110 km), not local weather</li><li>Moon: south pole only. Oman: only the tiles we hold.</li></ul>
-      <h3>Checks</h3><div id="second"></div>
-      <h3>Use of AI</h3><p class="sub">AI tools helped with research, critique, code, tests and editing. The idea and decisions are the author's, and output was checked by running tests and reading sources. There is no AI at runtime.</p><h3>Data and credits</h3><p class="credit">Data: LOLA (NASA/GSFC), MOLA (NASA/USGS), NASA POWER climatology, Copernicus DEM GLO-30/GLO-90 (ESA), ESA WorldCover 2021 (CC BY 4.0), HRSC DTM Mosaic of Gale Crater (Persaud/Putri/Muller 2021, CC BY 4.0), Global Lithological Map (Hartmann and Moosdorf 2012, CC BY 3.0), USGS/ASU THEMIS Thermal Inertia Mosaic, NASA EOSDIS GIBS, Meteomatics Weather API (Space Apps partner access). Basemap &copy; OpenStreetMap contributors. Code: Apache 2.0.</p>
+      </ol></div></details>
+      <details class="sec"><summary><span>What our data cannot see</span></summary><div class="secb"><ul class="cant"><li>Rocks, steps and slopes smaller than 500 m</li><li>Earth heights are a surface model (trees, buildings); Moon and Mars are bare ground</li><li>Climate is a typical-year average on a coarse grid (NASA POWER temperature, wind and humidity cells about 50 km, solar about 110 km), not local weather</li><li>Moon: south and north pole data only. Oman: only the tiles we hold.</li><li>Gravity (Mars 0.38 g, Moon 0.16 g), thin air and dust, radiation, real Moon and Mars temperatures, geology and chemistry</li></ul></div></details>
+      <details class="sec"><summary><span>Checks</span></summary><div class="secb"><div id="second"></div></div></details>
+      <details class="sec"><summary><span>Use of AI</span></summary><div class="secb"><p class="sub">AI tools helped with research, critique, code, tests and editing. The idea and decisions are the author's, and output was checked by running tests and reading sources. There is no AI at runtime.</p></div></details>
+      <details class="sec"><summary><span>Data and credits</span></summary><div class="secb"><p class="credit">Data: LOLA (NASA/GSFC), MOLA (NASA/USGS), NASA POWER climatology, Copernicus DEM GLO-30/GLO-90 (ESA), ESA WorldCover 2021 (CC BY 4.0), HRSC DTM Mosaic of Gale Crater (Persaud/Putri/Muller 2021, CC BY 4.0), Global Lithological Map (Hartmann and Moosdorf 2012, CC BY 3.0), USGS/ASU THEMIS Thermal Inertia Mosaic, NASA EOSDIS GIBS, Meteomatics Weather API (Space Apps partner access). Basemap &copy; OpenStreetMap contributors. Code: Apache 2.0.</p></div></details>
+      <p class="sub">Read the full method in the <a href="https://github.com/SamarAlHadhrami/understudy-earth/tree/main/docs" target="_blank" rel="noopener">repo docs</a>.</p>
     </div>
   </aside>
 </main>
 <footer class="foot"><details><summary>Data and credits</summary>Map data &copy; OpenStreetMap contributors (ODbL); access distances are derived from OpenStreetMap and are not space data. Contains ESA WorldCover data (CC BY 4.0). Terrain: Copernicus DEM GLO-30/GLO-90 (ESA), LOLA and MOLA (NASA), HiRISE Jezero DTM (USGS), HRSC DTM Mosaic of Gale Crater (Persaud, Putri, Muller, 2021, CC BY 4.0). Rock type: Global Lithological Map (Hartmann and Moosdorf 2012, CC BY 3.0). Thermal inertia: USGS/ASU THEMIS Mosaic. Climate: NASA POWER; Meteomatics Weather API (Space Apps Challenge partner access). Optional picture layer: NASA EOSDIS GIBS. A screening tool, not a validated site selector.</details></footer>
 <div id="brief" class="brief" hidden></div>
-<div id="t3d" class="brief" hidden><div class="bar-top"><button data-act="rot3d" data-dir="-1">&#8634; Rotate</button><button data-act="rot3d" data-dir="1">Rotate &#8635;</button><button data-act="closet3d">Close</button></div><h2>3D view: same data as the twin pictures</h2>
+<div id="modal" class="brief" hidden></div>
+<div id="t3d" class="brief" hidden><div class="brief-card"><div class="bar-top"><button data-act="rot3d" data-dir="-1">Rotate left</button><button data-act="rot3d" data-dir="1">Rotate right</button><button data-act="closet3d" class="plain">Close</button></div><h2>3D view: same data as the twin pictures</h2>
 <div class="twins"><figure><canvas id="t3dcvA" width="300" height="260" aria-label="3D terrain, target"></canvas></figure><figure><canvas id="t3dcvB" width="300" height="260" aria-label="3D terrain, Earth square"></canvas></figure></div>
-<p class="sub" id="t3dcap"></p></div>
+<p class="sub" id="t3dcap"></p></div></div>
+<div class="scback" id="scback"></div>
+<div class="rcard modal" id="scard" role="dialog" aria-label="Terrain result"><div class="rc-head"><b>Terrain result</b><button type="button" class="plain" data-act="closecard">Close</button></div><div class="rc-body"><div id="skyres"></div></div></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="score.js"></script>
 <script src="needs.js"></script>
