@@ -51,5 +51,10 @@ numpy, scipy, rasterio, pyproj, Playwright (testing), Leaflet 1.9.4; basemap til
 
 ## Fonts (self-hosted in app/fonts)
 - IBM Plex Sans (regular, medium, semibold), SIL Open Font License 1.1, IBM. Files from the Fontsource packaging.
-- Source Serif 4 (semibold, headings), SIL Open Font License 1.1, Adobe. Files from the Fontsource packaging.
+- Space Grotesk (medium, semibold, bold; headings and the landing page), SIL Open Font License 1.1, Florian Karsten. Files from the Fontsource packaging.
 - Quick tour and layout: plain HTML, CSS and JS written for this project; no library.
+
+## Base map and icons (redesign)
+- Base map: Esri World Dark Gray Base and World Dark Gray Reference tiles (English labels), attribution shown on the map: Esri, HERE, Garmin, FAO, NOAA, USGS, OpenStreetMap contributors. Esri's terms for these public tile services were not confirmed in full; if the tiles fail to load the app falls back to OpenStreetMap tiles. CARTO basemaps were tried first and now require an API key, so they are not used.
+- Icons: simple inline SVG shapes drawn for this project (no icon library).
+- Moon and Mars on the landing page: procedural shaded spheres, labelled as an illustration. They are not made from LOLA or MOLA data.

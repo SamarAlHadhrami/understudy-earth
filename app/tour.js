@@ -3,15 +3,15 @@
   'use strict';
   var KEY = 'ue_tour_seen';
   var STEPS = [
-    { sel: '.brand', title: 'What this does', text: 'Understudy Earth looks in Oman, and at two outside check sites, for ground that resembles a Moon or Mars target, and for the months when the weather suits your test. It is a screening tool, not a site selector.' },
-    { sel: '#b-target', title: 'Choose a target', text: 'Pick a Moon or Mars place to copy. Targets marked threshold-sensitive change their result with the cut-offs we chose, so treat those as less firm.' },
-    { sel: '#b-needs', title: 'Describe your test', text: 'Use a preset, type one sentence, or move the sliders for temperature, wind, dryness, sunlight and slope. These numbers are your choice or our assumption, not mission requirements.' },
-    { sel: '.legend', title: 'Read the map colours', text: 'Each square is 10 km. GOOD is among the closest 5% of squares to the target and has a month that fits. PARTIAL is a weaker match. WEAK is hatched. Grey means no qualifying candidate: no square we searched is close enough. That says nothing about the rest of Earth.' },
-    { sel: '#result .strip', fallback: '#result', title: 'See when it fits', text: 'Click a square to see its twelve months. Each month is scored by its weakest factor. Climate is a typical-year average on a coarse grid, not local weather.', needsResult: true },
-    { sel: '#result .verdict', fallback: '#result', title: 'Fit Verdict and limits', text: 'The Fit Verdict is a soft score that you can re-weight. It is not a pass or fail. Further down, the limits box lists what Earth cannot copy and what our data cannot see. Read it before using a number.', needsResult: true },
-    { sel: '#result .twins', fallback: '#result', title: 'Twin pictures and context', text: 'The twin pictures show the target and the Earth square from the same relief data. Geology, access and temperature rows are context, not scored.', needsResult: true },
-    { sel: '#demobar', title: 'Demo buttons, brief, share link', text: 'Demo runs a good match, a case with no qualifying candidate, and a known failure. Brief makes a one-page summary for printing. Copy share link, at the end of the panel, stores your choices in the address.' },
-    { sel: 'nav .grp[aria-label=Evidence]', title: 'Check the checker', text: 'The Evidence tabs show how the method does on known sites, where it is threshold-sensitive, and the AMADEE-18 replay, a known case where it does not pick the real month.' }
+    { sel: '#b-target', step: 1, title: 'Step 1: choose a target', text: 'Pick a Moon or Mars place to copy. Targets marked threshold-sensitive change their result with the cut-offs we chose, so treat those as less firm.' },
+    { sel: '#b-needs', step: 2, title: 'Step 2: describe your test', text: 'Use a preset, type one sentence, or open Advanced needs for temperature, wind, dryness, sunlight and slope. These numbers are your choice or our assumption, not mission requirements.' },
+    { sel: '.legend', title: 'Read the map colours', text: 'The map opens on the world: dots are 45 chosen places, and Oman is the fine-detail area. Click Oman to see 10 km squares. GOOD is among the closest 5% to the target; PARTIAL is weaker; WEAK is hatched. Grey means no qualifying candidate in the searched area. It says nothing about the rest of Earth.' },
+    { sel: '#gapcard', step: 3, title: 'Step 3: the result', text: 'This card gives the best square we found for your target. Click a square on the map for its own result.' },
+    { sel: '#result .strip', fallback: '#result', step: 3, title: 'See when it fits', text: 'Each month is scored by its weakest factor. Climate is a typical-year average on a coarse grid, not local weather.', needsResult: true },
+    { sel: '#result .verdict', fallback: '#result', step: 3, title: 'Fit Verdict', text: 'A soft score that you can re-weight. It is not a pass or fail. Twin pictures, 3D and context rows sit in the sections below it. Context is not scored.', needsResult: true },
+    { sel: '#result .limits', fallback: '#result', step: 3, title: 'What this cannot see', text: 'This box lists what Earth cannot copy and what our data cannot see. Read it before using a number.', needsResult: true },
+    { sel: '#exbtn', title: 'Try an example', text: 'One click jumps to a good match, a case with no good match, a known failure, a Mars click, the world set, the baseline check, the AMADEE-18 replay or the printable brief.' },
+    { sel: '#appbar nav', title: 'World and Evidence', text: 'World shows the 45 chosen places. Evidence shows how the method does on known sites and where it is threshold-sensitive. More holds the rest, including the AMADEE-18 replay, a known case where it does not pick the real month.' }
   ];
   var i = 0, card, hl, offer, lastFocus;
   function $(s) { return document.querySelector(s); }
@@ -51,7 +51,10 @@
   function go(n) {
     i = Math.max(0, Math.min(STEPS.length - 1, n)); var s = STEPS[i];
     if (s.needsResult) ensureResult();
-    var el = $(s.sel); if (!visible(el) && s.fallback) el = $(s.fallback);
+    if (s.step && window.ueSetStep) window.ueSetStep(s.step);
+    var el = $(s.sel); if (!el && s.fallback) el = $(s.fallback);
+    for (var d = el && el.closest && el.closest('details'); d; d = d.parentElement && d.parentElement.closest('details')) d.open = true;
+    if (!visible(el) && s.fallback) el = $(s.fallback);
     $('#tour-h').textContent = s.title; $('#tour-p').textContent = s.text;
     $('#tour-c').textContent = (i + 1) + ' of ' + STEPS.length;
     $('#tour-back').disabled = i === 0; $('#tour-next').textContent = i === STEPS.length - 1 ? 'Done' : 'Next';

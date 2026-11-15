@@ -1,5 +1,5 @@
 # APP FLOW
-0. Header: Quick tour button (offered once on first visit); tabs grouped Plan (Planner, Click Mars / Moon, Fine-scale checks), Compare (Gap view, Calendar, World set), Evidence (Baseline check, Name-free check, AMADEE-18 replay), About (How it works).
+0. Landing page first (Start planning, Quick tour, page tiles). Top bar: Planner, World, Evidence, About, More menu, Try an example menu (one click to a good state on any main page), Quick tour. Planner opens on a world map; click Oman to zoom in. Phone: three steps (Target, Test, Result).
 1. Planner tab (first view, Jezero crater target, rover preset): map of Oman squares showing a mix of GOOD, PARTIAL and WEAK (hatched). Panel: choose target, describe the test with a preset button, the typed sentence box (examples shown; unknown input is refused) or sliders.
 2. Map mode: where+when (default), terrain only, or needs only. Month: best month per square or a chosen month. Checkbox hides squares with 10% or more trees, crops or buildings.
 3. Gap card: best terrain match in Oman. If no square qualifies, the map turns grey, the nearest square is outlined and the card says "no qualifying candidate in Oman"; tick Meteor Crater or Atacama to add a second site. A stability note says whether the tier is threshold-sensitive.

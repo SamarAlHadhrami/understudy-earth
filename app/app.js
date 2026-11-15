@@ -10,7 +10,7 @@
   var SLOPE_REF = 'Observed reference points, not limits: Curiosity maximum tilt 25.34° through sol 2488 (Rankin et al., JPL, 2019); Opportunity tilt 32° on 2016-03-10 (JPL news, 2016-03-31); Perseverance climbed about 20° on slippery sand (JPL news, 2024-10-28). The slope limit here is user-set.';
   var POWER_NOTE = 'NASA POWER climatology v2.10.1, community RE, years 2001-2025. T2M_MAX and T2M_MIN (2 m air, °C), WS2M (wind, m/s), RH2M (%), ALLSKY_SFC_SW_DWN (sunlight, kWh/m²/day). Temperature, wind and humidity cells are about 50 km (0.5 x 0.625°); solar is about 110 km (1°). Regional and approximate.';
   var AMADEE_NEEDS = { tlo: 5, thi: 35, wmin: 0, wmax: 12, rhmax: 100, smin: 4, swmax: 60 };
-  var COL = { match: '#17766a', partial: '#d9a63a', gap: '#a23d4a' };
+  var COL = { match: '#1fa392', partial: '#e0ae3f', gap: '#b4414f' };
   var FIELDS = ['tlo', 'thi', 'wmin', 'wmax', 'rhmax', 'smin', 'swmax', 'limit'];
 
   function load(f, opt) { return fetch('data/' + f).then(function (r) { if (!r.ok) { if (opt) return null; throw new Error(f + ' ' + r.status); } return r.json(); }).catch(function (e) { if (opt) return null; throw e; }); }
@@ -62,9 +62,17 @@
     gibs.on('tileerror', function () { if (!failed) { failed = true; map.removeLayer(gibs); } });
     return gibs;
   }
+  // English-label base map: Esri World Dark Gray base plus its English reference labels. If either fails to load, plain OpenStreetMap tiles replace them.
+  function baseTiles(m, maxZ) {
+    var esri = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/';
+    var base = L.tileLayer(esri + 'World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', { maxZoom: maxZ, maxNativeZoom: 16, attribution: 'Tiles &copy; Esri, HERE, Garmin, FAO, NOAA, USGS, &copy; OpenStreetMap contributors' }).addTo(m);
+    var lab = L.tileLayer(esri + 'World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', { maxZoom: maxZ, maxNativeZoom: 16, pane: 'shadowPane' }).addTo(m), failed = false;
+    function fb() { if (failed) return; failed = true; m.removeLayer(base); m.removeLayer(lab); L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: maxZ, attribution: '&copy; OpenStreetMap contributors' }).addTo(m); }
+    base.on('tileerror', fb);
+  }
   function initMap() {
     map = L.map('map', { zoomControl: true }).setView([20.3, 56.4], 6);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 12, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+    baseTiles(map, 12);
     var gibsLayer = null;
     var gt = document.getElementById('gibs_toggle');
     if (gt) gt.addEventListener('change', function () {
@@ -72,23 +80,23 @@
     });
     var r = L.svg({ padding: 0.5 }); r.addTo(map);
     var ns = 'http://www.w3.org/2000/svg', defs = document.createElementNS(ns, 'defs');
-    defs.innerHTML = '<pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#f3dfe0"/><rect width="3" height="6" fill="#a23d4a"/></pattern>';
+    defs.innerHTML = '<pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#e7b9bf"/><rect width="3" height="6" fill="#b4414f"/></pattern>';
     r._container.insertBefore(defs, r._container.firstChild);
     var bounds = [];
     D.earth.filter(function (e) { return e.group.indexOf('oman') === 0; }).forEach(function (e) {
       var dlat = 5 / 111.32, dlon = 5 / (111.32 * Math.cos(e.lat * Math.PI / 180));
       var b = [[e.lat - dlat, e.lon - dlon], [e.lat + dlat, e.lon + dlon]];
-      var rc = L.rectangle(b, { renderer: r, weight: 1, color: '#f5f4ef', fillOpacity: 0.85 }).addTo(map);
+      var rc = L.rectangle(b, { renderer: r, weight: 1, color: '#0b1020', fillOpacity: 0.85 }).addTo(map);
       rc.on('click', function () { pick(e); });
       rc.bindTooltip(function () { return 'Terrain top ' + Math.max(1, Math.round(e.rank * 100)) + '% | ' + (e._best.length ? 'best ' + N.monthsText(e._best) : 'no month fits'); }, { sticky: true });
       rects[e.id] = rc; bounds.push(b[0], b[1]);
     });
     state_views = { dhofar: [[16.9, 53.9], [19.0, 56.1]], muscat: [[22.9, 57.9], [24.1, 59.1]], all: bounds, oman: [[16.5, 52], [26.5, 60]] };
-    map.fitBounds(state_views.dhofar, { padding: [20, 20] });
+    state_views.world = [[-50, -125], [65, 135]]; map.fitBounds(state_views.world, { padding: [10, 10] });
     var ctl = L.control({ position: 'topright' });
     ctl.onAdd = function () {
       var d = L.DomUtil.create('div', 'viewbtns');
-      d.innerHTML = '<button data-v="dhofar">Dhofar</button><button data-v="muscat">Muscat</button><button data-v="all">All Oman</button><button data-v="oman">Oman box</button>';
+      d.innerHTML = '<button data-v="world">World</button><button data-v="dhofar">Dhofar</button><button data-v="muscat">Muscat</button><button data-v="all">All Oman</button><button data-v="oman">Oman box</button>';
       L.DomEvent.disableClickPropagation(d);
       d.addEventListener('click', function (ev) { var v = ev.target.getAttribute('data-v'); if (v) map.fitBounds(state_views[v], { padding: [20, 20] }); });
       return d;
@@ -177,7 +185,7 @@
     var r = map._rend90 || L.svg({ padding: 0.5 }); if (!map._rend90) { map._rend90 = r; r.addTo(map); }
     D.e90.forEach(function (e) {
       var dlat = 5 / 111.32, dlon = 5 / (111.32 * Math.cos(e.lat * Math.PI / 180));
-      var rc = L.rectangle([[e.lat - dlat, e.lon - dlon], [e.lat + dlat, e.lon + dlon]], { renderer: r, weight: 0.5, color: '#f5f4ef', fillOpacity: 0.6 }).addTo(map);
+      var rc = L.rectangle([[e.lat - dlat, e.lon - dlon], [e.lat + dlat, e.lon + dlon]], { renderer: r, weight: 0.5, color: '#0b1020', fillOpacity: 0.6 }).addTo(map);
       rc.on('click', function () { pick(e); }); rects[e.id] = rc;
     });
   }
@@ -203,8 +211,22 @@
     });
   }
 
+  var wdots = null;
+  function plannerWorld() {
+    if (!map) return;
+    if (!D.world) { if (!D._wf) { D._wf = 1; fetch('data/world.json').then(function (r) { return r.json(); }).then(function (a) { D.world = a; plannerWorld(); }).catch(function () { }); } return; }
+    if (!wdots) { wdots = L.layerGroup().addTo(map); map.on('zoomend', function () { var on = map.getZoom() <= 5; if (on && !map.hasLayer(wdots)) wdots.addTo(map); if (!on && map.hasLayer(wdots)) map.removeLayer(wdots); }); }
+    wdots.clearLayers(); var t = st.target;
+    D.world.forEach(function (x) {
+      var d = Math.min.apply(null, x.windows.map(function (w) { return SC.distance(w, t); })), k = SC.gapTier(d);
+      L.circleMarker([x.lat, x.lon], { radius: 6, color: '#ffffff', weight: 1, fillColor: COL[k], fillOpacity: 0.95, dashArray: '2 2' }).addTo(wdots).bindTooltip(x.name + ': ' + GLABEL[k] + ' (coarse 90 m check)');
+    });
+    var om = bestOf(function (e) { return e.group.indexOf('oman') === 0; }), ko = SC.gapTier(om.d);
+    var mo = L.circleMarker([20.5, 56.5], { radius: 11, color: '#ffffff', weight: 3, fillColor: COL[ko], fillOpacity: 0.95 }).addTo(wdots);
+    mo.bindTooltip('Oman: fine-detail area (' + GLABEL[ko] + '). Click to zoom in.'); mo.on('click', function () { map.fitBounds(state_views.oman); });
+  }
   function renderAll() {
-    recompute(); var t = st.target;
+    recompute(); var t = st.target; plannerWorld();
     $('hook').innerHTML = '<b>Where and when</b> to rehearse a job like <b>' + esc(t.name) + '</b> (' + t.body + '). Each square is 10 km. ' + (st.noCand ? '<b>No qualifying candidate in the searched area for this target:</b> squares are grey; the nearest one is outlined. ' : '') +
       (st.noCand ? '' : st.mode === 'terrain' ? 'Colour = terrain match.' : (st.mode === 'needs' ? 'Colour = fit to your test needs.' : 'Colour = terrain match AND a month that fits your test.'));
     allSq().forEach(function (e) {
@@ -212,7 +234,7 @@
       var k = e._tier, isSel = (sel && sel.id === e.id) || (selB && selB.id === e.id);
       var near = st.noCand && st.nearest === e.id, mk = masked(e);
       var fillc = k === 'gap' ? 'url(#hatch)' : (k === 'none' ? '#848a92' : COL[k]);
-      rc.setStyle({ fillColor: fillc, fillOpacity: mk ? 0.2 : (k === 'gap' ? 0.9 : (k === 'none' ? 0.55 : 0.8)), weight: isSel || near ? 3 : 1, color: isSel || near ? '#1c1f23' : '#f5f4ef', dashArray: mk ? '3 4' : null });
+      rc.setStyle({ fillColor: fillc, fillOpacity: mk ? 0.2 : (k === 'gap' ? 0.9 : (k === 'none' ? 0.55 : 0.8)), weight: isSel || near ? 3 : 1, color: isSel || near ? '#ffffff' : '#0b1020', dashArray: mk ? '3 4' : null });
       if (rc._path) rc._path.setAttribute('fill', fillc);
     });
     renderGapCard(); renderResult(); writeHash();
@@ -342,10 +364,10 @@
     var a = dist(e), b = dist(t), mx = Math.max.apply(null, a.concat(b)) || 1;
     ctx.clearRect(0, 0, W, H); var bw = (W - 20) / nb;
     for (var i = 0; i < nb; i++) {
-      ctx.fillStyle = '#6b7280'; ctx.fillRect(10 + i * bw, H - 18 - (H - 30) * b[i] / mx, bw * 0.42, (H - 30) * b[i] / mx);
-      ctx.fillStyle = '#17766a'; ctx.fillRect(10 + i * bw + bw * 0.46, H - 18 - (H - 30) * a[i] / mx, bw * 0.42, (H - 30) * a[i] / mx);
+      ctx.fillStyle = '#8e9ab8'; ctx.fillRect(10 + i * bw, H - 18 - (H - 30) * b[i] / mx, bw * 0.42, (H - 30) * b[i] / mx);
+      ctx.fillStyle = '#1fa392'; ctx.fillRect(10 + i * bw + bw * 0.46, H - 18 - (H - 30) * a[i] / mx, bw * 0.42, (H - 30) * a[i] / mx);
     }
-    ctx.fillStyle = '#585e66'; ctx.font = '11px "IBM Plex Sans", system-ui'; ctx.fillText('slope 0°', 10, H - 4); ctx.fillText('15°+', W - 36, H - 4);
+    ctx.fillStyle = '#a9b4d0'; ctx.font = '11px "IBM Plex Sans", system-ui'; ctx.fillText('slope 0°', 10, H - 4); ctx.fillText('15°+', W - 36, H - 4);
   }
 
 
@@ -416,6 +438,7 @@
     draw3D($('t3dcvB'), t3d.eid, 'This Earth square', '30 m Copernicus, area-averaged');
   }
 
+  function sec(t, sum, body) { return '<details class="sec"><summary><span>' + t + '</span><small>' + sum + '</small></summary><div class="secb">' + body + '</div></details>'; }
   function renderResult() {
     var el = $('result');
     if (!sel) { el.innerHTML = '<p class="hint">Click a square on the map to see where it fits, when it fits, and what Earth cannot copy.</p>'; return; }
@@ -426,9 +449,11 @@
       (sn90 ? '<p class="note">Threshold-sensitive: result changes with the comparison set (this 90 m whole-Oman layer is on). Not a firm match; see docs/VALIDATION.md section 9.</p>' : '') +
       verdictHtml(e) + '<div class="best">Best months: <b>' + (e._best.length ? esc(N.monthsText(e._best)) : 'none fits your test') + '</b></div>' + stripHtml(e) + monthNotes(e) +
       '<small>★ best, ✓ good, ~ partial, × poor (number = fit 0-100, weakest factor). Source: ' + esc(c.src) + '.</small>' +
-      '<table>' + rows + '</table><div class="chartbox"><canvas id="slopechart" width="340" height="90"></canvas><small><i class="dot b"></i>target slope spread <i class="dot g"></i>this square</small></div>' +
-      twinHtml(e) + '<p class="sub"><b>Access:</b> ' + esc(accessLine(e)) + '</p>' + notesHtml(e) + (e.group === 'oman90' ? '<p class="note">90 m data: coarser than the 30 m squares, shown as an extra layer; land cover was not checked here.</p>' : '') + '<div class="conf"><b>Confidence: ' + cf.level + '.</b> ' + cf.items.map(esc).join('; ') + '.</div>' +
-      '<div class="limits"><b>What this test cannot copy.</b> Gravity, thin air and radiation. Real ' + (st.target.body === 'Moon' ? 'lunar' : 'Martian') + ' temperatures: Earth air temperature here only tells you when conditions suit your test. Terrain numbers only see slope and roughness, not rock type or dust. No rock-abundance or dust measure is used. A terrain match is not a geology match. 500 m cells hide rocks and steps. Earth heights include trees and buildings. Climate is a typical-year average.</div>' +
+      sec('Numbers and context', 'Slope, roughness, climate and thermal rows. Context is not scored.', '<table>' + rows + '</table><div class="chartbox"><canvas id="slopechart" width="340" height="90"></canvas><small><i class="dot b"></i>target slope spread <i class="dot g"></i>this square</small></div>') +
+      sec('Twin pictures and 3D', 'Target and Earth square from the same relief data.', twinHtml(e)) +
+      sec('Access and geology', 'Road distance and rock-type notes. Context, not scored.', '<p class="sub"><b>Access:</b> ' + esc(accessLine(e)) + '</p>' + notesHtml(e) + (e.group === 'oman90' ? '<p class="note">90 m data: coarser than the 30 m squares, shown as an extra layer; land cover was not checked here.</p>' : '')) +
+      sec('Confidence: ' + cf.level, 'What the data can and cannot support.', '<div class="conf">' + cf.items.map(esc).join('; ') + '.</div>') +
+      sec('What this cannot see', 'Read before using a number.', '<div class="limits"><b>What this test cannot copy.</b> Gravity, thin air and radiation. Real ' + (st.target.body === 'Moon' ? 'lunar' : 'Martian') + ' temperatures: Earth air temperature here only tells you when conditions suit your test. Terrain numbers only see slope and roughness, not rock type or dust. No rock-abundance or dust measure is used. A terrain match is not a geology match. 500 m cells hide rocks and steps. Earth heights include trees and buildings. Climate is a typical-year average.</div>') +
       '<div class="btns"><button data-act="brief">Test site brief (print / PDF)</button><button data-act="addcal">Add to calendar</button><button data-act="cmp">Compare with another square</button></div>';
     if (selB) {
       var A = metricRows(sel), B = metricRows(selB);
@@ -588,7 +613,7 @@
   var wmap = null;
   function renderWorld() {
     if (!D.world) { fetch('data/world.json').then(function (r) { return r.json(); }).then(function (a) { D.world = a; renderWorld(); }); return; }
-    if (!wmap) { wmap = L.map('worldmap').setView([25, 20], 2); L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 8, attribution: '&copy; OpenStreetMap contributors' }).addTo(wmap); wmap._layer = L.layerGroup().addTo(wmap); }
+    if (!wmap) { wmap = L.map('worldmap').setView([25, 20], 2); baseTiles(wmap, 8); wmap._layer = L.layerGroup().addTo(wmap); }
     setTimeout(function () { wmap.invalidateSize(); }, 100);
     var t = st.target, items = [];
     D.world.forEach(function (x) { var d = Math.min.apply(null, x.windows.map(function (w) { return SC.distance(w, t); })); items.push({ name: x.name, kind: x.kind, lat: x.lat, lon: x.lon, d: d, n: x.windows.length, fine: false }); });
@@ -596,7 +621,7 @@
     var om = bestOf(function (e) { return e.group.indexOf('oman') === 0; }); items.push({ name: 'Searched area (30 m and 90 m squares; click to open the fine view)', kind: 'home', lat: 20.5, lon: 56.5, d: om.d, n: 0, fine: true, oman: true });
     wmap._layer.clearLayers();
     items.forEach(function (x) {
-      var k = SC.gapTier(x.d), m = L.circleMarker([x.lat, x.lon], { radius: x.oman ? 11 : 7, color: '#1c1f23', weight: x.fine ? 3 : 1, fillColor: k === 'gap' ? '#a23d4a' : COL[k], fillOpacity: 0.9, dashArray: x.fine ? null : '3 3' }).addTo(wmap._layer);
+      var k = SC.gapTier(x.d), m = L.circleMarker([x.lat, x.lon], { radius: x.oman ? 11 : 7, color: '#ffffff', weight: x.fine ? 3 : 1, fillColor: k === 'gap' ? '#a23d4a' : COL[k], fillOpacity: 0.9, dashArray: x.fine ? null : '3 3' }).addTo(wmap._layer);
       m.bindTooltip(x.name + ': ' + GLABEL[k] + ' (distance ' + x.d.toFixed(2) + ')');
       if (x.oman) m.on('click', function () { document.querySelector('.tab[data-view=map]').click(); map.fitBounds(state_views.oman); });
     });
