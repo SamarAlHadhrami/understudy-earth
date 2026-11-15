@@ -14,8 +14,8 @@
   var FIELDS = ['tlo', 'thi', 'wmin', 'wmax', 'rhmax', 'smin', 'swmax', 'limit'];
 
   function load(f, opt) { return fetch('data/' + f).then(function (r) { if (!r.ok) { if (opt) return null; throw new Error(f + ' ' + r.status); } return r.json(); }).catch(function (e) { if (opt) return null; throw e; }); }
-  Promise.all([load('meta.json'), load('earth.json'), load('targets.json'), load('results.json'), load('second_check.json'), load('climate_power.json'), load('landcover.json', true), load('baseline.json', true), load('stability.json', true), load('notes.json', true), load('access.json', true), load('jezero.json', true), load('gale.json', true), load('lithology.json', true), load('thermal_mars.json', true)]).then(function (a) {
-    D.meta = a[0]; D.earth = a[1]; D.targets = a[2]; D.results = a[3]; D.second = a[4]; D.power = a[5]; D.lc = a[6]; D.base = a[7]; D.stab = a[8]; D.notes = a[9]; D.acc = a[10]; D.jez = a[11]; D.gale = a[12]; D.lith = a[13]; D.thermal = a[14];
+  Promise.all([load('meta.json'), load('earth.json'), load('targets.json'), load('results.json'), load('second_check.json'), load('climate_power.json'), load('landcover.json', true), load('baseline.json', true), load('stability.json', true), load('notes.json', true), load('access.json', true), load('jezero.json', true), load('meteomatics.json', true), load('gale.json', true), load('lithology.json', true), load('thermal_mars.json', true)]).then(function (a) {
+    D.meta = a[0]; D.earth = a[1]; D.targets = a[2]; D.results = a[3]; D.second = a[4]; D.power = a[5]; D.lc = a[6]; D.base = a[7]; D.stab = a[8]; D.notes = a[9]; D.acc = a[10]; D.jez = a[11]; D.mm = a[12]; D.gale = a[13]; D.lith = a[14]; D.thermal = a[15];
     SC = UEScore(D.meta); init();
   }).catch(function (e) {
     var el = $('loaderr'); el.hidden = false; el.textContent = 'Could not load the data files (' + e.message + '). Reload the page; if it persists the site files are missing.';
@@ -264,6 +264,20 @@
     return h + '</div>';
   }
 
+  function hav2(a, b, c, d) { var p = Math.PI / 180, x = Math.sin((c - a) * p / 2) * Math.sin((c - a) * p / 2) + Math.cos(a * p) * Math.cos(c * p) * Math.sin((d - b) * p / 2) * Math.sin((d - b) * p / 2); return 12742 * Math.asin(Math.sqrt(x)); }
+  function meteomaticsNear(e) {
+    if (!D.mm) return null;
+    var best = null, bd = 1e9;
+    Object.keys(D.mm.points).forEach(function (k) { var p = D.mm.points[k], dk = hav2(e.lat, e.lon, p.lat, p.lon); if (dk < bd) { bd = dk; best = { key: k, p: p }; } });
+    return (best && bd <= 30) ? { name: best.key, dist: bd, p: best.p } : null;
+  }
+  function meteomaticsLine(e, m) {
+    var near = meteomaticsNear(e); if (!near) return '';
+    var mx = near.p['t_max_2m_24h:C'], mn = near.p['t_min_2m_24h:C']; if (!mx || !mn) return '';
+    var c = climate(e), dmax = Math.round(mx[m] - c.tmax[m]), dmin = Math.round(mn[m] - c.tmin[m]);
+    return '<p class="sub"><b>Meteomatics, saved ' + D.mm.saved + '</b> (' + esc(D.mm.attribution) + '), nearest point "' + esc(near.name) + '" ' + near.dist.toFixed(0) + ' km away, ' + N.MON[m] + ': day max ' + mx[m].toFixed(1) + ' °C, night min ' + mn[m].toFixed(1) + ' °C (NASA POWER for the same month and point: ' + c.tmax[m].toFixed(1) + ' / ' + c.tmin[m].toFixed(1) + ' °C; the two sources disagree here by ' + dmax + ' / ' + dmin + ' °C — Meteomatics is a point value, POWER is a ~50 km regional cell).</p>';
+  }
+
   function monthNotes(e) {
     var c = climate(e), n = st.n, why = [];
     for (var m = 0; m < 12; m++) {
@@ -278,7 +292,8 @@
     }
     var sorted = e._fits.map(function (f, i) { return [f, i]; }).sort(function (a, b) { return b[0] - a[0]; }), close = '';
     if (sorted[0][0] >= 50 && sorted[1][0] >= sorted[0][0] - 5) close = '<p class="note"><b>Close months:</b> ' + sorted.filter(function (x) { return x[0] >= sorted[0][0] - 5; }).slice(0, 4).map(function (x) { return N.MON[x[1]] + ' (' + Math.round(x[0]) + ')'; }).join(', ') + ' are within 5 points, so the top month is not clearly ahead.</p>';
-    return close + '<details class="why"><summary>Why months fail, and the data behind the strip</summary><p>' + (why.length ? esc(why.join('; ')) + '.' : 'Every month fits (75 or more).') + '</p><p class="sub">' + esc(POWER_NOTE) + '</p></details>';
+    var bestm = e._best.length ? e._best[0] : e._fits.indexOf(Math.max.apply(null, e._fits));
+    return close + '<details class="why"><summary>Why months fail, and the data behind the strip</summary><p>' + (why.length ? esc(why.join('; ')) + '.' : 'Every month fits (75 or more).') + '</p><p class="sub">' + esc(POWER_NOTE) + '</p>' + meteomaticsLine(e, bestm) + '</details>';
   }
 
   function confidence(e) {
@@ -431,10 +446,19 @@
     var ff = N.monthFactors(avg, 1, needs), fk = Object.keys(ff).sort(function (a, b) { return ff[a] - ff[b]; })[0];
     var febWhy = ff[fk] >= 99.5 ? 'every factor is inside the assumed window.' : (fk === 'temp' ? 'day max ' + avg.tmax[1].toFixed(1) + ' °C against our assumed limit of ' + needs.thi + ' °C (night min ' + avg.tmin[1].toFixed(1) + ' °C). January has day max ' + avg.tmax[0].toFixed(1) + ' °C. The OeWF page quotes 16-27 °C for February, which looks like a mean temperature; NASA POWER daily max and min are more extreme than that, and we did not change our needs to force February.' : fk + ' is the weakest factor.');
     var verdict = best.indexOf(1) >= 0 ? 'The planner picks February among its best months.' : 'The planner does NOT pick February as a best month (best: ' + N.monthsText(best) + ', fit ' + Math.round(mx) + '). February scores ' + Math.round(feb) + ' (' + (N.needTier(feb) === 'match' ? 'a good month' : N.needTier(feb) === 'partial' ? 'a partial month' : 'a poor month') + ') under these assumed needs.';
+    var mmCheck = '';
+    if (D.mm && D.mm.points.amadee_marmul) {
+      var mp = D.mm.points.amadee_marmul;
+      if (mp['t_max_2m_24h:C'] && mp['t_min_2m_24h:C']) {
+        var mavg = { tmax: mp['t_max_2m_24h:C'], tmin: mp['t_min_2m_24h:C'], wind: mp['wind_speed_10m:ms'] || avg.wind, rh: mp['relative_humidity_2m:p'] || avg.rh, srad: avg.srad };
+        var mfits = N.allFits(mavg, needs), mbest = N.bestMonths(mfits), mfeb = mfits[1];
+        mmCheck = '<p class="sub"><b>Re-checked with Meteomatics (saved ' + D.mm.saved + ', nearest point, not a square average):</b> February day max ' + mavg.tmax[1].toFixed(1) + ' °C / night min ' + mavg.tmin[1].toFixed(1) + ' °C (NASA POWER square average above: ' + avg.tmax[1].toFixed(1) + ' / ' + avg.tmin[1].toFixed(1) + ' °C). Under Meteomatics, February scores ' + Math.round(mfeb) + (mbest.indexOf(1) >= 0 ? ' and IS among the planner\'s best months' : ', best months instead: ' + N.monthsText(mbest)) + '. We did not change the needs to force this; the two data sources simply disagree on how mild February is here, same as the February result was not forced before.</p>';
+      }
+    }
     $('replay').innerHTML = '<p class="sub"><b>Historical illustration with assumed needs.</b> The region is a 15 km circle around 18.19&deg;N 55.23&deg;E (Marmul area, Dhofar). The exact AMADEE-18 site is approximate and not confirmed. ' + mar.length + ' squares fall inside the circle.</p>' +
       '<p><b>Terrain:</b> median rank top ' + Math.max(1, Math.round(med * 100)) + '% of ' + D.earth.length + ' squares for target <b>' + esc(t.name) + '</b> (change the target on the Planner tab).</p>' +
       '<p><b>Assumed needs (ours, written down before the replay; see docs/VALIDATION.md):</b> day highs up to 35 °C, night lows at least 5 °C, sunlight at least 4 kWh/m²/day. The OeWF page gives no numeric limits; it only says February temperatures at the site typically range 16-27 °C with under 10 mm of rain (shown for reference, not used).</p>' + strip +
-      '<p class="best">Planner\'s best months: <b>' + esc(N.monthsText(best)) + '</b></p><p><b>Real mission:</b> the AMADEE-18 field phase ran in <b>February 2018</b> in the Dhofar region of Oman (Austrian Space Forum, oewf.org/en/amadee-18, read 2026-11-14).</p><p><b>Result:</b> ' + esc(verdict) + '</p>' +
+      '<p class="best">Planner\'s best months: <b>' + esc(N.monthsText(best)) + '</b></p><p><b>Real mission:</b> the AMADEE-18 field phase ran in <b>February 2018</b> in the Dhofar region of Oman (Austrian Space Forum, oewf.org/en/amadee-18, read 2026-11-14).</p><p><b>Result:</b> ' + esc(verdict) + '</p>' + mmCheck +
       '<p><b>Why February is not the top month:</b> ' + febWhy + '</p><div class="limits"><b>Honest reading.</b> The mission\'s real constraints (logistics, crew schedule, local hosts) are unknown to us, so a different best month does not mean the planner or the mission was wrong. Climate is a typical-year average, not February 2018 weather. Source: ' + esc(climate(mar[0]).src) + '.</div>' +
       '<div class="btns"><button id="rp-go">Show the circle on the map</button></div>';
     var go = $('rp-go'); if (go) go.onclick = function () { FIELDS.forEach(function (f) { if (needs[f] !== undefined) st.n[f] = needs[f]; }); syncInputs(); document.querySelector('.tab[data-view=map]').click(); map.setView([18.19, 55.23], 9); if (replayCircle) map.removeLayer(replayCircle); replayCircle = L.circle([18.19, 55.23], { radius: 15000, color: '#fff', weight: 2, dashArray: '6 6', fillOpacity: 0 }).bindTooltip('AMADEE-18 area (approximate)').addTo(map); sel = mar[0]; renderAll(); };
