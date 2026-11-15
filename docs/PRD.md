@@ -13,7 +13,7 @@
 ## Features
 Core: map, target selector, test-needs sliders and ready-made tests (our assumptions), month strip, reasons and close-month note, combined where+when colouring, calm "no qualifying candidate" state, second-site toggle, Test Site Brief, name-free check, baseline and stability tab, one-click demo.
 Extras: typed sentence box (rule-based, refuses unknown input), Fit Verdict (user-weighted soft score), twin shaded-relief pictures (64 x 64), slope chart, compare mode, rehearsal calendar and two-site plan, share link, confidence badge, tree/crop/building flag (ESA WorldCover).
-Also built: geology notes, access factor (OpenStreetMap), Jezero story at 30 m, optional whole-Oman 90 m layer. Also built: click-anywhere on Mars (463 m) and on the lunar south pole, a world set of chosen places. Not built: GCC and Middle East 90 m stages, rocks/dust proxy (see docs/EXTRA_FACTORS_RESEARCH.md), 3D view (see docs/3D_FEASIBILITY.md).
+Also built: geology notes, access factor (OpenStreetMap), two fine-scale checks at Jezero (1 m, with a 30 m step) and Gale crater (30 m HRSC mosaic), optional whole-Oman 90 m layer, Meteomatics cross-check (12 Oman points, compared with NASA POWER). Also built: click-anywhere on Mars (463 m, 87S-87N) and on the lunar south pole, a world set of 45 chosen places, an optional NASA GIBS satellite picture layer, a day-night air-temperature swing test need. Not built: Moon north pole / coarse global layer (no usable public product found in time), rocks/dust proxy (see docs/EXTRA_FACTORS_RESEARCH.md), 3D view (see docs/3D_FEASIBILITY.md).
 
 ## Success checks
 Python and JS tests pass; second-method check agrees; checks reported plainly; static app opens from a public link; limits box on every result.
