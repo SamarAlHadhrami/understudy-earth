@@ -13,7 +13,10 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 RAW = os.path.join(ROOT, "data", "meteomatics"); os.makedirs(RAW, exist_ok=True)
 POINTS = {"amadee_marmul": (18.19, 55.23), "salalah": (17.02, 54.09), "thumrait": (17.67, 54.03), "muscat": (23.59, 58.41),
           "samail": (23.30, 57.99), "nizwa": (22.93, 57.53), "sur": (22.57, 59.53), "duqm": (19.66, 57.71), "sohar": (24.35, 56.71),
-          "mahout": (20.42, 58.88), "ibri": (23.22, 56.52), "khasab": (26.18, 56.25)}
+          "mahout": (20.42, 58.88), "ibri": (23.22, 56.52), "khasab": (26.18, 56.25),
+          # added 2026-11-15 (Prompt 4 revised): the two outside check sites (also our best pool-v2 Mars-match squares'
+          # general area) plus one GCC world-set reference point, within the same request-cap-respecting pattern.
+          "meteor_crater": (35.027, -111.023), "atacama_tile": (-24.5, -69.5), "dubai": (25.2048, 55.2708)}
 # Verified live against the API on 2026-11-15 (see docs/REFERENCES.md).
 PARAMS = ["t_max_2m_24h:C", "t_min_2m_24h:C", "wind_speed_10m:ms", "relative_humidity_2m:p", "sunshine_duration_24h:min", "precip_24h:mm"]
 UNITS = {"t_max_2m_24h:C": "C", "t_min_2m_24h:C": "C", "wind_speed_10m:ms": "m/s", "relative_humidity_2m:p": "%",
