@@ -44,7 +44,7 @@ try:
             pg.evaluate("document.querySelectorAll('#map svg path.leaflet-interactive')[%d].dispatchEvent(new MouseEvent('click',{bubbles:true}))" % (n1 - 5)); pg.wait_for_timeout(400); assert "90 m data" in pg.inner_text("#result")
             pg.uncheck("#show90"); pg.wait_for_timeout(500)
             pg.evaluate("document.getElementById('brief').hidden=true"); pg.click(".tab[data-view=sky]"); pg.wait_for_function("document.getElementById('marsimg').complete && document.getElementById('marsimg').naturalWidth>0"); pg.wait_for_timeout(1500)
-            pg.locator("#marsimg").scroll_into_view_if_needed(); bb = pg.locator("#marsimg").bounding_box(); pg.mouse.click(bb["x"] + bb["width"] * (77.5 + 180) / 360, bb["y"] + bb["height"] * (60 - 18.4) / 120); 
+            pg.locator("#marsimg").scroll_into_view_if_needed(); bb = pg.locator("#marsimg").bounding_box(); pg.mouse.click(bb["x"] + bb["width"] * (77.5 + 180) / 360, bb["y"] + bb["height"] * (87 - 18.4) / 174);
             try: pg.wait_for_selector("#skyres h3", timeout=15000)
             except Exception: print("SKY DEBUG", pg.evaluate("(function(){var e=document.elementFromPoint(%f,%f);return e.tagName+'#'+e.id+'.'+e.className})()" % (bb["x"] + bb["width"] * 0.714, bb["y"] + bb["height"] * 0.35)), errs[-3:], pg.inner_text("#skyres")[:200], pg.evaluate("document.getElementById('v-sky').className"), bb); raise
             pg.wait_for_timeout(500)

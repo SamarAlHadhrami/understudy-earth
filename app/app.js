@@ -498,6 +498,7 @@
     $('marsimg').addEventListener('click', function (ev) {
       var r = ev.target.getBoundingClientRect(), fx = (ev.clientX - r.left) / r.width, fy = (ev.clientY - r.top) / r.height, lon = -180 + fx * 360, lat = 87 - fy * 174;
       $('marsmark').style.left = (fx * 100) + '%'; $('marsmark').style.top = (fy * 100) + '%';
+      if (!MARS) $('skyres').innerHTML = '<p class="note">Loading Mars terrain data (about 13 MB, once per visit)...</p>';
       loadMars(function () {
         var m = marsAt(lat, lon);
         if (m.unknown) { $('skyres').innerHTML = '<h3>Unknown</h3><p>No valid terrain numbers for the window near ' + lat.toFixed(1) + '°, ' + lon.toFixed(1) + '°. No match is shown.</p>'; return; }
