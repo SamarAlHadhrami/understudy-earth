@@ -9,7 +9,7 @@ A landing page offers Start planning and a Quick tour. The top bar has Planner, 
 3. **Result:** the panel jumps to the Result block (it shows the match badge). The map shows the squares.
 
 ## Result card
-Clicking a square (or a world dot, or a Mars or Moon spot) opens a card over the map, or a bottom sheet on a phone. It shows a one-line verdict, the 12-month strip, and buttons: Test site brief, Add to calendar, Compare, Compare terrain pictures, 3D view. Details hold the fit weights, numbers, pictures, surface material proxy, access, geology, confidence and limits.
+Clicking a square (or a world dot, or a Mars or Moon spot) opens a card over the map, or a bottom sheet on a phone. It shows a one-line verdict, the 12-month strip, and buttons: Test site brief, Add to calendar, Compare, Compare terrain pictures, 3D view, Open in Google Maps, and Show 10 km boundary on a map (plain links to a real map). Details hold the fit weights, numbers, pictures, surface material proxy, access, geology, confidence and limits.
 
 ## Other pages
 - **World:** 45 chosen places coloured for the current target.

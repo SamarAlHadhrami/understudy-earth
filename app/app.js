@@ -292,6 +292,15 @@
   function stabOf(t) { if (!D.stab) return null; var r = D.stab.summary.filter(function (x) { return x.target === t.name; })[0]; return r || null; }
 
   var gb = document.getElementById('gobest'); if (gb) gb.addEventListener('click', function () { goBestOman(); });
+  // Links to a real map for an Earth square: Google Maps satellite view centred on it, and the 10 km boundary drawn on a map (geojson.io). Plain links, nothing is sent by the app.
+  function realMapLinks(e) {
+    var dlat = 5 / 111.32, dlon = 5 / (111.32 * Math.cos(e.lat * Math.PI / 180));
+    var ring = [[e.lon - dlon, e.lat - dlat], [e.lon + dlon, e.lat - dlat], [e.lon + dlon, e.lat + dlat], [e.lon - dlon, e.lat + dlat], [e.lon - dlon, e.lat - dlat]].map(function (c) { return [+c[0].toFixed(5), +c[1].toFixed(5)]; });
+    var gj = JSON.stringify({ type: 'Feature', properties: { name: 'Understudy Earth 10 km square' }, geometry: { type: 'Polygon', coordinates: [ring] } });
+    var g = 'https://www.google.com/maps/@?api=1&map_action=map&center=' + e.lat.toFixed(5) + ',' + e.lon.toFixed(5) + '&zoom=12&basemap=satellite';
+    var b = 'https://geojson.io/#data=data:application/json,' + encodeURIComponent(gj);
+    return '<a class="btnlink" href="' + g + '" target="_blank" rel="noopener">Open in Google Maps</a><a class="btnlink" href="' + b + '" target="_blank" rel="noopener">Show 10 km boundary on a map</a>';
+  }
   function renderGapCard() {
     var bo = bestOf(function (e) { return e.group.indexOf('oman') === 0; }), shown = bo.d, extra = [];
     [['meteor_crater', 's_meteor'], ['atacama', 's_atacama']].forEach(function (x) {
@@ -531,7 +540,7 @@
       (sn90 ? '<p class="note">Threshold-sensitive: result changes with the comparison set (this 90 m whole-Oman layer is on). Not a firm match; see docs/VALIDATION.md section 9.</p>' : '') +
       stripHtml(e) + legendLine() +
       '<div class="btns"><button type="button" class="primary" data-act="brief">Test site brief</button><button type="button" data-act="addcal">Add to calendar</button><button type="button" data-act="cmp">Compare</button>' +
-      (e.group !== 'oman90' ? '<button type="button" data-act="pics">Compare terrain pictures</button>' : '') + (can3d ? '<button type="button" data-act="t3d">3D view</button>' : '') + '</div><p class="sub" id="calnote"></p>' +
+      (e.group !== 'oman90' ? '<button type="button" data-act="pics">Compare terrain pictures</button>' : '') + (can3d ? '<button type="button" data-act="t3d">3D view</button>' : '') + realMapLinks(e) + '</div><p class="sub" id="calnote"></p>' +
       '<p class="sub">Terrain only: gravity, air, radiation and rock type are not copied. The Details list the limits.</p>' +
       '<details class="sec det"><summary><span>Details</span><small>Fit weights, numbers, pictures, access, geology, confidence, limits</small></summary><div class="secb">' +
       '<h3>Fit Verdict</h3>' + verdictHtml(e, k) + monthNotes(e) +
