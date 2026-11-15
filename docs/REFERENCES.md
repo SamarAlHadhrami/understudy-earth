@@ -58,3 +58,7 @@ numpy, scipy, rasterio, pyproj, Playwright (testing), Leaflet 1.9.4; basemap til
 - Base map: Esri World Dark Gray Base and World Dark Gray Reference tiles (English labels), attribution shown on the map: Esri, HERE, Garmin, FAO, NOAA, USGS, OpenStreetMap contributors. Esri's terms for these public tile services were not confirmed in full; if the tiles fail to load the app falls back to OpenStreetMap tiles. CARTO basemaps were tried first and now require an API key, so they are not used.
 - Icons: simple inline SVG shapes drawn for this project (no icon library).
 - Moon and Mars on the landing page: procedural shaded spheres, labelled as an illustration. They are not made from LOLA or MOLA data.
+
+## Surface material proxy (context only)
+
+- Mars thermal inertia: USGS/ASU THEMIS mosaic (app/data/thermal_mars.json). Earth rock type: GLiM v1.0 (app/data/lithology.json). Earth day-night skin-temperature swing: NASA POWER (app/data/climate_power.json). Shown side by side in the result Details as a rough proxy; the score is unchanged and no Surface material weight was added because no source maps these different quantities onto each other. Moon Diviner rock abundance (60 S to 60 N only) and Earth MODIS land surface temperature were not built.
