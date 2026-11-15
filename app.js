@@ -118,7 +118,7 @@
     ['s_meteor', 's_atacama'].forEach(function (id) { $(id).addEventListener('change', renderGapCard); });
     $('presets').addEventListener('click', function (ev) {
       var p = N.PRESETS[ev.target.getAttribute('data-p')]; if (!p) return;
-      FIELDS.forEach(function (f) { st.n[f] = p[f]; }); $('understood').textContent = p.label + ': numbers are our assumption, adjust them to your test.'; syncInputs(); renderAll();
+      FIELDS.forEach(function (f) { st.n[f] = p[f]; }); $('understood').textContent = p.label + ': numbers are our assumption, adjust them to your test.'; syncInputs(); renderAll(); if (window.ueGoResult) window.ueGoResult();
     });
     $('go').addEventListener('click', applySentence);
     $('sentence').addEventListener('keydown', function (e) { if (e.key === 'Enter') applySentence(); });
@@ -189,7 +189,7 @@
     }
     st.needs_said = r.said; st.n = r.needs;
     $('understood').innerHTML = '<b>Understood:</b> ' + r.said.map(function (x) { return esc(x.text); }).join('; ') + '.' + (r.unknown.length ? ' <b>Not understood and ignored:</b> ' + esc(r.unknown.join(', ')) + '.' : '') + ' Check the sliders.';
-    syncInputs(); renderAll();
+    syncInputs(); renderAll(); if (window.ueGoResult) window.ueGoResult();
   }
 
   function syncInputs(fromUser) {
