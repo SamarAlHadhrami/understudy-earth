@@ -421,7 +421,9 @@
     if (!sel) { el.innerHTML = '<p class="hint">Click a square on the map to see where it fits, when it fits, and what Earth cannot copy.</p>'; return; }
     var e = sel, k = e._tier, c = climate(e), cf = confidence(e);
     var rows = metricRows(e).map(function (r) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td></tr>'; }).join('');
+    var sn90 = st.show90 && stabOf(st.target) && stabOf(st.target).threshold_sensitive;
     var h = '<div><span class="chip ' + k + '">' + LABEL[k] + '</span> <span class="chip ' + (stabOf(st.target) && stabOf(st.target).threshold_sensitive ? 'partial' : 'match') + '">' + robustText(st.target) + '</span> <span class="sub">' + esc(GROUPS[e.group]) + ' &middot; ' + e.lat.toFixed(3) + ', ' + e.lon.toFixed(3) + '</span></div>' +
+      (sn90 ? '<p class="note">Threshold-sensitive: result changes with the comparison set (this 90 m whole-Oman layer is on). Not a firm match; see docs/VALIDATION.md section 9.</p>' : '') +
       verdictHtml(e) + '<div class="best">Best months: <b>' + (e._best.length ? esc(N.monthsText(e._best)) : 'none fits your test') + '</b></div>' + stripHtml(e) + monthNotes(e) +
       '<small>★ best, ✓ good, ~ partial, × poor (number = fit 0-100, weakest factor). Source: ' + esc(c.src) + '.</small>' +
       '<table>' + rows + '</table><div class="chartbox"><canvas id="slopechart" width="340" height="90"></canvas><small><i class="dot b"></i>target slope spread <i class="dot g"></i>this square</small></div>' +
