@@ -4,7 +4,7 @@ import json, os, sys, time, math, datetime, urllib.request
 from concurrent.futures import ThreadPoolExecutor
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 CACHE = os.path.join(ROOT, "data", "power_cache"); os.makedirs(CACHE, exist_ok=True)
-PARAMS = ["T2M", "T2M_MAX", "T2M_MIN", "WS2M", "RH2M", "PRECTOTCORR", "ALLSKY_SFC_SW_DWN"]
+PARAMS = ["T2M", "T2M_MAX", "T2M_MIN", "WS2M", "RH2M", "PRECTOTCORR", "ALLSKY_SFC_SW_DWN", "TS_MAX", "TS_MIN"]
 MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
 URL = ("https://power.larc.nasa.gov/api/temporal/climatology/point?parameters=" + ",".join(PARAMS) +
        "&community=RE&longitude={lon}&latitude={lat}&format=JSON")
@@ -17,7 +17,10 @@ def cell(lat, lon):
 
 def fetch(key, lat, lon):
     f = os.path.join(CACHE, key + ".json")
-    if os.path.exists(f): return json.load(open(f))
+    if os.path.exists(f):
+        d = json.load(open(f))
+        if all(p in d.get("properties", {}).get("parameter", {}) for p in PARAMS):
+            return d
     for k in range(4):
         try:
             with urllib.request.urlopen(URL.format(lat=lat, lon=lon), timeout=60) as r:
@@ -43,7 +46,7 @@ if __name__ == "__main__":
         res = dict(zip(cells, ex.map(lambda kv: fetch(kv[0], *kv[1]), cells.items())))
     out = {"source": "NASA POWER climatology API v2.10.1, community RE, 25-year monthly climatology Jan 2001-Dec 2025",
            "accessed": datetime.date.today().isoformat(), "cell_deg": [0.5, 0.625], "months": MONTHS, "params": PARAMS,
-           "units": {"T2M": "C", "T2M_MAX": "C", "T2M_MIN": "C", "WS2M": "m/s", "RH2M": "%", "PRECTOTCORR": "mm/day", "ALLSKY_SFC_SW_DWN": "kWh/m2/day"},
+           "units": {"T2M": "C", "T2M_MAX": "C", "T2M_MIN": "C", "WS2M": "m/s", "RH2M": "%", "PRECTOTCORR": "mm/day", "ALLSKY_SFC_SW_DWN": "kWh/m2/day", "TS_MAX": "C", "TS_MIN": "C"},
            "cells": {}, "win": win}
     for k, d in res.items():
         out["cells"][k] = {"lat": cells[k][0], "lon": cells[k][1], **{p: series(d, p) for p in PARAMS}}

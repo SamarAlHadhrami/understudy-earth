@@ -1,0 +1,61 @@
+{
+ "unit": "SI thermal inertia, J m^-2 K^-1 s^-1/2 (THEMIS quantitative mosaic, Fergason et al. 2006)",
+ "source": "USGS/ASU THEMIS Thermal Inertia Mosaic, Quantitative 32-bit, 100 m/px, doi references in docs/REFERENCES.md",
+ "sites": {
+  "Jezero crater": {
+   "tile": "00N060E",
+   "ti_si": 333.8,
+   "n_px": 10000
+  },
+  "Gale mound south flank": {
+   "tile": "30S120E",
+   "ti_si": 280.8,
+   "n_px": 10000
+  },
+  "Gale mound (Aeolis Mons)": {
+   "tile": "30S120E",
+   "ti_si": 219.5,
+   "n_px": 10000
+  },
+  "Gale landing area (Bradbury)": {
+   "tile": "30S120E",
+   "ti_si": 459.7,
+   "n_px": 10000
+  },
+  "Oxia Planum": {
+   "tile": "00N300E",
+   "ti_si": 360.0,
+   "n_px": 10000
+  },
+  "Meridiani Planum": {
+   "tile": "30S300E",
+   "ti_si": 220.9,
+   "n_px": 10000
+  },
+  "Gusev crater": {
+   "tile": "30S120E",
+   "ti_si": 277.8,
+   "n_px": 10000
+  },
+  "Mawrth Vallis": {
+   "tile": "00N300E",
+   "ti_si": 211.8,
+   "n_px": 5572
+  },
+  "Melas Chasma (Valles Marineris)": {
+   "tile": "30S240E",
+   "ti_si": 212.9,
+   "n_px": 10000
+  },
+  "Olympus Mons flank": {
+   "tile": "00N180E",
+   "ti_si": 385.4,
+   "n_px": 10000
+  },
+  "Hellas floor": {
+   "tile": "60S060E",
+   "ti_si": 248.2,
+   "n_px": 10000
+  }
+ }
+}
