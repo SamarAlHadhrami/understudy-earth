@@ -17,6 +17,8 @@
 - Ready-made test numbers (rover, instrument, walking, cold) and the fade margins are OUR ASSUMPTIONS, not sourced requirements.
 ## Background
 - AMADEE-18, Austrian Space Forum (OeWF), oewf.org/en/amadee-18: field simulation in the Dhofar region of Oman, February 2018. Exact site not confirmed; Marmul area (18.19 N, 55.23 E, Global Energy Monitor) used as approximate centre.
+- NASA EOSDIS GIBS (Global Imagery Browse Services), MODIS_Terra_CorrectedReflectance_TrueColor layer, WMTS REST tiles at gibs.earthdata.nasa.gov, no login, CORS open (checked 2026-11-15: HTTP 200, `Access-Control-Allow-Origin: *`). Optional satellite picture layer on the Planner map, off by default, with attribution "NASA EOSDIS GIBS (MODIS Terra true colour)"; a tile load error removes the layer and falls back to the OpenStreetMap base, which the app never depends on this service for.
+
 ## Libraries
 numpy, scipy, rasterio, pyproj, Playwright (testing), Leaflet 1.9.4; basemap tiles (c) OpenStreetMap contributors.
 ## Research notes (not used as data)

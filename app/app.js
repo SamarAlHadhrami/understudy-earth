@@ -52,9 +52,24 @@
     return st.mode === 'terrain' ? tt : (st.mode === 'needs' ? nt : N.worse(tt, nt));
   }
 
+  // NASA GIBS true-colour imagery, optional picture layer, off by default. No login, CORS open (checked 2026-11-15).
+  // Core map features never depend on this: it only ever ADDS a layer, and any load problem silently leaves the OSM base shown.
+  function addGibsLayer(map) {
+    var day = new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10); // most recent imagery lags by about a day
+    var gibs = L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/' + day + '/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg',
+      { maxZoom: 9, attribution: 'NASA EOSDIS GIBS (MODIS Terra true colour)' });
+    var failed = false;
+    gibs.on('tileerror', function () { if (!failed) { failed = true; map.removeLayer(gibs); } });
+    return gibs;
+  }
   function initMap() {
     map = L.map('map', { zoomControl: true }).setView([20.3, 56.4], 6);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 12, className: 'dark-tiles', attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+    var gibsLayer = null;
+    var gt = document.getElementById('gibs_toggle');
+    if (gt) gt.addEventListener('change', function () {
+      if (gt.checked) { gibsLayer = addGibsLayer(map); gibsLayer.addTo(map); } else if (gibsLayer) { map.removeLayer(gibsLayer); gibsLayer = null; }
+    });
     var r = L.svg({ padding: 0.5 }); r.addTo(map);
     var ns = 'http://www.w3.org/2000/svg', defs = document.createElementNS(ns, 'defs');
     defs.innerHTML = '<pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#a8788a"/><rect width="3" height="6" fill="#33202e"/></pattern>';
