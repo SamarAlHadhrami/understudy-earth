@@ -456,7 +456,7 @@
       '<div class="conf"><b>Confidence: Low.</b> ' + esc(conf) + '</div><div class="limits"><b>What this cannot see.</b> Terrain numbers only see slope and roughness, not rock type or dust. Gravity, air and radiation are not copied. 500 m cells hide rocks and steps; Earth heights are a surface model. A terrain match is not a geology match.</div>';
   }
   function renderSky() {
-    $('skyhelp').innerHTML = skyBody === 'mars' ? 'Click anywhere on the map (60°S to 60°N, 463 m MOLA data; brighter = steeper). Windows are 10 km squares every 25 km, so the numbers describe the nearest window, not the exact spot. Poles are not covered: unknown.' : 'Moon: only the LOLA terrain for 80°S to 90°S is used. Click inside the circle (300 km around the pole). Anywhere else on the Moon is unknown.';
+    $('skyhelp').innerHTML = skyBody === 'mars' ? 'Click anywhere on the map (87°S to 87°N, 463 m MOLA data; brighter = steeper). Windows are 10 km squares every 25 km, so the numbers describe the nearest window, not the exact spot. Poles are not covered: unknown.' : 'Moon: only the LOLA terrain for 80°S to 90°S is used. Click inside the circle (300 km around the pole). Anywhere else on the Moon is unknown.';
     $('marsbox').hidden = skyBody !== 'mars'; $('moonbox').hidden = skyBody !== 'moon';
     document.querySelectorAll('#skytabs button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-body') === skyBody); });
     if (skyBody === 'mars') loadMars(function () {}); else drawMoon();
@@ -472,7 +472,7 @@
   function bindSky() {
     $('skytabs').addEventListener('click', function (ev) { var b = ev.target.getAttribute('data-body'); if (b) { skyBody = b; $('skyres').innerHTML = ''; renderSky(); } });
     $('marsimg').addEventListener('click', function (ev) {
-      var r = ev.target.getBoundingClientRect(), fx = (ev.clientX - r.left) / r.width, fy = (ev.clientY - r.top) / r.height, lon = -180 + fx * 360, lat = 60 - fy * 120;
+      var r = ev.target.getBoundingClientRect(), fx = (ev.clientX - r.left) / r.width, fy = (ev.clientY - r.top) / r.height, lon = -180 + fx * 360, lat = 87 - fy * 174;
       $('marsmark').style.left = (fx * 100) + '%'; $('marsmark').style.top = (fy * 100) + '%';
       loadMars(function () {
         var m = marsAt(lat, lon);

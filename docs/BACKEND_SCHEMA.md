@@ -14,4 +14,4 @@
 - `jezero.json`: Jezero window statistics at 500 m and 30 m and the closest squares (both checks).
 - `earth90.json`: 4756 squares from GLO-90 (same fields as earth.json, group oman90), loaded only when the 90 m layer is switched on. `pool_v2.json`: summary of the what-if with the combined pool.
 - `climate_power.json` now covers 189 cells (the 90 m squares included).
-- `mars_grid.bin` + `mars_grid.json` (windows over 60 S to 60 N), `mars_preview.png` (slope preview, 720 x 284), `moon_grid.json` (705 polar windows), `world.json` (45 chosen sites with their 90 m squares).
+- `mars_grid.bin` + `mars_grid.json` (windows over 87 S to 87 N), `mars_preview.png` (slope preview, 720 x 412), `moon_grid.json` (705 polar windows), `world.json` (45 chosen sites with their 90 m squares).

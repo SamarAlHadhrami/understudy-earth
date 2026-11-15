@@ -1,6 +1,9 @@
-"""Terrain numbers for 10 km windows spaced 25 km apart over the MOLA 463 m map between 60 S and 60 N (same method as the targets).
-Windows are read as small blocks (never the whole 2 GB file) and area-averaged to 20 x 20 cells of 500 m. Beyond 60 degrees the equirectangular map is too stretched for this
-block size, so those spots are 'unknown'. Writes app/data/mars_grid.bin (per window: 6 float32 + 33 uint8 slope shares), mars_grid.json (layout) and mars_preview.png."""
+"""Terrain numbers for 10 km windows spaced 25 km apart over the MOLA 463 m map between 87 S and 87 N (same method as the targets).
+Windows are read as small blocks (never the whole 2 GB file) and area-averaged to 20 x 20 cells of 500 m. The window's longitude extent
+is widened by 1/cos(lat) so every window covers about the same ground area at every latitude (an "area-correct window"); very close to
+the poles (beyond about 87 degrees) a single 10 km window would wrap most of the way around the planet in longitude, so those spots stay
+'unknown' rather than averaging over a physically unreasonable area. Writes app/data/mars_grid.bin (per window: 6 float32 + 33 uint8 slope
+shares), mars_grid.json (layout) and mars_preview.png."""
 import json, math, os, struct, sys
 import numpy as np, rasterio
 from PIL import Image
@@ -12,7 +15,7 @@ import terrain as t
 from build_windows import DATA, OUT
 
 KM_PER_DEG = 2 * math.pi * 3389.5 / 360
-STEP_KM, LATMAX = 25.0, 60.0
+STEP_KM, LATMAX = 25.0, 87.0
 NS = len(t.SLOPE_EDGES) - 1
 
 def main():
