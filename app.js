@@ -14,8 +14,8 @@
   var FIELDS = ['tlo', 'thi', 'wmin', 'wmax', 'rhmax', 'smin', 'swmax', 'limit'];
 
   function load(f, opt) { return fetch('data/' + f).then(function (r) { if (!r.ok) { if (opt) return null; throw new Error(f + ' ' + r.status); } return r.json(); }).catch(function (e) { if (opt) return null; throw e; }); }
-  Promise.all([load('meta.json'), load('earth.json'), load('targets.json'), load('results.json'), load('second_check.json'), load('climate_power.json'), load('landcover.json', true), load('baseline.json', true), load('stability.json', true), load('notes.json', true), load('access.json', true), load('jezero.json', true), load('meteomatics.json', true), load('gale.json', true)]).then(function (a) {
-    D.meta = a[0]; D.earth = a[1]; D.targets = a[2]; D.results = a[3]; D.second = a[4]; D.power = a[5]; D.lc = a[6]; D.base = a[7]; D.stab = a[8]; D.notes = a[9]; D.acc = a[10]; D.jez = a[11]; D.mm = a[12]; D.gale = a[13];
+  Promise.all([load('meta.json'), load('earth.json'), load('targets.json'), load('results.json'), load('second_check.json'), load('climate_power.json'), load('landcover.json', true), load('baseline.json', true), load('stability.json', true), load('notes.json', true), load('access.json', true), load('jezero.json', true), load('meteomatics.json', true), load('gale.json', true), load('lithology.json', true), load('thermal_mars.json', true)]).then(function (a) {
+    D.meta = a[0]; D.earth = a[1]; D.targets = a[2]; D.results = a[3]; D.second = a[4]; D.power = a[5]; D.lc = a[6]; D.base = a[7]; D.stab = a[8]; D.notes = a[9]; D.acc = a[10]; D.jez = a[11]; D.mm = a[12]; D.gale = a[13]; D.lith = a[14]; D.thermal = a[15];
     SC = UEScore(D.meta); init();
   }).catch(function (e) {
     var el = $('loaderr'); el.hidden = false; el.textContent = 'Could not load the data files (' + e.message + '). Reload the page; if it persists the site files are missing.';
@@ -24,7 +24,7 @@
   function climate(e) {
     if (e._c) return e._c;
     var c = D.power.cells[D.power.win[e.id]];
-    return (e._c = { tmax: c.T2M_MAX, tmin: c.T2M_MIN, wind: c.WS2M, rh: c.RH2M, srad: c.ALLSKY_SFC_SW_DWN, src: 'NASA POWER climatology 2001-2025 (regional and approximate: temperature, wind and humidity cells about 50 km, solar about 110 km)', coarse: true });
+    return (e._c = { tmax: c.T2M_MAX, tmin: c.T2M_MIN, wind: c.WS2M, rh: c.RH2M, srad: c.ALLSKY_SFC_SW_DWN, tsmax: c.TS_MAX, tsmin: c.TS_MIN, src: 'NASA POWER climatology 2001-2025 (regional and approximate: temperature, wind and humidity cells about 50 km, solar about 110 km)', coarse: true });
   }
 
   function init() {
@@ -227,8 +227,12 @@
     return a ? 'Nearest paved or main road ' + a[0] + ' km; nearest town ' + (a[2] ? a[2] + ' ' : '') + a[1] + ' km. Source: OpenStreetMap contributors (ODbL). Not space data; permission to enter is unverified.' : 'No access data (outside the OpenStreetMap extract for Oman).';
   }
   function notesHtml(e) {
-    var n = D.notes && D.notes[e.group]; if (!n) return '';
-    return '<div class="geo"><h3>' + esc(n.title) + '</h3><ul>' + n.notes.map(function (x) { return '<li>' + esc(x.text) + ' <small>(' + esc(x.source) + ')</small></li>'; }).join('') + '</ul><small>' + esc(n.caveat) + '</small></div>';
+    var n = D.notes && D.notes[e.group];
+    var lith = D.lith && D.lith.by_id && D.lith.by_id[e.id];
+    var lithLine = lith ? '<p class="note">Rock type on real data (GLiM, not a score): <b>' + esc(lith.name) + '</b>. 0.5&deg; cell (about 55 km), coarse; source: ' + esc(D.lith.source) + '.</p>' : '';
+    if (!n && !lithLine) return '';
+    if (!n) return '<div class="geo">' + lithLine + '</div>';
+    return '<div class="geo"><h3>' + esc(n.title) + '</h3><ul>' + n.notes.map(function (x) { return '<li>' + esc(x.text) + ' <small>(' + esc(x.source) + ')</small></li>'; }).join('') + '</ul>' + lithLine + '<small>' + esc(n.caveat) + '</small></div>';
   }
   function robustText(t) { var x = stabOf(t); return x ? (x.threshold_sensitive ? 'threshold-sensitive' : 'robust') : 'not checked'; }
   function stabOf(t) { if (!D.stab) return null; var r = D.stab.summary.filter(function (x) { return x.target === t.name; })[0]; return r || null; }
@@ -307,6 +311,17 @@
     return 'yearly mean ' + mean.toFixed(1) + ' °C (range ' + Math.min.apply(null, sw).toFixed(1) + '-' + Math.max.apply(null, sw).toFixed(1) + '). Earth air temperature on 50 km cells: it is NOT a thermal-inertia or rock/dust measure and is not comparable with Moon or Mars surface values.';
   }
 
+  function thermalLine(e) {
+    var c = climate(e);
+    var tsw = c.tsmax.map(function (x, i) { return x - c.tsmin[i]; }), mean = tsw.reduce(function (a, b) { return a + b; }, 0) / 12;
+    var txt = 'Earth square, NASA POWER day-night SKIN temperature swing (not air temperature; MERRA-2): yearly mean ' + mean.toFixed(1) + ' °C (range ' + Math.min.apply(null, tsw).toFixed(1) + '-' + Math.max.apply(null, tsw).toFixed(1) + '°C).';
+    var th = st.target.body === 'Mars' && D.thermal && D.thermal.sites && D.thermal.sites[st.target.name];
+    if (th) txt += ' Target (' + st.target.name + ') real thermal inertia: ' + th.ti_si + ' SI units (J m^-2 K^-1 s^-1/2), USGS/ASU THEMIS mosaic, 100 m/px.';
+    else if (st.target.body === 'Mars') txt += ' No THEMIS thermal inertia value for this target (data gap).';
+    else txt += ' THEMIS thermal inertia only exists for Mars; no equivalent is used for the Moon here.';
+    return txt + ' Different physical quantities and units (skin-temperature swing vs SI thermal inertia): not directly comparable, context only, not scored.';
+  }
+
   function metricRows(e) {
     var t = st.target, n = st.n;
     return [['Terrain rank for this target', 'top ' + Math.max(1, Math.round(e.rank * 100)) + '% of ' + D.earth.length + ' squares'],
@@ -315,6 +330,7 @@
       ['Relief', Math.round(e.relief_m) + ' m (target ' + Math.round(t.relief_m) + ' m)'],
       ['Share of cells below ' + n.limit + '° slope (user-set)', Math.round(SC.trav(e, n.limit) * 100) + '% (target ' + Math.round(SC.trav(t, n.limit) * 100) + '%)'],
       ['Day-night air temperature swing, NASA POWER (rough proxy, context only, not scored)', swingText(e)],
+      ['Thermal inertia / rock-material proxy (real data, context only, not scored)', thermalLine(e)],
       ['Best months for your test', e._best.length ? N.monthsText(e._best) : 'none fits']];
   }
 
@@ -448,8 +464,9 @@
     var go = $('rp-go'); if (go) go.onclick = function () { FIELDS.forEach(function (f) { if (needs[f] !== undefined) st.n[f] = needs[f]; }); syncInputs(); document.querySelector('.tab[data-view=map]').click(); map.setView([18.19, 55.23], 9); if (replayCircle) map.removeLayer(replayCircle); replayCircle = L.circle([18.19, 55.23], { radius: 15000, color: '#fff', weight: 2, dashArray: '6 6', fillOpacity: 0 }).bindTooltip('AMADEE-18 area (approximate)').addTo(map); sel = mar[0]; renderAll(); };
   }
 
-  // ---- click a planet (Mars 463 m, Moon south pole only)
-  var MARS = null, MOON = null, skyBody = 'mars';
+  // ---- click a planet (Mars 463 m, Moon south and north poles)
+  var MARS = null, MOON = {}, skyBody = 'mars';
+  var POLE = { moon: { file: 'moon_grid.json', label: '80°S to 90°S', tag: 'south pole' }, moon_n: { file: 'moon_grid_north.json', label: '80°N to 90°N', tag: 'north pole' } };
   function loadMars(cb) {
     if (MARS) return cb();
     Promise.all([fetch('data/mars_grid.json').then(function (r) { return r.json(); }), fetch('data/mars_grid.bin').then(function (r) { return r.arrayBuffer(); })]).then(function (a) {
@@ -480,18 +497,20 @@
       '<div class="conf"><b>Confidence: Low.</b> ' + esc(conf) + '</div><div class="limits"><b>What this cannot see.</b> Terrain numbers only see slope and roughness, not rock type or dust. Gravity, air and radiation are not copied. 500 m cells hide rocks and steps; Earth heights are a surface model. A terrain match is not a geology match.</div>';
   }
   function renderSky() {
-    $('skyhelp').innerHTML = skyBody === 'mars' ? 'Click anywhere on the map (87°S to 87°N, 463 m MOLA data; brighter = steeper). Windows are 10 km squares every 25 km, so the numbers describe the nearest window, not the exact spot. Poles are not covered: unknown.' : 'Moon: only the LOLA terrain for 80°S to 90°S is used. Click inside the circle (300 km around the pole). Anywhere else on the Moon is unknown.';
-    $('marsbox').hidden = skyBody !== 'mars'; $('moonbox').hidden = skyBody !== 'moon';
+    var pole = POLE[skyBody];
+    $('skyhelp').innerHTML = skyBody === 'mars' ? 'Click anywhere on the map (87°S to 87°N, 463 m MOLA data; brighter = steeper). Windows are 10 km squares every 25 km, so the numbers describe the nearest window, not the exact spot. Poles are not covered: unknown.' :
+      'Moon: only the LOLA terrain for ' + pole.label + ' is used. Click inside the circle (300 km around the pole). Anywhere else on the Moon is unknown.';
+    $('marsbox').hidden = skyBody !== 'mars'; $('moonbox').hidden = skyBody === 'mars';
     document.querySelectorAll('#skytabs button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-body') === skyBody); });
-    if (skyBody === 'mars') loadMars(function () {}); else drawMoon();
+    if (skyBody === 'mars') loadMars(function () {}); else drawMoon(pole);
   }
-  function drawMoon() {
+  function drawMoon(pole) {
     var go = function () {
       var cv = $('moonc'), c = cv.getContext('2d'); c.clearRect(0, 0, 320, 320); c.fillStyle = '#05080f'; c.beginPath(); c.arc(160, 160, 155, 0, 7); c.fill();
-      MOON.forEach(function (w) { var v = Math.min(1, Math.log1p(w.slope_p90) / Math.log1p(25)), g = Math.round(40 + 215 * v); c.fillStyle = 'rgb(' + g + ',' + g + ',' + g + ')'; c.fillRect(160 + w.x / 300 * 155 - 3, 160 - w.y / 300 * 155 - 3, 6.2, 6.2); });
-      c.strokeStyle = '#7aa2ff'; c.strokeRect(0, 0, 0, 0); c.fillStyle = '#9fb0d3'; c.font = '10px system-ui'; c.fillText('pole', 150, 158); c.fillText('300 km radius (80°S)', 90, 314);
+      MOON[skyBody].forEach(function (w) { var v = Math.min(1, Math.log1p(w.slope_p90) / Math.log1p(25)), g = Math.round(40 + 215 * v); c.fillStyle = 'rgb(' + g + ',' + g + ',' + g + ')'; c.fillRect(160 + w.x / 300 * 155 - 3, 160 - w.y / 300 * 155 - 3, 6.2, 6.2); });
+      c.strokeStyle = '#7aa2ff'; c.strokeRect(0, 0, 0, 0); c.fillStyle = '#9fb0d3'; c.font = '10px system-ui'; c.fillText('pole', 150, 158); c.fillText('300 km radius (' + pole.label.slice(0, 4) + ')', 90, 314);
     };
-    if (MOON) return go(); fetch('data/moon_grid.json').then(function (r) { return r.json(); }).then(function (a) { MOON = a; go(); });
+    if (MOON[skyBody]) return go(); fetch('data/' + pole.file).then(function (r) { return r.json(); }).then(function (a) { MOON[skyBody] = a; go(); });
   }
   function bindSky() {
     $('skytabs').addEventListener('click', function (ev) { var b = ev.target.getAttribute('data-body'); if (b) { skyBody = b; $('skyres').innerHTML = ''; renderSky(); } });
@@ -506,11 +525,12 @@
       });
     });
     $('moonc').addEventListener('click', function (ev) {
-      if (!MOON) return; var r = ev.target.getBoundingClientRect(), px = (ev.clientX - r.left) / r.width * 320, py = (ev.clientY - r.top) / r.height * 320, x = (px - 160) / 155 * 300, y = -(py - 160) / 155 * 300;
-      if (Math.hypot(x, y) > 300) { $('skyres').innerHTML = '<h3>Unknown</h3><p>Outside 80°S to 90°S: no lunar terrain data here. No match is shown.</p>'; return; }
-      var w = MOON.slice().sort(function (a, b) { return Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y); })[0], km = Math.hypot(w.x - x, w.y - y);
+      var pole = POLE[skyBody], set = MOON[skyBody]; if (!set) return;
+      var r = ev.target.getBoundingClientRect(), px = (ev.clientX - r.left) / r.width * 320, py = (ev.clientY - r.top) / r.height * 320, x = (px - 160) / 155 * 300, y = -(py - 160) / 155 * 300;
+      if (Math.hypot(x, y) > 300) { $('skyres').innerHTML = '<h3>Unknown</h3><p>Outside ' + pole.label + ': no lunar terrain data here. No match is shown.</p>'; return; }
+      var w = set.slice().sort(function (a, b) { return Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y); })[0], km = Math.hypot(w.x - x, w.y - y);
       var o = Object.assign({}, w, { id: 'ML', name: 'Moon window ' + w.lat + '°, ' + w.lon + '°', body: 'Moon' });
-      skyResult(o, 'Moon near ' + w.lat.toFixed(1) + '°, ' + w.lon.toFixed(1) + '° (south pole data only)', 'LOLA 80 m data, south pole only; the window centre is ' + km.toFixed(0) + ' km from your click (20 km spacing).', '');
+      skyResult(o, 'Moon near ' + w.lat.toFixed(1) + '°, ' + w.lon.toFixed(1) + '° (' + pole.tag + ' data only)', 'LOLA 80 m data, ' + pole.tag + ' only; the window centre is ' + km.toFixed(0) + ' km from your click (20 km spacing).', '');
     });
     document.addEventListener('click', function (ev) {
       var id = ev.target.getAttribute && ev.target.getAttribute('data-sq'); if (!id) return;
