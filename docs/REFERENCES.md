@@ -13,7 +13,7 @@ Every data source, library and tool, one line each. Values we show are derived (
 - **30 m HRSC DTM mosaic of Gale Crater**, Persaud, Putri and Muller (2021), Zenodo, doi 10.5281/zenodo.5808354, CC BY 4.0 (ESA Mars Express HRSC).
 - **THEMIS thermal inertia mosaic** (100 m, 60 S to 60 N), USGS/ASU; method of Fergason et al. (2006). Context only, never scored.
 - **GLiM v1.0 rock-type map**, Hartmann and Moosdorf (2012), doi 10.1029/2012GC004370, CC BY 3.0, data at PANGAEA doi 10.1594/PANGAEA.788537. 0.5 degree cells, context only.
-- **NASA GIBS satellite tiles** (MODIS Terra and Aqua true colour, Blue Marble), gibs.earthdata.nasa.gov, no login. Optional layer, off by default.
+- **Esri World Imagery** satellite tiles (Esri, Maxar, Earthstar Geographics), optional picture layer, off by default; credit shown on the map.
 - **Meteomatics Weather API**, Meteomatics AG, used under the Space Apps challenge participant access; monthly means for 12 Oman points are shown as a cross-check beside NASA POWER. Credit: "Weather data by Meteomatics (meteomatics.com), accessed via NASA Space Apps Challenge participant access." Written confirmation of display rights was not obtained separately.
 
 ## Rover slope reference points (observed values, not limits)

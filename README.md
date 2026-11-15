@@ -54,7 +54,7 @@ Everything is precomputed by the Python pipeline in `pipeline/` into small files
 
 ## Data and credits
 Full list with licences: [docs/REFERENCES.md](docs/REFERENCES.md).
-- **NASA:** LRO LOLA (Moon terrain), MGS MOLA (Mars terrain), POWER (climate), HiRISE Jezero terrain model, GIBS (optional satellite layer), THEMIS thermal inertia (context).
+- **NASA:** LRO LOLA (Moon terrain), MGS MOLA (Mars terrain), POWER (climate), HiRISE Jezero terrain model, THEMIS thermal inertia (context).
 - **ESA:** Copernicus DEM GLO-30 and GLO-90 (produced using Copernicus WorldDEM-30 (c) DLR e.V. 2010-2014 and (c) Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the European Union and ESA; all rights reserved), WorldCover.
 - **Others:** OpenStreetMap contributors (ODbL, access distances), GLiM lithology (Hartmann and Moosdorf 2012, CC BY 3.0), Meteomatics weather API (Space Apps Challenge partner access; derived values only), Leaflet, Esri tiles.
 
