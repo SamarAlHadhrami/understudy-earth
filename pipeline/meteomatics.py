@@ -61,7 +61,7 @@ def main():
     for name, (lat, lon) in POINTS.items():
         vals = monthly.get(name, {})
         if not vals: continue
-        points_out[name] = {"lat": lat, "lon": lon, **{p: vals[p] for p in PARAMS if p in vals and vals[p]}}
+        points_out[name] = {"lat": lat, "lon": lon, **{p: vals[p.replace(":", "_")] for p in PARAMS if p.replace(":", "_") in vals and vals[p.replace(":", "_")]}}
     public = {
         "source": "Meteomatics Weather API, free access for NASA Space Apps Challenge 2026 participants",
         "attribution": "Weather data by Meteomatics (meteomatics.com), accessed via NASA Space Apps Challenge participant access",
