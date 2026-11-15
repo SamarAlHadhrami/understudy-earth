@@ -10,7 +10,7 @@
   var SLOPE_REF = 'Observed reference points, not limits: Curiosity maximum tilt 25.34° through sol 2488 (Rankin et al., JPL, 2019); Opportunity tilt 32° on 2016-03-10 (JPL news, 2016-03-31); Perseverance climbed about 20° on slippery sand (JPL news, 2024-10-28). The slope limit here is user-set.';
   var POWER_NOTE = 'NASA POWER climatology v2.10.1, community RE, years 2001-2025. T2M_MAX and T2M_MIN (2 m air, °C), WS2M (wind, m/s), RH2M (%), ALLSKY_SFC_SW_DWN (sunlight, kWh/m²/day). Temperature, wind and humidity cells are about 50 km (0.5 x 0.625°); solar is about 110 km (1°). Regional and approximate.';
   var AMADEE_NEEDS = { tlo: 5, thi: 35, wmin: 0, wmax: 12, rhmax: 100, smin: 4, swmax: 60 };
-  var COL = { match: '#2ec4b6', partial: '#f6c453', gap: '#ff5a5f' };
+  var COL = { match: '#17766a', partial: '#d9a63a', gap: '#a23d4a' };
   var FIELDS = ['tlo', 'thi', 'wmin', 'wmax', 'rhmax', 'smin', 'swmax', 'limit'];
 
   function load(f, opt) { return fetch('data/' + f).then(function (r) { if (!r.ok) { if (opt) return null; throw new Error(f + ' ' + r.status); } return r.json(); }).catch(function (e) { if (opt) return null; throw e; }); }
@@ -64,7 +64,7 @@
   }
   function initMap() {
     map = L.map('map', { zoomControl: true }).setView([20.3, 56.4], 6);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 12, className: 'dark-tiles', attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 12, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
     var gibsLayer = null;
     var gt = document.getElementById('gibs_toggle');
     if (gt) gt.addEventListener('change', function () {
@@ -72,13 +72,13 @@
     });
     var r = L.svg({ padding: 0.5 }); r.addTo(map);
     var ns = 'http://www.w3.org/2000/svg', defs = document.createElementNS(ns, 'defs');
-    defs.innerHTML = '<pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#a8788a"/><rect width="3" height="6" fill="#33202e"/></pattern>';
+    defs.innerHTML = '<pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#f3dfe0"/><rect width="3" height="6" fill="#a23d4a"/></pattern>';
     r._container.insertBefore(defs, r._container.firstChild);
     var bounds = [];
     D.earth.filter(function (e) { return e.group.indexOf('oman') === 0; }).forEach(function (e) {
       var dlat = 5 / 111.32, dlon = 5 / (111.32 * Math.cos(e.lat * Math.PI / 180));
       var b = [[e.lat - dlat, e.lon - dlon], [e.lat + dlat, e.lon + dlon]];
-      var rc = L.rectangle(b, { renderer: r, weight: 1, color: '#0a1020', fillOpacity: 0.85 }).addTo(map);
+      var rc = L.rectangle(b, { renderer: r, weight: 1, color: '#f5f4ef', fillOpacity: 0.85 }).addTo(map);
       rc.on('click', function () { pick(e); });
       rc.bindTooltip(function () { return 'Terrain top ' + Math.max(1, Math.round(e.rank * 100)) + '% | ' + (e._best.length ? 'best ' + N.monthsText(e._best) : 'no month fits'); }, { sticky: true });
       rects[e.id] = rc; bounds.push(b[0], b[1]);
@@ -177,7 +177,7 @@
     var r = map._rend90 || L.svg({ padding: 0.5 }); if (!map._rend90) { map._rend90 = r; r.addTo(map); }
     D.e90.forEach(function (e) {
       var dlat = 5 / 111.32, dlon = 5 / (111.32 * Math.cos(e.lat * Math.PI / 180));
-      var rc = L.rectangle([[e.lat - dlat, e.lon - dlon], [e.lat + dlat, e.lon + dlon]], { renderer: r, weight: 0.5, color: '#0a1020', fillOpacity: 0.6 }).addTo(map);
+      var rc = L.rectangle([[e.lat - dlat, e.lon - dlon], [e.lat + dlat, e.lon + dlon]], { renderer: r, weight: 0.5, color: '#f5f4ef', fillOpacity: 0.6 }).addTo(map);
       rc.on('click', function () { pick(e); }); rects[e.id] = rc;
     });
   }
@@ -211,8 +211,8 @@
       var rc = rects[e.id]; if (!rc) return;
       var k = e._tier, isSel = (sel && sel.id === e.id) || (selB && selB.id === e.id);
       var near = st.noCand && st.nearest === e.id, mk = masked(e);
-      var fillc = k === 'gap' ? 'url(#hatch)' : (k === 'none' ? '#4b5878' : COL[k]);
-      rc.setStyle({ fillColor: fillc, fillOpacity: mk ? 0.2 : (k === 'gap' ? 0.9 : (k === 'none' ? 0.55 : 0.8)), weight: isSel || near ? 3 : 1, color: isSel || near ? '#fff' : '#0a1020', dashArray: mk ? '3 4' : null });
+      var fillc = k === 'gap' ? 'url(#hatch)' : (k === 'none' ? '#848a92' : COL[k]);
+      rc.setStyle({ fillColor: fillc, fillOpacity: mk ? 0.2 : (k === 'gap' ? 0.9 : (k === 'none' ? 0.55 : 0.8)), weight: isSel || near ? 3 : 1, color: isSel || near ? '#1c1f23' : '#f5f4ef', dashArray: mk ? '3 4' : null });
       if (rc._path) rc._path.setAttribute('fill', fillc);
     });
     renderGapCard(); renderResult(); writeHash();
@@ -342,10 +342,10 @@
     var a = dist(e), b = dist(t), mx = Math.max.apply(null, a.concat(b)) || 1;
     ctx.clearRect(0, 0, W, H); var bw = (W - 20) / nb;
     for (var i = 0; i < nb; i++) {
-      ctx.fillStyle = '#7aa2ff'; ctx.fillRect(10 + i * bw, H - 18 - (H - 30) * b[i] / mx, bw * 0.42, (H - 30) * b[i] / mx);
-      ctx.fillStyle = '#2ec4b6'; ctx.fillRect(10 + i * bw + bw * 0.46, H - 18 - (H - 30) * a[i] / mx, bw * 0.42, (H - 30) * a[i] / mx);
+      ctx.fillStyle = '#6b7280'; ctx.fillRect(10 + i * bw, H - 18 - (H - 30) * b[i] / mx, bw * 0.42, (H - 30) * b[i] / mx);
+      ctx.fillStyle = '#17766a'; ctx.fillRect(10 + i * bw + bw * 0.46, H - 18 - (H - 30) * a[i] / mx, bw * 0.42, (H - 30) * a[i] / mx);
     }
-    ctx.fillStyle = '#9fb0d3'; ctx.font = '11px system-ui'; ctx.fillText('slope 0°', 10, H - 4); ctx.fillText('15°+', W - 36, H - 4);
+    ctx.fillStyle = '#585e66'; ctx.font = '11px "IBM Plex Sans", system-ui'; ctx.fillText('slope 0°', 10, H - 4); ctx.fillText('15°+', W - 36, H - 4);
   }
 
 
@@ -588,7 +588,7 @@
   var wmap = null;
   function renderWorld() {
     if (!D.world) { fetch('data/world.json').then(function (r) { return r.json(); }).then(function (a) { D.world = a; renderWorld(); }); return; }
-    if (!wmap) { wmap = L.map('worldmap').setView([25, 20], 2); L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 8, className: 'dark-tiles', attribution: '&copy; OpenStreetMap contributors' }).addTo(wmap); wmap._layer = L.layerGroup().addTo(wmap); }
+    if (!wmap) { wmap = L.map('worldmap').setView([25, 20], 2); L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 8, attribution: '&copy; OpenStreetMap contributors' }).addTo(wmap); wmap._layer = L.layerGroup().addTo(wmap); }
     setTimeout(function () { wmap.invalidateSize(); }, 100);
     var t = st.target, items = [];
     D.world.forEach(function (x) { var d = Math.min.apply(null, x.windows.map(function (w) { return SC.distance(w, t); })); items.push({ name: x.name, kind: x.kind, lat: x.lat, lon: x.lon, d: d, n: x.windows.length, fine: false }); });
@@ -596,7 +596,7 @@
     var om = bestOf(function (e) { return e.group.indexOf('oman') === 0; }); items.push({ name: 'Searched area (30 m and 90 m squares; click to open the fine view)', kind: 'home', lat: 20.5, lon: 56.5, d: om.d, n: 0, fine: true, oman: true });
     wmap._layer.clearLayers();
     items.forEach(function (x) {
-      var k = SC.gapTier(x.d), m = L.circleMarker([x.lat, x.lon], { radius: x.oman ? 11 : 7, color: '#fff', weight: x.fine ? 3 : 1, fillColor: k === 'gap' ? '#a8788a' : COL[k], fillOpacity: 0.9, dashArray: x.fine ? null : '3 3' }).addTo(wmap._layer);
+      var k = SC.gapTier(x.d), m = L.circleMarker([x.lat, x.lon], { radius: x.oman ? 11 : 7, color: '#1c1f23', weight: x.fine ? 3 : 1, fillColor: k === 'gap' ? '#a23d4a' : COL[k], fillOpacity: 0.9, dashArray: x.fine ? null : '3 3' }).addTo(wmap._layer);
       m.bindTooltip(x.name + ': ' + GLABEL[k] + ' (distance ' + x.d.toFixed(2) + ')');
       if (x.oman) m.on('click', function () { document.querySelector('.tab[data-view=map]').click(); map.fitBounds(state_views.oman); });
     });

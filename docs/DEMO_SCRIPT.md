@@ -1,5 +1,5 @@
 # 30-second demo shot list (screen recording, English subtitles, large text)
-Prepare: public link, desktop width. Use the Demo bar at the bottom left of the map.
+Prepare: public link, desktop width. Use the Demo bar at the bottom left of the map (under the map on a phone). Light theme; Quick tour is not needed on camera (first-visit offer is off after one view, or clear site data).
 
 | Time | Shot | Say / subtitle |
 |---|---|---|

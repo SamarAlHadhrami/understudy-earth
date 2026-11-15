@@ -48,3 +48,8 @@ numpy, scipy, rasterio, pyproj, Playwright (testing), Leaflet 1.9.4; basemap til
 - Day-night air temperature swing: NASA POWER T2M_MAX minus T2M_MIN (already cited); context row only, not scored, not comparable with Mars or Moon surface values.
 - Mars THEMIS thermal inertia (USGS/ASU, 100 m, within 60 S to 60 N) was later built (2026-11-15, see the Mars thermal inertia entry above) as a context row for Mars targets, streamed from S3 in small windows, never scored.
 - NOT built: Moon LRO Diviner rock abundance and Earth MODIS day-minus-night land surface temperature. Diviner's GDR_L3 product is within 60 S to 60 N latitude (verified: PDS Orbital Data Explorer page-help for GDR_L3, ode.rsl.wustl.edu/moon/pagehelp/Content/Missions_Instruments/LRO/DIVINER/GDR_L3.htm, read sentence: "All maps are simple cylindrical projections covering the latitude range -60 to +60 degrees at 32 ppd resolution"), so it genuinely does not cover the 80 S to 90 S or 80 N to 90 N pole data we hold — this is a hard coverage gap, not a judgement call. An earlier note in this file and in docs/EXTRA_FACTORS_RESEARCH.md said 70 S to 70 N for Diviner; that figure was never traced to an opened source and is corrected here to 60 S to 60 N (same statement everywhere now). MODIS LST needs an Earthdata login beyond the token already in hand (AppEEARS requires its own separate username/password login, see the item below); not built.
+
+## Fonts (self-hosted in app/fonts)
+- IBM Plex Sans (regular, medium, semibold), SIL Open Font License 1.1, IBM. Files from the Fontsource packaging.
+- Source Serif 4 (semibold, headings), SIL Open Font License 1.1, Adobe. Files from the Fontsource packaging.
+- Quick tour and layout: plain HTML, CSS and JS written for this project; no library.

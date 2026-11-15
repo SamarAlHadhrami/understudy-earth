@@ -9,7 +9,7 @@ try:
     with sync_playwright() as p:
         b = p.chromium.launch()
         for name, vp in [("desktop", {"width": 1440, "height": 900}), ("phone", {"width": 390, "height": 844})]:
-            pg = b.new_page(viewport=vp)
+            pg = b.new_page(viewport=vp); pg.add_init_script("try{localStorage.setItem('ue_tour_seen','1')}catch(e){}")
             pg.on("console", lambda m: errs.append(m.text) if m.type == "error" else None)
             pg.on("pageerror", lambda e: errs.append(str(e)))
             pg.on("response", lambda r: miss.append(r.url) if r.status == 404 else None)
