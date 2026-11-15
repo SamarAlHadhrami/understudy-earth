@@ -106,7 +106,12 @@
   }
   var state_views;
 
-  function pick(e) { curPlace = null; if (cmpNext) { selB = e; cmpNext = false; } else { sel = e; } renderAll(); showCard(); }
+  // Compare two squares side by side in a pop-up (A = the open square, B = the one clicked after pressing Compare).
+  function compareHtml() {
+    var A = metricRows(sel), B = metricRows(selB);
+    return '<table><tr><th></th><th>A ' + sel.lat.toFixed(2) + ', ' + sel.lon.toFixed(2) + '</th><th>B ' + selB.lat.toFixed(2) + ', ' + selB.lon.toFixed(2) + '</th></tr>' + A.map(function (r, i) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td><td>' + esc(B[i][1]) + '</td></tr>'; }).join('') + '</table><div class="btns"><button type="button" data-act="clearb">Clear B</button></div>';
+  }
+  function pick(e) { curPlace = null; var cmp = cmpNext && sel && sel.id !== e.id; if (cmpNext) { if (cmp) selB = e; cmpNext = false; } else { sel = e; } renderAll(); showCard(); if (cmp) openModal('Compare squares', compareHtml()); }
 
   function bind() {
     $('target').addEventListener('change', function () { st.target = D.targets.filter(function (t) { return t.id === $('target').value; })[0]; renderAll(); });
@@ -164,8 +169,8 @@
       if (tg.closest && tg.closest('#toast') && tg.closest('button')) hideToast();
       var t = tg.closest ? tg.closest('[data-act]') : null, a = t && t.getAttribute('data-act');
       if (!a) return;
-      if (a === 'brief') openBrief(); else if (a === 'cmp') { cmpNext = true; $('result').insertAdjacentHTML('afterbegin', '<p class="hint">Now click a second square on the map to compare.</p>'); }
-      else if (a === 'addcal') { addCal(); } else if (a === 'clearcal') { st.cal = []; updCalBadge(); renderCal(); } else if (a === 'closebrief') $('brief').hidden = true; else if (a === 'print') window.print(); else if (a === 'clearb') { selB = null; renderResult(); }
+      if (a === 'brief') openBrief(); else if (a === 'cmp') { cmpNext = true; toast('Now click a second square on the map to compare.', []); }
+      else if (a === 'addcal') { addCal(); } else if (a === 'clearcal') { st.cal = []; updCalBadge(); renderCal(); } else if (a === 'closebrief') $('brief').hidden = true; else if (a === 'print') window.print(); else if (a === 'clearb') { selB = null; $('modal').hidden = true; renderResult(); }
       else if (a === 'rmcal') { st.cal = st.cal.filter(function (id) { return id !== t.getAttribute('data-id'); }); updCalBadge(); renderCal(); }
       else if (a === 'add3') add3();
       else if (a === 'closecard') closeCards();
@@ -292,14 +297,10 @@
   function stabOf(t) { if (!D.stab) return null; var r = D.stab.summary.filter(function (x) { return x.target === t.name; })[0]; return r || null; }
 
   var gb = document.getElementById('gobest'); if (gb) gb.addEventListener('click', function () { goBestOman(); });
-  // Links to a real map for an Earth square: Google Maps satellite view centred on it, and the 10 km boundary drawn on a map (geojson.io). Plain links, nothing is sent by the app.
+  // Link to a real map: Google Maps satellite view centred on the Earth square (a plain link; nothing is sent by the app).
   function realMapLinks(e) {
-    var dlat = 5 / 111.32, dlon = 5 / (111.32 * Math.cos(e.lat * Math.PI / 180));
-    var ring = [[e.lon - dlon, e.lat - dlat], [e.lon + dlon, e.lat - dlat], [e.lon + dlon, e.lat + dlat], [e.lon - dlon, e.lat + dlat], [e.lon - dlon, e.lat - dlat]].map(function (c) { return [+c[0].toFixed(5), +c[1].toFixed(5)]; });
-    var gj = JSON.stringify({ type: 'Feature', properties: { name: 'Understudy Earth 10 km square' }, geometry: { type: 'Polygon', coordinates: [ring] } });
     var g = 'https://www.google.com/maps/@?api=1&map_action=map&center=' + e.lat.toFixed(5) + ',' + e.lon.toFixed(5) + '&zoom=12&basemap=satellite';
-    var b = 'https://geojson.io/#data=data:application/json,' + encodeURIComponent(gj);
-    return '<a class="btnlink" href="' + g + '" target="_blank" rel="noopener">Open in Google Maps</a><a class="btnlink" href="' + b + '" target="_blank" rel="noopener">Show 10 km boundary on a map</a>';
+    return '<a class="btnlink" href="' + g + '" target="_blank" rel="noopener">Open in Google Maps</a>';
   }
   function renderGapCard() {
     var bo = bestOf(function (e) { return e.group.indexOf('oman') === 0; }), shown = bo.d, extra = [];
@@ -551,10 +552,6 @@
       '<h3>Confidence: ' + cf.level + '</h3><div class="conf">' + cf.items.map(esc).join('; ') + '.</div>' +
       '<h3>What this cannot see</h3><div class="limits"><b>What this test cannot copy.</b> Gravity, thin air and radiation. Real ' + (st.target.body === 'Moon' ? 'lunar' : 'Martian') + ' temperatures: Earth air temperature here only tells you when conditions suit your test. Terrain numbers only see slope and roughness, not rock type or dust. No rock-abundance or dust measure is used. A terrain match is not a geology match. 500 m cells hide rocks and steps. Earth heights include trees and buildings. Climate is a typical-year average. Source: ' + esc(c.src) + '.</div>' +
       '</div></details>';
-    if (selB) {
-      var A = metricRows(sel), B = metricRows(selB);
-      h += '<h3>Compare squares</h3><table><tr><th></th><th>A ' + sel.lat.toFixed(2) + ', ' + sel.lon.toFixed(2) + '</th><th>B ' + selB.lat.toFixed(2) + ', ' + selB.lon.toFixed(2) + '</th></tr>' + A.map(function (r, i) { return '<tr><th>' + esc(r[0]) + '</th><td>' + esc(r[1]) + '</td><td>' + esc(B[i][1]) + '</td></tr>'; }).join('') + '</table><button type="button" data-act="clearb">Clear B</button>';
-    }
     el.innerHTML = h; chart(e);
   }
 
