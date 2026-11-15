@@ -14,7 +14,17 @@ SITES = [("Mojave Desert, California", 35.0, -116.0, "desert"), ("Death Valley, 
  ("Askja, Iceland", 65.0, -16.7, "volcanic"), ("Craters of the Moon, Idaho", 43.2, -113.5, "volcanic"), ("Lanzarote, Spain", 29.0, -13.6, "volcanic"), ("Teide, Tenerife", 28.27, -16.64, "volcanic"),
  ("Svalbard", 78.2, 15.6, "polar"), ("Haughton crater, Devon Island", 75.4, -89.7, "polar"), ("McMurdo Dry Valleys, Antarctica", -77.6, 162.5, "polar"), ("Tibetan Plateau", 33.5, 80.0, "mountain"),
  ("Salar de Uyuni, Bolivia", -20.2, -67.5, "desert"), ("Patagonian Andes", -50.0, -72.0, "mountain"), ("Pilbara, Australia", -22.6, 118.7, "desert"), ("Simpson Desert, Australia", -25.5, 137.0, "desert"),
- ("Canyonlands, Utah", 38.2, -109.9, "desert"), ("Pamir Mountains", 38.5, 73.5, "mountain")]
+ ("Canyonlands, Utah", 38.2, -109.9, "desert"), ("Pamir Mountains", 38.5, 73.5, "mountain"),
+ # world set v2: GCC beyond Oman/Saudi already above
+ ("Liwa Desert, UAE", 23.1, 53.7, "desert"), ("Qatar desert interior", 25.0, 51.1, "desert"), ("Kuwait desert", 29.2, 47.3, "desert"), ("Bahrain interior", 26.05, 50.5, "desert"),
+ ("Hajar Mountains, UAE/Oman", 24.9, 56.1, "mountain"),
+ # wider MENA
+ ("Grand Erg Oriental, Algeria", 31.5, 6.5, "desert"), ("Sahara, Libya (Idehan Ubari)", 26.6, 11.5, "desert"), ("Sinai Peninsula, Egypt", 28.5, 33.9, "mountain"),
+ ("Wadi Rum, Jordan", 29.57, 35.42, "desert"), ("Yemen highlands", 15.3, 44.2, "mountain"), ("Zagros Mountains, Iran", 32.0, 50.0, "mountain"), ("Atlas Mountains, Morocco", 31.1, -7.9, "mountain"),
+ # other arid/volcanic belts and polar/mountain
+ ("Kamchatka volcanic field, Russia", 56.0, 160.6, "volcanic"), ("Aleutian Islands, Alaska", 52.0, -176.0, "volcanic"), ("Atacama Puna plateau, Argentina", -24.0, -66.5, "mountain"),
+ ("Altiplano, Bolivia/Chile border", -22.5, -68.2, "mountain"), ("Taupo volcanic zone, New Zealand", -38.8, 176.0, "volcanic"), ("Great Victoria Desert, Australia", -28.5, 127.0, "desert"),
+ ("Caucasus Mountains, Georgia", 42.7, 44.0, "mountain")]
 W = os.path.join(DATA, "glo90_world"); os.makedirs(W, exist_ok=True)
 
 def hav(a, b, c, d):

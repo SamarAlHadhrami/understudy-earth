@@ -19,6 +19,14 @@ Only what I opened or saw in a search result is stated as fact. Everything else 
 | Access and logistics | Practical test planning | OpenStreetMap extract, ODbL (UNVERIFIED terms not reopened) | ODbL needs attribution; derived values only | large extract, derive small | 4-6 | EASY-MEDIUM |
 | Salinity / water | Astrobiology relevance (AMADEE-18 page mentions salt domes, opened) | Not checked | UNVERIFIED | UNVERIFIED | n/a | SKIP |
 
+**Final verdicts (re-checked 2026-11-15, after the Meteomatics and world-set work).** No new network access was done for this pass; verdicts below restate the table above in BUILT / CONTEXT ROW ONLY / SKIPPED terms, with one change (day-night swing).
+- Rock abundance + thermal inertia: SKIPPED. Confirmed again: Moon Diviner rock abundance is +-70 deg (does not cover our 80S-90S pole data), Mars THEMIS is +-60 deg (different physics, different grid), Earth MODIS LST needs an Earthdata login we have not set up. Scoring these as one measure would be dishonest; not built.
+- Day-night temperature swing: BUILT, but as a CONTEXT-ROW-TO-TEST-NEED upgrade, not a terrain score. It is now a user-set test need (NASA POWER T2M_MAX minus T2M_MIN, per month) scored alongside temperature, wind, dryness and sunlight in the Fit Verdict; it stays out of the terrain similarity method. The app states plainly that Moon and Mars surface swings are far larger than Earth air swings, so this checks test tolerance, not a target match.
+- Trees/crops/buildings (surface-model bias): BUILT earlier (ESA WorldCover land-cover flag, already in app/data/landcover.json, credited CC BY 4.0).
+- Access and logistics: BUILT earlier (OpenStreetMap road/town distance, app/data/access.json, credited ODbL, explicitly "not space data").
+- Elevation/air pressure: SKIPPED (low value, already implicitly covered by Copernicus DEM relief numbers; a separate air-pressure proxy was not built).
+- Mineralogy/rock type, albedo, dust/wind-blown sand, crater/boulder density, illumination/shadow (Moon), salinity/water, soil grain size: SKIPPED, same reasons as above (no honest, lined-up, freely licensed cross-body product found in the time available).
+
 **Sentence box options (reasoning, nothing downloaded).**
 1. Keep rules (current): no network, no key, no cost, predictable; it can only understand what the rules cover, so it must refuse unknown input. SAFEST.
 2. Tiny in-browser model (for example a WebAssembly/WebGPU model): no key, but model size (tens to hundreds of MB), load time and wrong guesses are UNVERIFIED risks; not worth it before the deadline.
