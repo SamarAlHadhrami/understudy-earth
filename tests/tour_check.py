@@ -9,7 +9,7 @@ try:
         b = p.chromium.launch()
         for name, vp in [("desktop", {"width": 1440, "height": 900}), ("phone", {"width": 390, "height": 844})]:
             pg = b.new_page(viewport=vp); pg.on("pageerror", lambda e: errs.append(str(e)))
-            pg.goto("http://localhost:8767/index.html"); pg.wait_for_selector("#map svg path.leaflet-interactive", state="attached", timeout=15000)
+            pg.add_init_script("try{sessionStorage.setItem('ue_started','1')}catch(e){}"); pg.goto("http://localhost:8767/index.html"); pg.wait_for_selector("#map svg path.leaflet-interactive", state="attached", timeout=15000)
             pg.wait_for_selector(".tour-offer.on", timeout=6000)
             pg.click("#offer-yes"); assert pg.inner_text("#tour-c") == "1 of 9"
             for k in range(8): pg.click("#tour-next"); pg.wait_for_timeout(250)

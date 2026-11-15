@@ -11,15 +11,18 @@ try:
         for name, vp in [("desktop", {"width": 1440, "height": 900}), ("phone", {"width": 390, "height": 844})]:
             pg = b.new_page(viewport=vp)
             pg.add_init_script("try{localStorage.setItem('ue_tour_seen','1')}catch(e){}")
-            pg.goto("http://localhost:8766/index.html"); pg.wait_for_selector("#map svg path.leaflet-interactive", state="attached", timeout=15000); pg.wait_for_timeout(1500)
+            LAND = False
+            pg.goto("http://localhost:8766/index.html"); pg.wait_for_timeout(2500)
+            pg.screenshot(path=f"{out}/{name}_landing.png"); pg.screenshot(path=f"{out}/{name}_landing_full.png", full_page=True)
+            pg.click("#start"); pg.wait_for_selector("#map svg path.leaflet-interactive", state="attached", timeout=15000); pg.wait_for_timeout(1500)
             pg.screenshot(path=f"{out}/{name}_start.png")
-            pg.click("#demobar button[data-demo=good]"); pg.wait_for_timeout(1200)
+            pg.evaluate("document.querySelector('[data-demo=good]').click()"); pg.wait_for_timeout(1200)
             pg.screenshot(path=f"{out}/{name}_good.png")
             pg.screenshot(path=f"{out}/{name}_good_full.png", full_page=True)
             for v in ["gap","cal","jez","sky","world","base","blind","replay","about"]:
-                pg.click(f".tab[data-view={v}]"); pg.wait_for_timeout(700)
+                pg.evaluate(f"document.querySelector('.tab[data-view={v}]').click()"); pg.wait_for_timeout(700)
                 pg.screenshot(path=f"{out}/{name}_{v}.png", full_page=(name=="phone"))
-            pg.click(".tab[data-view=map]"); pg.click("#demobar button[data-demo=none]"); pg.wait_for_timeout(900)
+            pg.evaluate("document.querySelector('.tab[data-view=map]').click()"); pg.evaluate("document.querySelector('[data-demo=none]').click()"); pg.wait_for_timeout(900)
             pg.screenshot(path=f"{out}/{name}_nocand.png")
 finally:
     srv.terminate()
