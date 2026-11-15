@@ -4,7 +4,7 @@
 - Moon claims cover only 80S-90S.
 - Copernicus is a surface model (includes buildings and plants); LOLA and MOLA are bare-ground style.
 - A 500 m baseline cannot see rocks, steps or small slopes. Rover limits apply at metre scale, so a pass here is necessary, not sufficient.
-- Oman coverage = only the tiles we hold (Muscat area, Dhofar), not all of Oman.
+- Oman coverage = the 30 m tiles we hold (Muscat area, Dhofar) plus an optional 90 m whole-Oman-box layer that includes some neighbouring land; not every square of Oman.
 - Unmatched results are not proof of anything untested.
 - "No qualifying candidate" means none of the squares we searched qualifies. It says nothing about places we did not search, and tiers are threshold-sensitive (see the stability check).
 - NASA POWER temperature, wind and humidity cells are about 50 km and solar about 110 km: regional and approximate.
@@ -16,7 +16,8 @@
 - Geology notes are the sources' own statements; our 10 km squares cannot see which features lie inside them.
 - The Jezero finer check uses one 10 km window of a 21 km DTM; 30 m cells still hide rocks and steps.
 - 90 m squares are coarser, have no land-cover check, and the box includes neighbouring countries and sea edges.
-- Meteomatics values are not used or published; NASA POWER is the only climate source in the app.
-- Click-on-Mars numbers describe the nearest 10 km window on a 25 km grid (463 m source), not the exact spot; above 60 degrees latitude and wherever data is missing the answer is "unknown". Lunar clicks work only at 80 S to 90 S.
-- The world set is a chosen set of places, not every place on Earth, with approximate reference points and 90 m data; no claim of a global best and no claim that any of them is a good analog.
-- No rock or dust measure is used; the day-night air temperature swing is context only.
+- Meteomatics values are published for 12 Oman points under the Space Apps Challenge's own participant-access grant (not the enterprise terms; see REFERENCES.md); NASA POWER remains the only source behind the terrain-adjacent test-need scoring, and Meteomatics is shown separately as a comparison, not blended with POWER.
+- Click-on-Mars numbers describe the nearest 10 km window on a 25 km grid (463 m source), not the exact spot; beyond about 87 degrees latitude and wherever data is missing the answer is "unknown". On steep or uneven ground the nearest window can read very differently from the exact spot (the app shows a caution when this is likely). Lunar clicks work only at 80 S to 90 S.
+- The world set (45 places) is a chosen and scanned set of places, not every place on Earth, with approximate reference points and 90 m data; no claim of a global best and no claim that any of them is a good analog.
+- No rock or dust measure is used (checked again in docs/EXTRA_FACTORS_RESEARCH.md; the physics does not line up honestly across Earth, Moon and Mars with data we can access in time). The day-night air temperature swing is a user-set test need, not a terrain match, and Moon/Mars surface swings are far larger than Earth air swings.
+- The optional NASA GIBS satellite picture layer is a live external image service, off by default; the core app never depends on it, and a load problem just removes the layer and keeps the OpenStreetMap base map.

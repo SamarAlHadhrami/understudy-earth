@@ -39,10 +39,10 @@ Factors, each 0-100: terrain (100 at or inside the match distance, 0 at twice th
 - Access (pipeline/access.py): nearest vertex of OpenStreetMap paved/main roads and nearest place=city/town node, great-circle distance from the square centre via a KD-tree on unit-sphere coordinates (vertex spacing makes the error well below 1 km). Access fit in the Fit Verdict = 100 within 5 km of a paved or main road, 0 at 50 km or more (our assumption); default weight 0.
 - Jezero (pipeline/jezero.py): strip reads, NaN-aware block means (cells with more than 5% empty stay empty), the same terrain features at 500 m, plus a separate 30 m-baseline check (slope p50/p90, steep share, log roughness, scaled by Earth spreads).
 - Whole Oman (pipeline/get_glo90.py, build_oman90.py, pool_v2.py): GLO-90 tiles averaged to 500 m cells; the 30 m squares are kept where they exist; pool v1 stays frozen for the app, pool v2 is reported in docs/VALIDATION.md.
-- Meteomatics (pipeline/meteomatics.py): private cross-check, credentials from environment variables, raw responses saved under data/meteomatics, nothing read by the app.
+- Meteomatics (pipeline/meteomatics.py): cross-check for 12 Oman points, credentials from environment variables (never read by the app), raw daily responses saved under data/meteomatics (git-ignored); monthly derived values published to app/data/meteomatics.json and shown as a comparison with NASA POWER, under the owner's decision to use the Space Apps Challenge participant access grant (see docs/REFERENCES.md).
 
 ## Prompt 2B additions (method unchanged)
 - Mars grid (pipeline/mars_grid.py): windows read as 22 x 22 to 22 x 44 pixel blocks (width scaled by 1/cos(latitude)) and area-averaged to 20 x 20 cells; stored as 6 float32 + 33 uint8 slope shares per window (the distance uses the slope marginal, so the 2-D histogram is rebuilt with all roughness in the first bin, which does not change the slope term). Layout in mars_grid.json. 11.4 MB.
 - Moon polar grid (pipeline/moon_grid.py): 705 windows on a 20 km grid inside 300 km of the pole.
 - World set (pipeline/world_sites.py): squares within 15 km of each reference point from one GLO-90 tile; distances use the main scales and thresholds, not recalibrated for 90 m.
-- Click results run the same distance to all 627 pool squares, show the closest Oman squares and the Fit Verdict for the closest Oman square.
+- Click results run the same distance to all 627 pool squares, show the closest squares in the searched area and the Fit Verdict for the closest one.
