@@ -242,6 +242,12 @@
   }
 
   var wdots = null;
+  // Oman dot: zoom to the best square for the current target AND open its result card.
+  function goBestOman() {
+    var om = bestOf(function (e) { return e.group.indexOf('oman') === 0; });
+    if (!om) { map.fitBounds(state_views.all, { padding: [24, 24] }); return; }
+    map.setView([om.lat, om.lon], 9); pick(om);
+  }
   function plannerWorld() {
     if (!map) return;
     if (!D.world) { if (!D._wf) { D._wf = 1; fetch('data/world.json').then(function (r) { return r.json(); }).then(function (a) { D.world = a; plannerWorld(); }).catch(function () { }); } return; }
@@ -254,7 +260,7 @@
     });
     var om = bestOf(function (e) { return e.group.indexOf('oman') === 0; }), ko = SC.gapTier(om.d);
     var mo = L.circleMarker([20.5, 56.5], { radius: 11, color: '#ffffff', weight: 3, fillColor: COL[ko], fillOpacity: 0.95 }).addTo(wdots);
-    mo.bindTooltip('Oman: fine-detail area (' + GLABEL[ko] + '). Click to zoom in.'); mo.on('click', function () { map.fitBounds(state_views.all, { padding: [24, 24] }); });
+    mo.bindTooltip('Oman: fine-detail area (' + GLABEL[ko] + '). Click to zoom in.'); mo.on('click', function () { goBestOman(); });
   }
   function renderAll() {
     recompute(); var t = st.target; plannerWorld();
@@ -755,7 +761,7 @@
     items.forEach(function (x) {
       var k = SC.gapTier(x.d), m = L.circleMarker([x.lat, x.lon], { radius: x.oman ? 11 : 7, color: '#ffffff', weight: x.fine ? 3 : 1, fillColor: k === 'gap' ? '#a23d4a' : COL[k], fillOpacity: 0.9, dashArray: x.fine ? null : '3 3' }).addTo(wmap._layer);
       m.bindTooltip(x.name + ': ' + GLABEL[k] + ' (distance ' + x.d.toFixed(2) + ')');
-      if (x.oman) m.on('click', function () { document.querySelector('.tab[data-view=map]').click(); map.fitBounds(state_views.all, { padding: [24, 24] }); });
+      if (x.oman) m.on('click', function () { document.querySelector('.tab[data-view=map]').click(); goBestOman(); });
     });
     items.sort(function (a, b) { return a.d - b.d; });
     $('worldlist').innerHTML = '<p class="sub">Target: <b>' + esc(t.name) + '</b> (change it on the Planner).</p><details class="more-blk"><summary>All places (table)</summary><p class="sub">Dashed dots use coarse 90 m data around an approximate reference point (squares within 15 km); solid-ringed dots are the 30 m squares in the main set. Tier = the same absolute thresholds as the main method, not recalibrated for 90 m.</p><table><tr><th>Place</th><th>Kind</th><th>Squares</th><th>Closest distance</th><th>Tier</th></tr>' + items.map(function (x) { var k = SC.gapTier(x.d); return '<tr><td>' + esc(x.name) + '</td><td>' + x.kind + '</td><td>' + (x.n || 'main set') + '</td><td class="mono">' + x.d.toFixed(3) + '</td><td><span class="chip ' + k + '">' + GLABEL[k] + '</span></td></tr>'; }).join('') + '</table></details>';
