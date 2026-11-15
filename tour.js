@@ -2,17 +2,19 @@
 (function () {
   'use strict';
   var KEY = 'ue_tour_seen';
-  var STEPS = [
-    { sel: '#b-target', step: 1, title: 'Step 1: choose a target', text: 'Pick a Moon or Mars place to copy. Targets marked threshold-sensitive change their result with the cut-offs we chose, so treat those as less firm.' },
-    { sel: '#b-needs', step: 2, title: 'Step 2: describe your test', text: 'Use a preset, type one sentence, or open Advanced needs for temperature, wind, dryness, sunlight and slope. These numbers are your choice or our assumption, not mission requirements.' },
-    { sel: '.legend', title: 'Read the map colours', text: 'The map opens on the world: dots are 45 chosen places, and Oman is the fine-detail area. Click Oman to see 10 km squares. GOOD is among the closest 5% to the target; PARTIAL is weaker; WEAK is hatched. Grey means no qualifying candidate in the searched area. It says nothing about the rest of Earth.' },
-    { sel: '#gapcard', step: 3, title: 'Step 3: the result', text: 'This card gives the best square we found for your target. Click a square on the map for its own result.' },
-    { sel: '#result .strip', fallback: '#result', step: 3, title: 'See when it fits', text: 'Each month is scored by its weakest factor. Climate is a typical-year average on a coarse grid, not local weather.', needsResult: true },
-    { sel: '#result .verdict', fallback: '#result', step: 3, title: 'Fit Verdict', text: 'A soft score that you can re-weight. It is not a pass or fail. Twin pictures, 3D and context rows sit in the sections below it. Context is not scored.', needsResult: true },
-    { sel: '#result .limits', fallback: '#result', step: 3, title: 'What this cannot see', text: 'This box lists what Earth cannot copy and what our data cannot see. Read it before using a number.', needsResult: true },
-    { sel: '#exbtn', title: 'Try an example', text: 'One click jumps to a good match, a case with no good match, a known failure, a Mars click, the world set, the baseline check, the AMADEE-18 replay or the printable brief.' },
-    { sel: '#appbar nav', title: 'World and Evidence', text: 'World shows the 45 chosen places. Evidence shows how the method does on known sites and where it is threshold-sensitive. More holds the rest, including the AMADEE-18 replay, a known case where it does not pick the real month.' }
+  var ALL_STEPS = [
+    { id: 'target', sel: '#b-target', step: 1, title: 'Step 1: choose a target', text: 'Pick a Moon or Mars place to copy. Targets marked threshold-sensitive change their result with the cut-offs we chose, so treat those as less firm.' },
+    { id: 'test', sel: '#b-needs', step: 2, title: 'Step 2: describe your test', text: 'Use a preset or type one sentence. Advanced needs holds temperature, wind, dryness, sunlight and slope. These numbers are your choice or our assumption, not mission requirements.' },
+    { id: 'colours', sel: '.legend', title: 'Step 3: click a coloured square', text: 'The map opens on the world; click Oman to see 10 km squares. GOOD is among the closest 5% to the target, PARTIAL is weaker, WEAK is hatched. Grey means no qualifying candidate in the searched area, which says nothing about the rest of Earth.' },
+    { id: 'gapcard', sel: '#gapcard', step: 3, title: 'The best square', text: 'This card gives the best square we found for your target. Click a square on the map for its own result.' },
+    { id: 'months', sel: '#result .strip', fallback: '#result', step: 3, title: 'See when it fits', text: 'Each month is scored by its weakest factor. Climate is a typical-year average on a coarse grid, not local weather.', needsResult: true },
+    { id: 'result', sel: '#result .vline', fallback: '#result', step: 3, title: 'Read the result', text: 'One plain verdict, the best months, then the brief, calendar and compare buttons. Details holds the numbers, pictures, 3D view and limits.', needsResult: true },
+    { id: 'limits', sel: '#result .limits', fallback: '#result', step: 3, title: 'What this cannot see', text: 'This box lists what Earth cannot copy and what our data cannot see. Read it before using a number.', needsResult: true },
+    { id: 'examples', sel: '#exbtn', title: 'Try an example', text: 'One click jumps to a good match, a case with no good match, a known failure, a Mars click, the world set, the baseline check, the AMADEE-18 replay or the printable brief.' },
+    { id: 'pages', sel: '#appbar nav', title: 'World and Evidence', text: 'World shows the 45 chosen places. Evidence shows how the method does on known sites. More holds the rest.' }
   ];
+  var SHOWN = { target: 1, test: 1, colours: 1, result: 1, examples: 1 };
+  var STEPS = ALL_STEPS.filter(function (x) { return SHOWN[x.id]; });
   var i = 0, card, hl, offer, lastFocus;
   function $(s) { return document.querySelector(s); }
   function seen() { try { return localStorage.getItem(KEY) === '1'; } catch (e) { return false; } }
