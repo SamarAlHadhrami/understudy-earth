@@ -65,13 +65,15 @@
   // English-label base map: Esri World Dark Gray base plus its English reference labels. If either fails to load, plain OpenStreetMap tiles replace them.
   function baseTiles(m, maxZ) {
     var esri = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/';
-    var base = L.tileLayer(esri + 'World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', { maxZoom: maxZ, maxNativeZoom: 16, attribution: 'Tiles &copy; Esri, HERE, Garmin, FAO, NOAA, USGS, &copy; OpenStreetMap contributors' }).addTo(m);
-    var lab = L.tileLayer(esri + 'World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', { maxZoom: maxZ, maxNativeZoom: 16, pane: 'shadowPane' }).addTo(m), failed = false;
-    function fb() { if (failed) return; failed = true; m.removeLayer(base); m.removeLayer(lab); L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: maxZ, attribution: '&copy; OpenStreetMap contributors' }).addTo(m); }
+    var base = L.tileLayer(esri + 'World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', { maxZoom: maxZ, maxNativeZoom: 16, noWrap: true, attribution: 'Tiles &copy; Esri, HERE, Garmin, FAO, NOAA, USGS, &copy; OpenStreetMap contributors' }).addTo(m);
+    var lab = L.tileLayer(esri + 'World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}', { maxZoom: maxZ, maxNativeZoom: 16, noWrap: true, pane: 'shadowPane' }).addTo(m), failed = false;
+    function fb() { if (failed) return; failed = true; m.removeLayer(base); m.removeLayer(lab); L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: maxZ, noWrap: true, attribution: '&copy; OpenStreetMap contributors' }).addTo(m); }
     base.on('tileerror', fb);
   }
   function initMap() {
-    map = L.map('map', { zoomControl: true }).setView([20.3, 56.4], 6);
+    map = L.map('map', { zoomControl: true, maxBounds: [[-85, -180], [85, 180]], maxBoundsViscosity: 1, worldCopyJump: false }).setView([20.3, 56.4], 6);
+    function fitMin() { map.setMinZoom(Math.max(1, map.getBoundsZoom([[-60, -180], [80, 180]], true))); }
+    fitMin(); window.addEventListener('resize', function () { map.invalidateSize(); fitMin(); });
     baseTiles(map, 12);
     var gibsLayer = null;
     var gt = document.getElementById('gibs_toggle');
@@ -96,7 +98,7 @@
     var ctl = L.control({ position: 'topright' });
     ctl.onAdd = function () {
       var d = L.DomUtil.create('div', 'viewbtns');
-      d.innerHTML = '<button data-v="world">World</button><button data-v="dhofar">Dhofar</button><button data-v="muscat">Muscat</button><button data-v="all">All Oman</button><button data-v="oman">Oman box</button>';
+      d.innerHTML = '<button data-v="world">World</button><button data-v="dhofar">Dhofar</button><button data-v="muscat">Muscat</button><button data-v="all">All Oman</button>';
       L.DomEvent.disableClickPropagation(d);
       d.addEventListener('click', function (ev) { var v = ev.target.getAttribute('data-v'); if (v) map.fitBounds(state_views[v], { padding: [20, 20] }); });
       return d;
