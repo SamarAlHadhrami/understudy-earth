@@ -10,19 +10,26 @@
 </head>
 <body>
 <header>
-  <div class="brand"><span class="logo" aria-hidden="true">&#9680;</span><div><h1>Understudy Earth</h1>
-  <p class="tag">Where and when on Earth can we rehearse a Moon or Mars job?</p></div></div>
-  <nav>
-    <button class="tab on" data-view="map">Planner</button>
-    <button class="tab" data-view="gap">Gap view</button>
-    <button class="tab" data-view="cal">Calendar</button>
-    <button class="tab" data-view="jez">Fine-scale checks</button>
-    <button class="tab" data-view="sky">Click Mars / Moon</button>
-    <button class="tab" data-view="world">World set</button>
-    <button class="tab" data-view="base">Baseline check</button>
-    <button class="tab" data-view="blind">Name-free check</button>
-    <button class="tab" data-view="replay">AMADEE-18 replay</button>
-    <button class="tab" data-view="about">How it works</button>
+  <div class="topbar">
+    <div class="brand"><h1>Understudy Earth</h1>
+    <p class="tag">Where and when on Earth can we rehearse a Moon or Mars job?</p></div>
+    <button type="button" class="tourbtn" id="tourbtn" aria-haspopup="dialog">Quick tour</button>
+  </div>
+  <nav aria-label="Views">
+    <div class="grp" role="group" aria-label="Plan"><span class="glabel">Plan</span>
+      <button class="tab on" data-view="map">Planner</button>
+      <button class="tab" data-view="sky">Click Mars / Moon</button>
+      <button class="tab" data-view="jez">Fine-scale checks</button></div>
+    <div class="grp" role="group" aria-label="Compare"><span class="glabel">Compare</span>
+      <button class="tab" data-view="gap">Gap view</button>
+      <button class="tab" data-view="cal">Calendar</button>
+      <button class="tab" data-view="world">World set</button></div>
+    <div class="grp" role="group" aria-label="Evidence"><span class="glabel">Evidence</span>
+      <button class="tab" data-view="base">Baseline check</button>
+      <button class="tab" data-view="blind">Name-free check</button>
+      <button class="tab" data-view="replay">AMADEE-18 replay</button></div>
+    <div class="grp" role="group" aria-label="About"><span class="glabel">About</span>
+      <button class="tab" data-view="about">How it works</button></div>
   </nav>
 </header>
 
@@ -30,20 +37,22 @@
   <section id="mapwrap">
     <div id="hook" class="hook"></div>
     <div id="map" role="application" aria-label="Map of Oman terrain windows coloured by fit for the chosen test"></div>
-    <div class="legend" aria-label="Legend">
+    <div class="mapbar">
+      <div class="demobar" id="demobar"><b>Demo</b> <button data-demo="good">1 Good match</button><button data-demo="none">2 No qualifying candidate</button><button data-demo="fail">3 Known failure</button><button data-demo="brief">4 Brief</button></div>
+      <div class="legend" aria-label="Map legend">
       <span><i class="sw match"></i>GOOD</span><span><i class="sw partial"></i>PARTIAL</span><span><i class="sw gap"></i>WEAK (hatched)</span><span><i class="sw none"></i>no qualifying candidate (grey)</span>
-      <label class="chk" style="margin-left:auto"><input type="checkbox" id="gibs_toggle"> Satellite picture (NASA GIBS, optional)</label>
+      <label class="chk" style="margin:0"><input type="checkbox" id="gibs_toggle"> Satellite picture (NASA GIBS)</label>
     </div>
-    <div class="demobar" id="demobar"><b>Demo</b> <button data-demo="good">1 Good match</button><button data-demo="none">2 No qualifying candidate</button><button data-demo="fail">3 Known failure</button><button data-demo="brief">4 Brief</button></div>
+    </div>
     <div id="loaderr" class="err" hidden></div>
   </section>
 
   <aside id="panel">
     <div class="view on" id="v-map">
-      <h2>1. Terrain to copy</h2>
-      <label>Moon / Mars target <select id="target"></select></label>
+      <div class="blk" id="b-target"><h2><span class="n">1</span>Terrain to copy</h2>
+      <label>Moon / Mars target <select id="target"></select></label></div>
 
-      <h2>2. What your test needs</h2>
+      <div class="blk" id="b-needs"><h2><span class="n">2</span>What your test needs</h2>
       <div class="presets" id="presets">
         <button data-p="rover">Rover test</button><button data-p="instrument">Instrument test</button>
         <button data-p="walking">Walking test</button><button data-p="cold">Cold test</button>
@@ -65,14 +74,16 @@
           <small id="limsrc"></small></label>
         <small id="assume">Test-need numbers are the user's choice or <b>our assumption</b>; they are not mission requirements. Earth temperatures are not Mars or Moon temperatures.</small>
       </div>
+      </div>
+      <div class="blk" id="b-map"><h2><span class="n">3</span>Map options</h2>
       <label class="chk"><input type="checkbox" id="mask" checked> Hide squares with 10% or more trees, crops or buildings (surface-model bias; ESA WorldCover)</label>
       <label class="chk"><input type="checkbox" id="show90"> Show whole-Oman 90 m squares (extra layer; coarser data, no twin pictures or land-cover check; the box 16.5-26.5 N, 52-60 E includes neighbouring land and sea edges)</label>
       <label>Map shows
         <select id="mode"><option value="both">Where + when (terrain match and test needs)</option><option value="terrain">Terrain match only</option><option value="needs">Test needs only</option></select></label>
       <label>Month
-        <select id="month"><option value="best">Best month for each square</option></select></label>
+        <select id="month"><option value="best">Best month for each square</option></select></label></div>
 
-      <div class="gapcard" id="gapcard">
+      <div class="gapcard" id="gapcard" aria-label="Terrain match: best square">
         <div class="gc-head"><span>Terrain match: best square</span><span id="badge" class="badge">&ndash;</span></div>
         <div class="gc-score"><span class="mono" id="gcscore">&ndash;</span><small id="gctext"></small></div>
         <div class="second">
@@ -123,5 +134,6 @@
 <script src="score.js"></script>
 <script src="needs.js"></script>
 <script src="app.js"></script>
+<script src="tour.js"></script>
 </body>
 </html>
